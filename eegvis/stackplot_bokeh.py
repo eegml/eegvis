@@ -112,7 +112,7 @@ def stackplot_t(tarray,
         # a default width that is wider but can just fit in jupyter
         kwargs['width'] = 950
     fig = bplt.figure(
-        tools="pan,box_zoom,reset,resize,previewsave,lasso_select",
+        tools="pan,box_zoom,reset,previewsave,lasso_select",
         **kwargs)  # subclass of Plot that simplifies plot creation
 
     ## xlim(*xlm)
@@ -450,7 +450,7 @@ class IpyStackplot:
         if not 'width' in kwargs:
             kwargs['width'] = 950  # a default width that is wider but can just fit in jupyter
         fig = bplt.figure(
-            tools="pan,box_zoom,reset,resize,previewsave,lasso_select",
+            tools="pan,box_zoom,reset,previewsave,lasso_select",
             **kwargs)  # subclass of Plot that simplifies plot creation
 
         ## xlim(*xlm)
@@ -761,7 +761,7 @@ class IpyEEGPlot:
             kwargs[
                 'width'] = 950  # a default width that is wider but can just fit in jupyter
         fig = bplt.figure(title=self.title,
-            tools="pan,box_zoom,reset,resize,previewsave,lasso_select,ywheel_zoom",
+            tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
             **kwargs)  # subclass of Plot that simplifies plot creation
 
         ## xlim(*xlm)
