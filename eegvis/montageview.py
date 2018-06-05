@@ -326,9 +326,9 @@ class LaplacianMontageView(MontageView):
         V.loc['P4-aP4', 'Pz'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
 
         V.loc['F8-aF8', 'F8'] = 1     # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
-        V.loc['F8-aF8', 'Fp2'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
-        V.loc['F8-aF8', 'F4'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
-        V.loc['F8-aF8', 'T4'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+        V.loc['F8-aF8', 'Fp2'] = -1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+        V.loc['F8-aF8', 'F4'] = -1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+        V.loc['F8-aF8', 'T4'] = -1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
 
         V.loc['T4-aT4', 'T4'] = 1    # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
         V.loc['T4-aT4', 'F8'] = -1/3 # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
@@ -383,7 +383,7 @@ class TCPMontageView(MontageView):
         'Fp2-F8',
         'F8-T4',
         'T4-T6',
-        'T6-O2'
+        'T6-O2',
 
         'A1-T3',
         'T3-C3',
@@ -401,8 +401,8 @@ class TCPMontageView(MontageView):
         'C4-P4' ]
     
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.LAPLACIAN_LABELS, rec_labels)
-        self.laplacian_set_matrix(self.V) # define connection matrix
+        super().__init__(self.TCP_LABELS, rec_labels)
+        self.tcp_set_matrix(self.V) # define connection matrix
         
         poschoice = {
             False : 'pos',
@@ -410,67 +410,67 @@ class TCPMontageView(MontageView):
         if reversed_polarity:
             self.V = (-1) * self.V
 
-        self.name = 'laplacian, up=%s' % poschoice[reversed_polarity]
+        self.name = 'TCP, up=%s' % poschoice[reversed_polarity]
 
 
-def tcp_set_matrix(V):
-    V.loc['Fp1-F7', 'Fp1'] = 1
-    V.loc['Fp1-F7', 'F7'] = -1
+    def tcp_set_matrix(self, V):
+        V.loc['Fp1-F7', 'Fp1'] = 1
+        V.loc['Fp1-F7', 'F7'] = -1
 
-    V.loc['F7-T3', 'F7'] = 1
-    V.loc['F7-T3', 'T3'] = -1
+        V.loc['F7-T3', 'F7'] = 1
+        V.loc['F7-T3', 'T3'] = -1
 
-    V.loc['T3-T5', 'T3'] = 1
-    V.loc['T3-T5', 'T5'] = -1
+        V.loc['T3-T5', 'T3'] = 1
+        V.loc['T3-T5', 'T5'] = -1
 
-    V.loc['T5-O1', 'T5'] = 1
-    V.loc['T5-O1', 'O1'] = -1
+        V.loc['T5-O1', 'T5'] = 1
+        V.loc['T5-O1', 'O1'] = -1
 
-    V.loc['Fp2-F8', 'Fp2'] = 1
-    V.loc['Fp2-F8', 'F8'] = -1
+        V.loc['Fp2-F8', 'Fp2'] = 1
+        V.loc['Fp2-F8', 'F8'] = -1
 
-    V.loc['F8-T4', 'F8'] = 1
-    V.loc['F8-T4', 'T4'] = -1
+        V.loc['F8-T4', 'F8'] = 1
+        V.loc['F8-T4', 'T4'] = -1
 
-    V.loc['T4-T6', 'T4'] = 1
-    V.loc['T4-T6', 'T6'] = -1
+        V.loc['T4-T6', 'T4'] = 1
+        V.loc['T4-T6', 'T6'] = -1
 
-    V.loc['T6-O2', 'T6'] = 1
-    V.loc['T6-O2', '02'] = -1
+        V.loc['T6-O2', 'T6'] = 1
+        V.loc['T6-O2', 'O2'] = -1
 
 
-    V.loc['A1-T3', 'A1'] = 1
-    V.loc['A1-T3', 'T3'] = -1
+        V.loc['A1-T3', 'A1'] = 1
+        V.loc['A1-T3', 'T3'] = -1
 
-    V.loc['T3-C3', 'T3'] = 1
-    V.loc['T3-C3', 'C3'] = -1
+        V.loc['T3-C3', 'T3'] = 1
+        V.loc['T3-C3', 'C3'] = -1
 
-    V.loc['C3-Cz', 'C3'] = 1
-    V.loc['C3-Cz', 'Cz'] = -1
+        V.loc['C3-Cz', 'C3'] = 1
+        V.loc['C3-Cz', 'Cz'] = -1
 
-    V.loc['Cz-C4', 'Cz'] = 1
-    V.loc['Cz-C4', 'C4'] = -1
+        V.loc['Cz-C4', 'Cz'] = 1
+        V.loc['Cz-C4', 'C4'] = -1
 
-    V.loc['C4-T4', 'C4'] = 1
-    V.loc['C4-T4', 'T4'] = -1
+        V.loc['C4-T4', 'C4'] = 1
+        V.loc['C4-T4', 'T4'] = -1
 
-    V.loc['T4-A2', 'T4'] = 1
-    V.loc['T4-A2', 'A2'] = -1
+        V.loc['T4-A2', 'T4'] = 1
+        V.loc['T4-A2', 'A2'] = -1
 
-    
-    V.loc['Fp1-F3', 'Fp1'] = 1
-    V.loc['Fp1-F3', 'F3'] = -1
-    V.loc['F3-C3', 'F3'] = 1
-    V.loc['F3-C3', 'C3'] = -1
-    V.loc['C3-P3', 'C3'] = 1
-    V.loc['C3-P3', 'P3'] = -1
 
-    V.loc['Fp2-F4', 'Fp2'] = 1
-    V.loc['Fp2-F4', 'F4'] = -1
-    V.loc['F4-C4', 'F4'] = 1
-    V.loc['F4-C4', 'C4'] = -1
-    V.loc['C4-P4', 'C4'] = 1
-    V.loc['C4-P4', 'P4'] = -1
+        V.loc['Fp1-F3', 'Fp1'] = 1
+        V.loc['Fp1-F3', 'F3'] = -1
+        V.loc['F3-C3', 'F3'] = 1
+        V.loc['F3-C3', 'C3'] = -1
+        V.loc['C3-P3', 'C3'] = 1
+        V.loc['C3-P3', 'P3'] = -1
+
+        V.loc['Fp2-F4', 'Fp2'] = 1
+        V.loc['Fp2-F4', 'F4'] = -1
+        V.loc['F4-C4', 'F4'] = 1
+        V.loc['F4-C4', 'C4'] = -1
+        V.loc['C4-P4', 'C4'] = 1
+        V.loc['C4-P4', 'P4'] = -1
 
 
 ####################
