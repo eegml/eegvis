@@ -23,7 +23,7 @@ from bokeh.io import push_notebook
 
 # ipython related
 from IPython.display import display
-import ipywidgets
+import ipywidgets # using verseion 7.0 from conda-forge
 
 import eegvis.montageview as montageview
 
@@ -382,8 +382,8 @@ class IpyStackplot:
         s0 = limit_sample_check(goto_sample - hw, self.signals)
         s1 = limit_sample_check(goto_sample + hw, self.signals)
         window_samples = s1 - s0
-        duration = (s1 - s0) / fs
-        start_time_sec = s0 / fs
+        duration = (s1 - s0) / self.fs
+        start_time_sec = s0 / self.fs
 
         data = self.signals[self.ch_start:self.ch_stop, s0:
                             s1]  # note transposed
