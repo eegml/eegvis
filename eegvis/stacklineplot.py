@@ -91,6 +91,7 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0,
     if not ylabels:
         ylabels = ["%d" % ii for ii in range(numRows)]
     if topdown == True:
+        ylabels = ylabels.copy()
         ylabels.reverse() # this acts on ylabels in place 
     ax.set_yticklabels(ylabels)
 
@@ -146,7 +147,7 @@ def show_epoch_centered(signals, goto_sec,
 
 def show_montage_centered(signals, montage, goto_sec,
                           epoch_width_sec,
-                          chstart, chstop, fs, ylabels=None, yscale=1.0):
+                          chstart, chstop, fs, ylabels=None, yscale=1.0,topdown=True):
     """
     @signals array-like object with signals[ch_num, sample_num]
     @goto_sec where to go in the signal to show the feature
@@ -175,6 +176,7 @@ def show_montage_centered(signals, montage, goto_sec,
     inmontage_view = np.dot(montage.V.data, signal_view)
 
     rlabels = montage.montage_labels 
-    stackplot(inmontage_view, start_time=start_time_sec, seconds=duration, ylabels=rlabels,
-              yscale=yscale, topdown=True)
+    stackplot(inmontage_view, start_time=start_time_sec, seconds=duration, 
+              ylabels=rlabels,
+              yscale=yscale, topdown=topdown)
     
