@@ -234,104 +234,117 @@ class LaplacianMontageView(MontageView):
         "O1-aO1",
         'F3-aF3',
         'C3-aC3',
-        "P3-aP3",
+        'P3-aP3',
         'Cz-aCz',
-        "F4-aF4",
-        "C4-aC4",
-        "P4-aP4",
+        'F4-aF4',
+        'C4-aC4',
+        'P4-aP4',
         'F8-aF8',
         'T4-aT4',
         'T6-aT6',
         'O2-aO2' ]
 
-def laplacian_set_matrix(V):
-    """expect an xarray-like matrix V"""
-    
-    V.loc['F7-aF7', 'F7'] = 1 # aF7 = Fp1+F3+C3+T3
-    V.loc['F7-aF7', 'Fp1'] = -1/4
-    V.loc['F7-aF7', 'F3'] = -1/4
-    V.loc['F7-aF7', 'C3'] = -1/4
-    V.loc['F7-aF7', 'T3'] = -1/4
-
-    V.loc['T3-aT3', 'T3'] = 1 # aT3 = F7+C3+T5
-    V.loc['T3-aT3', 'F7'] = -1/3
-    V.loc['T3-aT3', 'C3'] = -1/3
-    V.loc['T3-aT3', 'T5'] = -1/3
-
-    V.loc['T5-aT5', 'T5'] = 1 # aT5 = T3+C3+P3+O1
-    V.loc["T5-aT5", 'T3'] = -1/4 # aT5 = T3+C3+P3+O1
-    V.loc["T5-aT5", 'C3'] = -1/4 # aT5 = T3+C3+P3+O1
-    V.loc["T5-aT5", 'P3'] = -1/4 # aT5 = T3+C3+P3+O1
-    V.loc["T5-aT5", 'O1'] = -1/4 # aT5 = T3+C3+P3+O1
-
-    V.loc["O1-aO1", 'O1'] = 1 # aO1 = "PZ+P3+T5"
-    V.loc['O1-aO1', 'Pz'] = -1/3
-    V.loc['O1-aO1', 'P3'] = -1/3
-    V.loc['O1-aO1', 'T5'] = -1/3
-
-    V.loc['F3-aF3', 'F3'] = 1 #"aF3" Definition="F7+C3+FZ+FP1"/>
-    V.loc['F3-aF3', 'F7'] = -1/4
-    V.loc['F3-aF3', 'C3'] = -1/4
-    V.loc['F3-aF3', 'Fz'] = -1/4
-    V.loc['F3-aF3', 'Fp1'] = -1/4
-
-    V.loc['C3-aC3', 'C3'] = 1 # <AvgRef Name="aC3" Definition="T3+F3+CZ+P3"/>
-    V.loc['C3-aC3', 'T3'] = -1/4
-    V.loc['C3-aC3', 'F3'] = -1/4
-    V.loc['C3-aC3', 'Cz'] = -1/4
-    V.loc['C3-aC3', 'P3'] = -1/4
-
-    V.loc["P3-aP3", 'P3'] = 1.0     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
-    V.loc["P3-aP3", 'C3'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
-    V.loc["P3-aP3", 'Pz'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
-    V.loc["P3-aP3", 'O1'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
-    V.loc["P3-aP3", 'T5'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
-
-    V.loc['Cz-aCz', 'Cz'] = 1 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
-    V.loc['Cz-aCz', 'Fz'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
-    V.loc['Cz-aCz', 'C4'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
-    V.loc['Cz-aCz', 'Pz'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
-    V.loc['Cz-aCz', 'C3'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
-    
-    V.loc["F4-aF4", 'F4'] = 1     # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
-    V.loc["F4-aF4", 'Fp2'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
-    V.loc["F4-aF4", 'F8'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
-    V.loc["F4-aF4", 'C4'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
-    V.loc["F4-aF4", 'Fz'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
-
-    
-    V.loc["C4-aC4", 'C4'] = 1.0     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
-    V.loc["C4-aC4", 'F4'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
-    V.loc["C4-aC4", 'T4'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
-    V.loc["C4-aC4", 'P4'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
-    V.loc["C4-aC4", 'Cz'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
-
-    V.loc["P4-aP4", 'P4'] = 1
-    V.loc['P4-aP4', 'C4'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
-    V.loc['P4-aP4', 'T6'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
-    V.loc['P4-aP4', 'O2'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
-    V.loc['P4-aP4', 'Pz'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(self.LAPLACIAN_LABELS, rec_labels)
+        self.laplacian_set_matrix(self.V) # define connection matrix
         
-    V.loc['F8-aF8', 'F8'] = 1     # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
-    V.loc['F8-aF8', 'Fp2'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
-    V.loc['F8-aF8', 'F4'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
-    V.loc['F8-aF8', 'T4'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+        poschoice = {
+            False : 'pos',
+            True : 'neg'}
+        if reversed_polarity:
+            self.V = (-1) * self.V
 
-    V.loc['T4-aT4', 'T4'] = 1    # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
-    V.loc['T4-aT4', 'F8'] = -1/3 # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
-    V.loc['T4-aT4', 'C4'] = -1/3 # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
-    V.loc['T4-aT4', 'T6'] = -1/3 # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
-    
-    V.loc['T6-aT6', 'T6'] = 1    # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
-    V.loc['T6-aT6', 'T4'] = -1/3 # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
-    V.loc['T6-aT6', 'P4'] = -1/3 # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
-    V.loc['T6-aT6', 'O2'] = -1/3 # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
+        self.name = 'laplacian, up=%s' % poschoice[reversed_polarity]
 
-    V.loc['O2-aO2', 'O2'] = 1    # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
-    V.loc['O2-aO2', 'T6'] = -1/3 # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
-    V.loc['O2-aO2', 'P4'] = -1/3 # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
-    V.loc['O2-aO2', 'Pz'] = -1/3 # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
-    return V
+
+    def laplacian_set_matrix(self,V):
+        """expect an xarray-like matrix V"""
+
+        V.loc['F7-aF7', 'F7'] = 1 # aF7 = Fp1+F3+C3+T3
+        V.loc['F7-aF7', 'Fp1'] = -1/4
+        V.loc['F7-aF7', 'F3'] = -1/4
+        V.loc['F7-aF7', 'C3'] = -1/4
+        V.loc['F7-aF7', 'T3'] = -1/4
+
+        V.loc['T3-aT3', 'T3'] = 1 # aT3 = F7+C3+T5
+        V.loc['T3-aT3', 'F7'] = -1/3
+        V.loc['T3-aT3', 'C3'] = -1/3
+        V.loc['T3-aT3', 'T5'] = -1/3
+
+        V.loc['T5-aT5', 'T5'] = 1 # aT5 = T3+C3+P3+O1
+        V.loc["T5-aT5", 'T3'] = -1/4 # aT5 = T3+C3+P3+O1
+        V.loc["T5-aT5", 'C3'] = -1/4 # aT5 = T3+C3+P3+O1
+        V.loc["T5-aT5", 'P3'] = -1/4 # aT5 = T3+C3+P3+O1
+        V.loc["T5-aT5", 'O1'] = -1/4 # aT5 = T3+C3+P3+O1
+
+        V.loc["O1-aO1", 'O1'] = 1 # aO1 = "PZ+P3+T5"
+        V.loc['O1-aO1', 'Pz'] = -1/3
+        V.loc['O1-aO1', 'P3'] = -1/3
+        V.loc['O1-aO1', 'T5'] = -1/3
+
+        V.loc['F3-aF3', 'F3'] = 1 #"aF3" Definition="F7+C3+FZ+FP1"/>
+        V.loc['F3-aF3', 'F7'] = -1/4
+        V.loc['F3-aF3', 'C3'] = -1/4
+        V.loc['F3-aF3', 'Fz'] = -1/4
+        V.loc['F3-aF3', 'Fp1'] = -1/4
+
+        V.loc['C3-aC3', 'C3'] = 1 # <AvgRef Name="aC3" Definition="T3+F3+CZ+P3"/>
+        V.loc['C3-aC3', 'T3'] = -1/4
+        V.loc['C3-aC3', 'F3'] = -1/4
+        V.loc['C3-aC3', 'Cz'] = -1/4
+        V.loc['C3-aC3', 'P3'] = -1/4
+
+        V.loc["P3-aP3", 'P3'] = 1.0     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
+        V.loc["P3-aP3", 'C3'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
+        V.loc["P3-aP3", 'Pz'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
+        V.loc["P3-aP3", 'O1'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
+        V.loc["P3-aP3", 'T5'] = -1/4     # <AvgRef Name="aP3" Definition="C3+PZ+O1+T5"/>
+
+        V.loc['Cz-aCz', 'Cz'] = 1 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
+        V.loc['Cz-aCz', 'Fz'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
+        V.loc['Cz-aCz', 'C4'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
+        V.loc['Cz-aCz', 'Pz'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
+        V.loc['Cz-aCz', 'C3'] = -1/4 # <AvgRef Name="aCz" Definition="FZ+C4+PZ+C3"/>
+
+        V.loc["F4-aF4", 'F4'] = 1     # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
+        V.loc["F4-aF4", 'Fp2'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
+        V.loc["F4-aF4", 'F8'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
+        V.loc["F4-aF4", 'C4'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
+        V.loc["F4-aF4", 'Fz'] = -1/4 # <AvgRef Name="aF4" Definition="FP2+F8+C4+FZ"/>
+
+
+        V.loc["C4-aC4", 'C4'] = 1.0     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
+        V.loc["C4-aC4", 'F4'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
+        V.loc["C4-aC4", 'T4'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
+        V.loc["C4-aC4", 'P4'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
+        V.loc["C4-aC4", 'Cz'] = -1/4     # <AvgRef Name="aC4" Definition="F4+T4+P4+CZ"/>
+
+        V.loc["P4-aP4", 'P4'] = 1
+        V.loc['P4-aP4', 'C4'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
+        V.loc['P4-aP4', 'T6'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
+        V.loc['P4-aP4', 'O2'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
+        V.loc['P4-aP4', 'Pz'] = -1/4     # <AvgRef Name="aP4" Definition="C4+T6+O2+PZ"/>
+
+        V.loc['F8-aF8', 'F8'] = 1     # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+        V.loc['F8-aF8', 'Fp2'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+        V.loc['F8-aF8', 'F4'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+        V.loc['F8-aF8', 'T4'] = 1/3  # <AvgRef Name="aF8" Definition="FP2+F4+T4"/>
+
+        V.loc['T4-aT4', 'T4'] = 1    # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
+        V.loc['T4-aT4', 'F8'] = -1/3 # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
+        V.loc['T4-aT4', 'C4'] = -1/3 # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
+        V.loc['T4-aT4', 'T6'] = -1/3 # <AvgRef Name="aT4" Definition="F8+C4+T6"/>
+
+        V.loc['T6-aT6', 'T6'] = 1    # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
+        V.loc['T6-aT6', 'T4'] = -1/3 # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
+        V.loc['T6-aT6', 'P4'] = -1/3 # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
+        V.loc['T6-aT6', 'O2'] = -1/3 # <AvgRef Name="aT6" Definition="T4+P4+O2"/>
+
+        V.loc['O2-aO2', 'O2'] = 1    # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
+        V.loc['O2-aO2', 'T6'] = -1/3 # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
+        V.loc['O2-aO2', 'P4'] = -1/3 # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
+        V.loc['O2-aO2', 'Pz'] = -1/3 # <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
+        return V
 
     # <AvgRef Name="aF7" Definition="FP1+F3+C3+T3"/>
     # <AvgRef Name="aT3" Definition="F7+C3+T5"/>
@@ -360,51 +373,104 @@ def laplacian_set_matrix(V):
 
 
 #### TCP
-def tcp_set_matrix(B]:
-    B.loc['Fp1-F7', 'Fp1'] = 1
-    B.loc['Fp1-F7', 'F7'] = -1
-    B.loc['F7-T3', 'F7'] = 1
-    B.loc['F7-T3', 'T3'] = -1
-    B.loc['T3-T5', 'T3'] = 1
-    B.loc['T3-T5', 'T5'] = -1
-    B.loc['T5-O1', 'T5'] = 1
-    B.loc['T5-O1', 'O1'] = -1
+class TCPMontageView(MontageView):
+    TCP_LABELS = [
+        'Fp1-F7',
+        'F7-T3',
+        'T3-T5',
+        'T5-O1',
 
-    B.loc['Fp2-F8', 'Fp2'] = 1
-    B.loc['Fp2-F8', 'F8'] = -1
-    B.loc['F8-T4', 'F8'] = 1
-    B.loc['F8-T4', 'T4'] = -1
-    B.loc['T4-T6', 'T4'] = 1
-    B.loc['T4-T6', 'T6'] = -1
-    B.loc['T6-O2', 'T6'] = 1
-    B.loc['T6-O2', '02'] = -1
+        'Fp2-F8',
+        'F8-T4',
+        'T4-T6',
+        'T6-O2'
 
-    B.loc['A1-T3', 'A1'] = 1
-    B.loc['A1-T3', 'T3'] = -1
-    B.loc['T3-C3', 'T3'] = 1
-    B.loc['T3-C3', 'C3'] = -1
-    B.loc['C3-Cz', 'C3'] = 1
-    B.loc['C3-Cz', 'Cz'] = -1
-    B.loc['Cz-C4', 'Cz'] = 1
-    B.loc['Cz-C4', 'C4'] = -1
-    B.loc['C4-T4', 'C4'] = 1
-    B.loc['C4-T4', 'T4'] = -1
-    B.loc['T4-A2', 'T4'] = 1
-    B.loc['T4-A2', 'A2'] = -1
+        'A1-T3',
+        'T3-C3',
+        'C3-Cz',
+        'Cz-C4',
+        'C4-T4',
+        'T4-A2',
 
-    B.loc['Fp1-F3', 'Fp1'] = 1
-    B.loc['Fp1-F3', 'F3'] = -1
-    B.loc['F3-C3', 'F3'] = 1
-    B.loc['F3-C3', 'C3'] = -1
-    B.loc['C3-P3', 'C3'] = 1
-    B.loc['C3-P3', 'P3'] = -1
+        'Fp1-F3',
+        'F3-C3',
+        'C3-P3',
 
-    B.loc['Fp2-F4', 'Fp2'] = 1
-    B.loc['Fp2-F4', 'F4'] = -1
-    B.loc['F4-C4', 'F4'] = 1
-    B.loc['F4-C4', 'C4'] = -1
-    B.loc['C4-P4', 'C4'] = 1
-    B.loc['C4-P4', 'P4'] = -1
+        'Fp2-F4',
+        'F4-C4',
+        'C4-P4' ]
+    
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(self.LAPLACIAN_LABELS, rec_labels)
+        self.laplacian_set_matrix(self.V) # define connection matrix
+        
+        poschoice = {
+            False : 'pos',
+            True : 'neg'}
+        if reversed_polarity:
+            self.V = (-1) * self.V
+
+        self.name = 'laplacian, up=%s' % poschoice[reversed_polarity]
+
+
+def tcp_set_matrix(V):
+    V.loc['Fp1-F7', 'Fp1'] = 1
+    V.loc['Fp1-F7', 'F7'] = -1
+
+    V.loc['F7-T3', 'F7'] = 1
+    V.loc['F7-T3', 'T3'] = -1
+
+    V.loc['T3-T5', 'T3'] = 1
+    V.loc['T3-T5', 'T5'] = -1
+
+    V.loc['T5-O1', 'T5'] = 1
+    V.loc['T5-O1', 'O1'] = -1
+
+    V.loc['Fp2-F8', 'Fp2'] = 1
+    V.loc['Fp2-F8', 'F8'] = -1
+
+    V.loc['F8-T4', 'F8'] = 1
+    V.loc['F8-T4', 'T4'] = -1
+
+    V.loc['T4-T6', 'T4'] = 1
+    V.loc['T4-T6', 'T6'] = -1
+
+    V.loc['T6-O2', 'T6'] = 1
+    V.loc['T6-O2', '02'] = -1
+
+
+    V.loc['A1-T3', 'A1'] = 1
+    V.loc['A1-T3', 'T3'] = -1
+
+    V.loc['T3-C3', 'T3'] = 1
+    V.loc['T3-C3', 'C3'] = -1
+
+    V.loc['C3-Cz', 'C3'] = 1
+    V.loc['C3-Cz', 'Cz'] = -1
+
+    V.loc['Cz-C4', 'Cz'] = 1
+    V.loc['Cz-C4', 'C4'] = -1
+
+    V.loc['C4-T4', 'C4'] = 1
+    V.loc['C4-T4', 'T4'] = -1
+
+    V.loc['T4-A2', 'T4'] = 1
+    V.loc['T4-A2', 'A2'] = -1
+
+    
+    V.loc['Fp1-F3', 'Fp1'] = 1
+    V.loc['Fp1-F3', 'F3'] = -1
+    V.loc['F3-C3', 'F3'] = 1
+    V.loc['F3-C3', 'C3'] = -1
+    V.loc['C3-P3', 'C3'] = 1
+    V.loc['C3-P3', 'P3'] = -1
+
+    V.loc['Fp2-F4', 'Fp2'] = 1
+    V.loc['Fp2-F4', 'F4'] = -1
+    V.loc['F4-C4', 'F4'] = 1
+    V.loc['F4-C4', 'C4'] = -1
+    V.loc['C4-P4', 'C4'] = 1
+    V.loc['C4-P4', 'P4'] = -1
 
 
 ####################
