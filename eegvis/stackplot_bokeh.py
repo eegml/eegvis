@@ -14,6 +14,8 @@ CustomJS Callboacks allow you to activate things in a plot but they don't call i
 
 """
 from __future__ import division, print_function, absolute_import
+from collections import OrderedDict 
+import pprint
 
 import numpy as np
 import bokeh.plotting as bplt
@@ -657,7 +659,7 @@ class IpyEEGPlot:
         if not montage:         # now define the default montage 'trace' and add it to the list of montages
             self.current_montage = montageview.MontageView(self.elabels,self.elabels, name='trace')
             self.current_montage.V.data = np.eye(self.num_rows)
-            # self.current_montage.name='trace'
+            
         else:
             self.current_montage = montage 
         
@@ -981,7 +983,7 @@ class IpyHdfEegPlot(IpyEEGPlot):
         self.electrode_labels = [str(ss,'ascii') for ss in blabels]
         self.ref_labels = montageview.standard2shortname(self.electrode_labels)
         super().__init__(self.signals,page_width_seconds, electrode_labels=self.electrode_labels,fs=rec.attrs['sample_frequency'], montage=montage,**kwargs)
-        self.title = "hdf %s - montage: %s" % (hdf.filename, self.current_montage.name if  self.current_montage else '')
+        self.title = "hdf %s - montage: %s" % (hdf.filename, self.current_montage.full_name if  self.current_montage else '')
 
 
 
@@ -992,24 +994,32 @@ class IpyHdfEegPlot2(IpyEEGPlot):
     just use the raw hdf file and conventions for now
     """
 
-    def __init__(self,hdf, page_width_seconds, montage=None,**kwargs):
+    def __init__(self,hdf, page_width_seconds, montage=None, montage_options={}, **kwargs):
         rec=hdf['record-0']
         self.signals = rec['signals']
         blabels = rec['signal_labels'] # byte labels
         self.electrode_labels = [str(ss,'ascii') for ss in blabels]
         self.ref_labels = montageview.standard2shortname(self.electrode_labels)
         super().__init__(self.signals,page_width_seconds, electrode_labels=self.electrode_labels,fs=rec.attrs['sample_frequency'], montage=montage,**kwargs)
-        self.title = "hdf %s - montage: %s" % (hdf.filename, self.current_montage.name if  self.current_montage else '')
+        self.title = "hdf %s - montage: %s" % (hdf.filename, self.current_montage.full_name if  self.current_montage else '')
+        if type(montage) == str: # then we have some work to do
+            if montage in montage_options:
+                self.montage = montage_options['montage']
+            else:
+                raise Exception('unrecognized montage: %s' % montage)
+        else:
+            self.montage = montage 
+        self.montage_options = montage_options
 
     def register_ui(self):
         self.buttonf = ipywidgets.Button(description="go forward 10s")
         self.buttonback = ipywidgets.Button(description="go backward 10s")
         self.montage_dropdown = ipywidgets.Dropdown(
-            options={'One': 1, 'Two': 2, 'Three': 3},
-            value=2,
+            #options={'One': 1, 'Two': 2, 'Three': 3},
+            options = self.montage_options.keys(), # or .montage_optins.keys() 
+            value=self.montage.name,
             description='Montage:',
-        )                         
-
+        )                        
         def go_forward(b):
             self.loc_sec += 10
             self.update()
@@ -1024,8 +1034,25 @@ class IpyHdfEegPlot2(IpyEEGPlot):
                 self.loc_sec = change['new']
                 self.update()
 
+        def on_dropdown_change(change):
+            #print('change observed: %s' % pprint.pformat(change))
+            if change['name'] == 'value': # the value changed
+                if change['new'] != change['old']:
+                    print('*** should change the montage to %s from %s***' % (change['new'],
+                                                                                change['old']))
+                    # Mv = self.montage_options[change['new']]
+                    # newmontage = Mv(self.elabels)
+                    # self.title = newmontage.full_name
+                    self.title = "change the title to the new montage"
+                    # self.current_montage = newmontage
+                    self.update()                   
+
+
+
         self.buttonf.on_click(go_forward)
         self.buttonback.on_click(go_backward)
+        self.montage_dropdown.observe(on_dropdown_change)
+        
         display(ipywidgets.HBox([self.buttonback, self.buttonf, self.montage_dropdown]))
 
 
