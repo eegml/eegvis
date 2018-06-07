@@ -2,6 +2,8 @@
 from __future__ import absolute_import
 from . import montageview
 from . import stackplot_bokeh
+import ipywidgets
+
 # these are montageview factor functions which require a spcific channel label list
 MONTAGE_BUILTINS = { 
     'tcp': montageview.TCPMontageView,
@@ -30,11 +32,11 @@ class Eegbrowser:
         shortlabels = eegfile.shortcut_elabels
         self.current_montageview = self.cur_montageview_factory(shortlabels)
 
-        self.eegplot = stackplot_bokeh.IpyHdfEegPlot(self.eeghdf_file.hdf,
-                                                 page_width_seconds=page_width_seconds,
-                                                 montage=self.current_montageview)
-        self.eegplot.show()
+        self.eegplot = stackplot_bokeh.IpyHdfEegPlot2(self.eeghdf_file.hdf,
+                                                      page_width_seconds=page_width_seconds,
+                                                      montage=self.current_montageview)
+        
+        self.eegplot.show()            
                                                  
-                                                 
-    def set__montage(self,newmontage_key):
+    def set_montage(self,newmontage_key):
         pass

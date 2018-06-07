@@ -983,7 +983,53 @@ class IpyHdfEegPlot(IpyEEGPlot):
         super().__init__(self.signals,page_width_seconds, electrode_labels=self.electrode_labels,fs=rec.attrs['sample_frequency'], montage=montage,**kwargs)
         self.title = "hdf %s - montage: %s" % (hdf.filename, self.current_montage.name if  self.current_montage else '')
 
-        
+
+
+class IpyHdfEegPlot2(IpyEEGPlot):
+    """
+    take an hdfeeg file and allow for browsing of the EEG signal
+
+    just use the raw hdf file and conventions for now
+    """
+
+    def __init__(self,hdf, page_width_seconds, montage=None,**kwargs):
+        rec=hdf['record-0']
+        self.signals = rec['signals']
+        blabels = rec['signal_labels'] # byte labels
+        self.electrode_labels = [str(ss,'ascii') for ss in blabels]
+        self.ref_labels = montageview.standard2shortname(self.electrode_labels)
+        super().__init__(self.signals,page_width_seconds, electrode_labels=self.electrode_labels,fs=rec.attrs['sample_frequency'], montage=montage,**kwargs)
+        self.title = "hdf %s - montage: %s" % (hdf.filename, self.current_montage.name if  self.current_montage else '')
+
+    def register_ui(self):
+        self.buttonf = ipywidgets.Button(description="go forward 10s")
+        self.buttonback = ipywidgets.Button(description="go backward 10s")
+        self.montage_dropdown = ipywidgets.Dropdown(
+            options={'One': 1, 'Two': 2, 'Three': 3},
+            value=2,
+            description='Montage:',
+        )                         
+
+        def go_forward(b):
+            self.loc_sec += 10
+            self.update()
+
+        def go_backward(b):
+            self.loc_sec -= 10
+            self.update()
+
+        def go_to_handler(change):
+            # print("change:", change)
+            if change['name'] == 'value':
+                self.loc_sec = change['new']
+                self.update()
+
+        self.buttonf.on_click(go_forward)
+        self.buttonback.on_click(go_backward)
+        display(ipywidgets.HBox([self.buttonback, self.buttonf, self.montage_dropdown]))
+
+
+
 
 
 if __name__ == '__main__':
