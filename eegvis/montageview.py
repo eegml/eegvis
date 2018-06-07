@@ -9,6 +9,11 @@ referential montages may be more sensitive or make it easier to view generalized
 discharges. One montage may make localizing temporal events easier while another
 focuses on occipital events.
 """
+# start with a few hard-coded montages:
+# [x] double banana, [x] TCP, [x] laplacian
+# [ ] DB-avg, [ ] sphenoidal [ ] circle
+
+
 import numpy as np
 import xarray
 
@@ -213,8 +218,14 @@ class DoubleBananaMontageView(MontageView):
     so that "up is negative" ***
     
     """
+    DB_LABELS = [
+        'Fp1-F7', 'F7-T3', 'T3-T5', 'T5-O1', 'Fp2-F8', 'F8-T4', 'T4-T6', 'T6-O2',
+        'Fp1-F3', 'F3-C3', 'C3-P3', 'P3-O1', 'Fp2-F4', 'F4-C4', 'C4-P4', 'P4-O2',
+        'Fz-Cz', 'Cz-Pz'
+    ]
+
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(DB_LABELS, rec_labels)
+        super().__init__(self.DB_LABELS, rec_labels)
         double_banana_set_matrix(self.V) # define connection matrix
         poschoice = {
             False : 'pos',
@@ -228,21 +239,12 @@ class LaplacianMontageView(MontageView):
     # try it first the way Persyst defines it
     # this ignores some channels (except as neighbors) e.g. Fp1/Fp2
     LAPLACIAN_LABELS = [
-        'F7-aF7',
-        'T3-aT3',
-        'T5-aT5',
-        "O1-aO1",
-        'F3-aF3',
-        'C3-aC3',
-        'P3-aP3',
+        'F7-aF7', 'T3-aT3', 'T5-aT5', "O1-aO1",
+        'F3-aF3', 'C3-aC3', 'P3-aP3',
         'Cz-aCz',
-        'F4-aF4',
-        'C4-aC4',
-        'P4-aP4',
-        'F8-aF8',
-        'T4-aT4',
-        'T6-aT6',
-        'O2-aO2' ]
+        'F4-aF4', 'C4-aC4', 'P4-aP4',
+        'F8-aF8', 'T4-aT4', 'T6-aT6', 'O2-aO2'
+    ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
         super().__init__(self.LAPLACIAN_LABELS, rec_labels)
