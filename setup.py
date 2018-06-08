@@ -8,11 +8,12 @@ from distutils.core import setup
 
 setup(
     name = 'eegvis',
-    version='0.0.1',
+    version='0.2.0',
     description="""eeg visualization functions""",
     author="""Chris Lee-Messer""",
-    url="http://bitbucket.org/cleemesser/eegvis",
-    download_url="http://bitbucket.org/cleemesser/eegvis/downloads",
+    url='https://github.com/eegml/eegvis',
+    #url="http://bitbucket.org/cleemesser/eegvis",
+    #download_url="http://bitbucket.org/cleemesser/eegvis/downloads",
     classifiers=['Topic :: Science :: EEG'],
     packages=['eegvis'],
     # package_data={}
