@@ -1257,7 +1257,7 @@ class IpyHdfEegPlot2(IpyEEGPlot):
         self.ch_stop = inmontage_view.shape[0]
         
         numRows = inmontage_view.shape[0] # ???
-        print('numRows: ', numRows)
+        # print('numRows: ', numRows)
         
         data = inmontage_view[self.ch_start:self.ch_stop, :]  # note transposed
         # really just need to reset the labels
