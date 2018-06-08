@@ -29,7 +29,7 @@ class Eegbrowser:
         shortlabels = eegfile.shortcut_elabels
         self.current_montageview = self.cur_montageview_factory(shortlabels)
 
-        self.eegplot = stackplot_bokeh.IpyHdfEegPlot2(self.eeghdf_file.hdf,
+        self.eegplot = stackplot_bokeh.IpyHdfEegPlot2(self.eeghdf_file,
                                                       page_width_seconds=page_width_seconds,
                                                       montage=self.current_montageview,
                                                       montage_options=self.montage_options)

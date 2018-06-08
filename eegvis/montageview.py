@@ -13,7 +13,7 @@ focuses on occipital events.
 # [x] double banana, [x] TCP, [x] laplacian
 # [ ] DB-avg, [ ] sphenoidal [ ] circle
 
-
+from collections import OrderedDict
 import numpy as np
 import xarray
 
@@ -146,7 +146,26 @@ class MontageView(object):
 
 
 # V defaults  to 0, using clinical 10-20 system
+class TraceMontageView(MontageView):
+    """display channels as recorded in the file
+    maybe this should be the "raw" montage view"""
 
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(rec_labels, rec_labels)
+        self.set_trace_matrix(self.V) # define connection matrix
+        
+        poschoice = {
+            False : 'pos',
+            True : 'neg'}
+        if reversed_polarity:
+            self.V = (-1) * self.V
+        self.name = 'trace'
+        self.full_name = '%s, up=%s' % (self.name, poschoice[reversed_polarity])
+        
+    def set_trace_matrix(self, V):
+        for label in self.montage_labels:
+            V.loc[label,label] = 1.0
+        return V
 
 def double_banana_set_matrix(V):
     """specify the double banana transformation for raw input labels
@@ -232,7 +251,8 @@ class DoubleBananaMontageView(MontageView):
             True : 'neg'}
         if reversed_polarity:
             self.V = (-1) * self.V
-        self.name = 'double banana, up=%s' % poschoice[reversed_polarity]
+        self.full_name = 'double banana, up=%s' % poschoice[reversed_polarity]
+        self.name = 'double banana'
 
 
 class LaplacianMontageView(MontageView):
@@ -255,8 +275,8 @@ class LaplacianMontageView(MontageView):
             True : 'neg'}
         if reversed_polarity:
             self.V = (-1) * self.V
-
-        self.name = 'laplacian, up=%s' % poschoice[reversed_polarity]
+        self.name = 'laplacian'
+        self.full_name = '%s, up=%s' % (self.name, poschoice[reversed_polarity])
 
 
     def laplacian_set_matrix(self,V):
@@ -412,7 +432,8 @@ class TCPMontageView(MontageView):
         if reversed_polarity:
             self.V = (-1) * self.V
 
-        self.name = 'TCP, up=%s' % poschoice[reversed_polarity]
+        self.name = 'tcp'
+        self.full_name = '%s, up=%s' % (self.name, poschoice[reversed_polarity])
 
 
     def tcp_set_matrix(self, V):
@@ -515,6 +536,14 @@ laplacian_xml = """
 <AvgRef Name="aO1" Definition="PZ+P3+T5"/>
 <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
 """
+
+# these are montageview factor functions which require a spcific channel label list
+MONTAGE_BUILTINS = OrderedDict([
+    ('trace',TraceMontageView), 
+    ('tcp', TCPMontageView),
+    ('double banana', DoubleBananaMontageView),
+    ('laplacian', LaplacianMontageView)
+    ])
 
 
 if __name__ == '__main__':
