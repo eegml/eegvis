@@ -997,7 +997,13 @@ class IpyHdfEegPlot2(IpyEEGPlot):
     just use the raw hdf file and conventions for now
     """
 
-    def __init__(self,eeghdf_file, page_width_seconds, montage=None, montage_options={}, **kwargs):
+    def __init__(self,eeghdf_file, page_width_seconds, montage_class=None, montage_options={}, start_seconds=-1, **kwargs):
+        """
+        @eeghdf_file - an eeghdf.Eeeghdf instance
+        @page_width_seconds = how big to make the view in seconds
+        @montage_class - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @start_seconds - center view on this point in time
+        """
         self.eeghdf_file = eeghdf_file
         hdf = eeghdf_file.hdf
         rec=hdf['record-0']
@@ -1006,14 +1012,12 @@ class IpyHdfEegPlot2(IpyEEGPlot):
         # self.electrode_labels = [str(ss,'ascii') for ss in blabels]
         self.electrode_labels = eeghdf_file.electrode_labels
         self.ref_labels = montageview.standard2shortname(self.electrode_labels) # reference labels are used for montages 
-
-
-        
-
-        # super().__init__(self.signals,page_width_seconds, electrode_labels=self.electrode_labels,fs=rec.attrs['sample_frequency'], montage=montage,**kwargs)
         self.fig =None 
         self.page_width_secs = page_width_seconds
-        self.loc_sec = page_width_seconds / 2.0  # default location in file by default at start if possible
+        if start_seconds < 0:
+            self.loc_sec = page_width_seconds / 2.0  # default location in file by default at start if possible
+        else:
+            self.loc_sec = start_seconds 
         self.elabels = self.ref_labels
         self.init_kwargs = kwargs
 
@@ -1026,14 +1030,21 @@ class IpyHdfEegPlot2(IpyEEGPlot):
         self.fig = None
         self.fs = rec.attrs['sample_frequency']
 
-
-        if type(montage) == str: # then we have some work to do
-            if montage in montage_options:
-                self.montage = montage_options[montage]
+        # defines self.current_montage 
+        if type(montage_class) == str: # then we have some work to do
+            if montage_class in montage_options:
+                self.current_montage = montage_options[montage]
             else:
-                raise Exception('unrecognized montage: %s' % montage)
+                raise Exception('unrecognized montage: %s' % montage_class)
         else:
-            self.current_montage = montage 
+            if montage_class:
+                self.current_montage = montage_class(self.ref_labels)
+                montage_options[self.current_montage.name] = montage_class
+            else: # use default 
+                montage_options = montageview.MONTAGE_BUILTINS
+                self.current_montage = montage_options[0](self.ref_labels)
+                
+        assert self.current_montage
         self.montage_options = montage_options
         self.update_title()
 
@@ -1476,3 +1487,17 @@ if __name__ == '__main__':
     # stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0)
     fig = test_stackplot_t_3()
     bplt.show(fig)
+
+
+"""
+notes on setting ranges for a plot
+
+from bokeh.models import Range1d
+
+fig = make_fig()
+left, right, bottom, top = 3, 9, 4, 10
+fig.x_range=Range1d(left, right)
+fig.y_range=Range1d(bottom, top)
+show(fig)
+
+"""    

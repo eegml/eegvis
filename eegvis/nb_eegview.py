@@ -31,7 +31,7 @@ class Eegbrowser:
 
         self.eegplot = stackplot_bokeh.IpyHdfEegPlot2(self.eeghdf_file,
                                                       page_width_seconds=page_width_seconds,
-                                                      montage=self.current_montageview,
+                                                      montage_class=self.cur_montageview_factory,
                                                       montage_options=self.montage_options)
         
         self.eegplot.show()            
