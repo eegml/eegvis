@@ -19,7 +19,7 @@ import pprint
 
 import numpy as np
 import bokeh.plotting as bplt
-from bokeh.models import FuncTickFormatter
+from bokeh.models import FuncTickFormatter, Range1d
 from bokeh.models.tickers import FixedTicker
 from bokeh.io import push_notebook
 
@@ -990,13 +990,14 @@ class IpyHdfEegPlot(IpyEEGPlot):
 
 
 
-class IpyHdfEegPlot2(IpyEEGPlot):
+class IpyHdfEegPlot2:
     """
     take an hdfeeg file and allow for browsing of the EEG signal
 
     just use the raw hdf file and conventions for now
-    """
 
+    """
+    # !!! probably should refactor to another file given this depends on a specific file format 
     def __init__(self,eeghdf_file, page_width_seconds, montage_class=None, montage_options={}, start_seconds=-1, **kwargs):
         """
         @eeghdf_file - an eeghdf.Eeeghdf instance
@@ -1204,9 +1205,15 @@ class IpyHdfEegPlot2(IpyEEGPlot):
         ## ylim(y0, y1)
 
         ticklocs = [ii * dr for ii in range(numRows)]
+        bottom = -dr/0.7 
+        top = (numRows-1) * dr + dr/0.7
+        self.y_range = Range1d(bottom, top)
+        self.fig.y_range = self.y_range
+
         if topdown == True:
             ticklocs.reverse()  #inplace
 
+        
         # print("ticklocs:", ticklocs)
 
         offsets = np.zeros((numRows, 2), dtype=float)
@@ -1248,6 +1255,8 @@ class IpyHdfEegPlot2(IpyEEGPlot):
         ## ax.set_yticklabels(ylabels)
 
         ## xlabel('time (s)')
+
+
         return self.fig
 
 
@@ -1286,6 +1295,11 @@ class IpyHdfEegPlot2(IpyEEGPlot):
 
         ticklocs = [ii * dr for ii in range(numRows)]
         ticklocs.reverse()  #inplace
+        bottom = -dr/0.7 
+        top = ( numRows-1) * dr + dr/0.7
+        self.y_range.start = bottom
+        self.y_range.end = top
+        #self.fig.y_range = Range1d(bottom, top)
 
         # print("ticklocs:", ticklocs)
 
@@ -1489,15 +1503,3 @@ if __name__ == '__main__':
     bplt.show(fig)
 
 
-"""
-notes on setting ranges for a plot
-
-from bokeh.models import Range1d
-
-fig = make_fig()
-left, right, bottom, top = 3, 9, 4, 10
-fig.x_range=Range1d(left, right)
-fig.y_range=Range1d(bottom, top)
-show(fig)
-
-"""    
