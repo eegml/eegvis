@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import, print_function, division, unicode_literals
 from collections import OrderedDict 
+import pprint
 
 import numpy as np
 import ipywidgets
@@ -16,7 +17,7 @@ from . import stackplot_bokeh
 from .stackplot_bokeh import limit_sample_check
 from bokeh.io import push_notebook
 
-
+import eegml_signal.filters as esfilters
 
 # """
 # notes on setting ranges for a plot
@@ -31,12 +32,25 @@ from bokeh.io import push_notebook
 # to update dynamically, then change fig.y_range.start = newbottom; fig.y_range.end = newtop
 # """     
 
+# this is not used yet
 class MinimalEEGRecord:
     """
     a basic Minimal EEG/MEG signal has uniform sampling, continuous time
 
+    essential parts:
+
     @signals - acts like a numpy ndarray of shape = (number_of_channels, number_of_samples)
     @sample_frequency - float in Hz sampling rate of the signal 
+
+    optional parts: useful if you have them
+
+    @electrode_labels
+    @electrode_montage_labels
+    @electrode_montage_factories
+    @electrode_positions3D
+    @start_dtime
+    @end_dtime
+
     """
     def __init__(self,
                  signals,
@@ -173,6 +187,27 @@ class EeghdfBrowser:
         self.ch_start = 0
         self.ch_stop = self.current_montage_instance.shape[0]
 
+        ####### set up filter cache: first try
+        self.current_hp_filter = None
+        self.current_lp_filter = None
+        self._highpass_cache = OrderedDict()
+        ff = esfilters.fir_highpass_zerolag(fs=self.fs, cutoff_freq=1.0, transition_width=0.5, numtaps=int(2*self.fs))
+        self._highpass_cache['None'] = None
+        self._highpass_cache['1 Hz'] = ff
+        ff = esfilters.fir_highpass_zerolag(fs=self.fs, cutoff_freq=5.0, transition_width=2.0, numtaps=int(0.2*self.fs))
+        self._highpass_cache['5 Hz'] = ff
+
+        firstkey = '1 Hz' # list(self._highpass_cache.keys())[0]
+        self.current_hp_filter = self._highpass_cache[firstkey]
+
+        
+        self._lowpass_cache = OrderedDict()
+        
+
+
+
+
+
     @property
     def signals(self):
         return self.eeghdf_file.phys_signals
@@ -231,6 +266,12 @@ class EeghdfBrowser:
 
         data = inmontage_view[self.ch_start:self.ch_stop, :]  # note transposed
         numRows = inmontage_view.shape[0]
+        ########## do filtering here ############
+        # start primative filtering
+        if self.current_hp_filter:
+            for ii in range(numRows):
+                data[ii,:] = self.current_hp_filter(data[ii,:])
+        ## end filtering
         t = self.page_width_secs * np.arange(
             window_samples, dtype=float) / window_samples
         t = t + s0 / self.fs  # t = t + start_time
@@ -338,6 +379,17 @@ class EeghdfBrowser:
         #     # print("segs[-1].shape:", segs[-1].shape)
         #     ##ticklocs.append(i * dr)
         # self.line_glyphs = line_glyphs
+
+        ########## do filtering here ############
+        # start primative filtering
+        # remember we are in the stackplot_t so channels and samples are flipped -- !!! eliminate this junk
+        
+        if self.current_hp_filter:
+            print("doing filtering")
+            for ii in range(numRows):
+                data[:,ii] = self.current_hp_filter(data[:,ii])
+        ## end filtering
+
 
         ## instead build a data_dict and use datasource with multi_line
         xs = [t for ii in range(numRows)]
@@ -563,18 +615,31 @@ class EeghdfBrowser:
         )       
 
         flayout= ipywidgets.Layout()
-        flayout.width = '10em'
+        flayout.width = '12em'
         self.low_freq_filter_dropdown = ipywidgets.Dropdown(
-            options = ['None', '0.1 Hz', '0.3 Hz', '1 Hz', '5 Hz', '15 Hz', 
-                       '30 Hz', '50 Hz', '100 Hz', '150Hz'],
-            value = '0.3 Hz',
+            #options = ['None', '0.1 Hz', '0.3 Hz', '1 Hz', '5 Hz', '15 Hz', 
+            #           '30 Hz', '50 Hz', '100 Hz', '150Hz'],
+            options = self._highpass_cache.keys(),
+            value = '1 Hz',
             description = 'LF',
             layout = flayout
             )
 
+        def lf_dropdown_on_change(change, parent=self):
+            #print('change observed: %s' % pprint.pformat(change))
+            if change['name'] == 'value': # the value changed
+                if change['new'] != change['old']:
+                    print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
+                    self.current_hp_filter = self._highpass_cache[change['new']]
+                    self.update() #                    
+        self.low_freq_filter_dropdown.observe(lf_dropdown_on_change)
+
+        ###
+
         self.high_freq_filter_dropdown = ipywidgets.Dropdown(
-            options = ['None', '15 Hz', '30 Hz', '50 Hz', '70Hz', '100 Hz', '150Hz', '300 Hz'],
-            value = '70Hz',
+            #options = ['None', '15 Hz', '30 Hz', '50 Hz', '70Hz', '100 Hz', '150Hz', '300 Hz'],
+            options = self._lowpass_cache.keys(),
+            # value = '70Hz',
             description = 'HF',
             layout = flayout
             )
