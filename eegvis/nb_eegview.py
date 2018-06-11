@@ -629,7 +629,7 @@ class EeghdfBrowser:
             #print('change observed: %s' % pprint.pformat(change))
             if change['name'] == 'value': # the value changed
                 if change['new'] != change['old']:
-                    print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
+                    # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
                     self.current_hp_filter = self._highpass_cache[change['new']]
                     self.update() #                    
         self.low_freq_filter_dropdown.observe(lf_dropdown_on_change)
