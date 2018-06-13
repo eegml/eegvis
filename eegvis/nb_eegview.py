@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # put code to view whole eeg files here
-
 from __future__ import absolute_import, print_function, division, unicode_literals
 from collections import OrderedDict 
 import pprint
@@ -33,6 +32,16 @@ import eegml_signal.filters as esfilters
 # """     
 
 # this is not used yet
+
+def setNotebookWidth100():
+    from IPython.core.display import display, HTML
+    display(HTML("<style>.container { width:100% !important; }</style>"))
+    np.set_printoptions(linewidth=110) # apply width to output formatting
+    # cf jupyter themes https://github.com/dunovank/jupyter-themes
+    # jt -t oceans16 -f roboto -fs 12 -cellw 100%
+    # https://stackoverflow.com/questions/21971449/how-do-i-increase-the-cell-width-of-the-jupyter-ipython-notebook-in-my-browser
+    
+    
 class MinimalEEGRecord:
     """
     a basic Minimal EEG/MEG signal has uniform sampling, continuous time
@@ -71,18 +80,6 @@ class MinimalEEGRecord:
         self.end_dtime = end_dtime
         
                  
-
-# class EegBrowser:
-#     """
-#     take an hdfeeg file and allow for browsing of the EEG signal
-
-#     just use the raw hdf file and conventions for now
-
-#     """
-#     # !!! probably should refactor to another file given this depends on a specific file format 
-#     def __init__(self,miminmal_eeg_record, page_width_seconds, montage=None, montage_options={}, start_seconds=-1, **kwargs):
-#         pass 
-
                                                  
 class EeghdfBrowser:
     """
@@ -92,7 +89,9 @@ class EeghdfBrowser:
 
     """
     def __init__(self, eeghdf_file, page_width_seconds=10.0, start_seconds=-1,
-                 montage='trace', montage_options={}, **kwargs):  
+                 montage='trace', montage_options={},
+                 yscale=1.0,
+                 plot_width=950):
         """
         @eegfile is an eeghdf.Eeghdf() class instance representing the file
         @montage is either a string in the standard list or a montageview factory
@@ -113,21 +112,8 @@ class EeghdfBrowser:
         self.electrode_labels = eeghdf_file.electrode_labels
 
         # reference labels are used for montages, since this is an eeghdf file, it can provide these 
-        # self.ref_labels = montageview.standard2shortname(self.electrode_labels) 
 
-
-        
-        # if montage in montageview.MONTAGE_BUILTINS:
-        #     self.cur_montageview_factory = montageview.MONTAGE_BUILTINS[montage]
-        #     self.montage_options = montageview.MONTAGE_BUILTINS
-        # else:
-        #     self.montage_options = montageview.MONTAGE_BUILTINS.copy() # ordered dict
-        #     self.montage_options[montage.name] = montage
-        #     self.cur_montageview_factory = montage
-
-        shortlabels = eeghdf_file.shortcut_elabels
-        
-        self.ref_labels = shortlabels
+        self.ref_labels = eeghdf_file.shortcut_elabels
 
         if not montage_options:
             # then use builtins and/or ones in the file
@@ -166,12 +152,11 @@ class EeghdfBrowser:
         else:
             self.loc_sec = start_seconds 
         self.elabels = self.ref_labels
-        self.init_kwargs = kwargs
+        # self.init_kwargs = kwargs
 
-        if 'yscale' in kwargs:
-            self.yscale = kwargs['yscale']
-        else:
-            self.yscale = 3.0
+        # other ones
+        self.yscale = yscale
+        self.ui_plot_width = plot_width
 
         self.bk_handle = None
         self.fig = None
@@ -191,10 +176,17 @@ class EeghdfBrowser:
         self.current_hp_filter = None
         self.current_lp_filter = None
         self._highpass_cache = OrderedDict()
-        ff = esfilters.fir_highpass_zerolag(fs=self.fs, cutoff_freq=1.0, transition_width=0.5, numtaps=int(2*self.fs))
+
         self._highpass_cache['None'] = None
+ 
+        self._highpass_cache['0.1 Hz'] = esfilters.fir_highpass_firwin_ff(self.fs, cutoff_freq=0.1,
+                                                                       numtaps=int(self.fs)) 
+
+        #ff = esfilters.fir_highpass_remez_zerolag(fs=self.fs, cutoff_freq=1.0, transition_width=0.5, numtaps=int(2*self.fs))
+        ff = esfilters.fir_highpass_firwin_ff(fs=self.fs, cutoff_freq=1.0, numtaps=int(2*self.fs))
         self._highpass_cache['1 Hz'] = ff
-        ff = esfilters.fir_highpass_zerolag(fs=self.fs, cutoff_freq=5.0, transition_width=2.0, numtaps=int(0.2*self.fs))
+        #ff = esfilters.fir_highpass_remez_zerolag(fs=self.fs, cutoff_freq=5.0, transition_width=2.0, numtaps=int(0.2*self.fs))
+        ff = esfilters.fir_highpass_firwin_ff(fs=self.fs, cutoff_freq=5.0, numtaps=int(0.2*self.fs))
         self._highpass_cache['5 Hz'] = ff
 
         firstkey = '1 Hz' # list(self._highpass_cache.keys())[0]
@@ -202,9 +194,13 @@ class EeghdfBrowser:
 
         
         self._lowpass_cache = OrderedDict()
+        self._lowpass_cache['None'] = None
+        self._lowpass_cache['15 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=15.0, numtaps=int(self.fs))
+        self._lowpass_cache['30 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=30.0, numtaps=int(self.fs))
+        self._lowpass_cache['50 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=50.0, numtaps=int(self.fs))
+        self._lowpass_cache['70 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=70.0, numtaps=int(self.fs))
         
-
-
+        
 
 
 
@@ -271,6 +267,10 @@ class EeghdfBrowser:
         if self.current_hp_filter:
             for ii in range(numRows):
                 data[ii,:] = self.current_hp_filter(data[ii,:])
+        if self.current_lp_filter:
+            for ii in range(numRows):
+                data[ii,:] = self.current_lp_filter(data[ii,:])
+        
         ## end filtering
         t = self.page_width_secs * np.arange(
             window_samples, dtype=float) / window_samples
@@ -330,9 +330,11 @@ class EeghdfBrowser:
             xlm = (0, numSamples)
 
         ticklocs = []
-        if not 'width' in kwargs:
-            kwargs[
-                'width'] = 950  # a default width that is wider but can just fit in jupyter
+        if not 'plot_width' in kwargs:
+            kwargs['plot_width'] = self.ui_plot_width # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
+        # if not 'plot_height' in kwargs and self:
+        #     kwargs['plot_height'
+
         if not self.fig:
             #print('creating figure')
             fig = bplt.figure(title=self.title,
@@ -385,9 +387,14 @@ class EeghdfBrowser:
         # remember we are in the stackplot_t so channels and samples are flipped -- !!! eliminate this junk
         
         if self.current_hp_filter:
-            print("doing filtering")
+            # print("doing filtering")
             for ii in range(numRows):
                 data[:,ii] = self.current_hp_filter(data[:,ii])
+
+        if self.current_lp_filter:
+            for ii in range(numRows):
+                data[ii,:] = self.current_lp_filter(data[ii,:])
+                
         ## end filtering
 
 
@@ -616,11 +623,11 @@ class EeghdfBrowser:
 
         flayout= ipywidgets.Layout()
         flayout.width = '12em'
-        self.low_freq_filter_dropdown = ipywidgets.Dropdown(
+        self.ui_low_freq_filter_dropdown = ipywidgets.Dropdown(
             #options = ['None', '0.1 Hz', '0.3 Hz', '1 Hz', '5 Hz', '15 Hz', 
             #           '30 Hz', '50 Hz', '100 Hz', '150Hz'],
             options = self._highpass_cache.keys(),
-            value = '1 Hz',
+            value = '0.1 Hz',
             description = 'LF',
             layout = flayout
             )
@@ -632,18 +639,26 @@ class EeghdfBrowser:
                     # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
                     self.current_hp_filter = self._highpass_cache[change['new']]
                     self.update() #                    
-        self.low_freq_filter_dropdown.observe(lf_dropdown_on_change)
+        self.ui_low_freq_filter_dropdown.observe(lf_dropdown_on_change)
 
         ###
 
-        self.high_freq_filter_dropdown = ipywidgets.Dropdown(
+        self.ui_high_freq_filter_dropdown = ipywidgets.Dropdown(
             #options = ['None', '15 Hz', '30 Hz', '50 Hz', '70Hz', '100 Hz', '150Hz', '300 Hz'],
             options = self._lowpass_cache.keys(),
             # value = '70Hz',
             description = 'HF',
             layout = flayout
             )
-
+        
+        def hf_dropdown_on_change(change, parent=self):
+            if change['name'] == 'value': # the value changed
+                if change['new'] != change['old']:
+                    # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
+                    self.current_lp_filter = self._lowpass_cache[change['new']]
+                    self.update() #                    
+        self.ui_high_freq_filter_dropdown.observe(hf_dropdown_on_change)
+        
         def go_to_handler(change, parent=self):
             # print("change:", change)
             if change['name'] == 'value':
@@ -663,20 +678,34 @@ class EeghdfBrowser:
 
         self.montage_dropdown.observe(on_dropdown_change)
         
-        display(ipywidgets.HBox([self.montage_dropdown, self.low_freq_filter_dropdown,
-                    self.high_freq_filter_dropdown]))
+        display(ipywidgets.HBox([self.montage_dropdown, self.ui_low_freq_filter_dropdown,
+                    self.ui_high_freq_filter_dropdown]))
 
     def register_bottom_bar_ui(self):
-        self.buttonf = ipywidgets.Button(description="go forward 10s")
-        self.buttonback = ipywidgets.Button(description="go backward 10s")
+        self.ui_buttonf = ipywidgets.Button(description="go forward 10s")
+        self.ui_buttonback = ipywidgets.Button(description="go backward 10s")
+        self.ui_buttonf1 = ipywidgets.Button(description="forward 1 s")
+        self.ui_buttonback1 = ipywidgets.Button(description="back 1 s")
 
         def go_forward(b, parent=self):
             self.loc_sec += 10
             self.update()
+        self.ui_buttonf.on_click(go_forward)
 
         def go_backward(b):
             self.loc_sec -= 10
             self.update()
+        self.ui_buttonback.on_click(go_backward)
+        
+        def go_forward1(b, parent=self):
+            self.loc_sec += 1
+            self.update()
+        self.ui_buttonf1.on_click(go_forward1)
+        
+        def go_backward1(b, parent=self):
+            self.loc_sec -= 1
+            self.update()
+        self.ui_buttonback1.on_click(go_backward1)
 
         def go_to_handler(change, parent=self):
             # print("change:", change)
@@ -684,11 +713,7 @@ class EeghdfBrowser:
                 self.loc_sec = change['new']
                 self.update()
 
-
-        self.buttonf.on_click(go_forward)
-        self.buttonback.on_click(go_backward)
-        
-        display(ipywidgets.HBox([self.buttonback, self.buttonf]))
+        display(ipywidgets.HBox([self.ui_buttonback, self.ui_buttonf,self.ui_buttonback1,self.ui_buttonf1]))
 
         
     def update_montage(self, montage_name):
@@ -730,3 +755,130 @@ class EeghdfBrowser:
         
 #         self.eegplot.show()            
         
+
+class EegBrowser(EeghdfBrowser):
+    """
+    take an minimal eeg file and allow for browsing of the EEG signal
+
+
+
+    """
+    def __init__(self,min_eeg, page_width_seconds, montage=None, montage_options=OrderedDict(), start_seconds=-1, **kwargs):
+    #def __init__(self, eeghdf_file, page_width_seconds=10.0, start_seconds=-1,
+    #             montage='trace', montage_options={}, **kwargs):  
+        """
+        @min_eeg file is a minimal_eeg_record class instance representing the file
+
+        @montage is either a string in the standard list or a montageview factory
+        @eeghdf_file - an eeghdf.Eeeghdf instance
+        @page_width_seconds = how big to make the view in seconds
+        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @start_seconds - center view on this point in time
+
+        BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw'
+        """
+
+        self._signals = min_eeg.signals
+        num_channels, num_samples = self._signals.shape
+        
+        # self.electrode_labels = [str(ss,'ascii') for ss in blabels]
+        self.electrode_labels = min_eeg.electrode_labels
+        if not self.electrode_labels:
+            self.electrode_labels = [str(ii) for ii in range(num_channels)]
+        self.ref_labels = montageview.standard2shortname(self.electrode_labels) 
+            
+
+        # if montage in montageview.MONTAGE_BUILTINS:
+        #     self.cur_montageview_factory = montageview.MONTAGE_BUILTINS[montage]
+        #     self.montage_options = montageview.MONTAGE_BUILTINS
+        # else:
+        #     self.montage_options = montageview.MONTAGE_BUILTINS.copy() # ordered dict
+        #     self.montage_options[montage.name] = montage
+        #     self.cur_montageview_factory = montage
+
+        if min_eeg.montage_options:
+            # not sure if update works here
+            montage_options.update(min_eeg.montage_options)
+        if not montage_options:
+            # then use builtins and/or ones in the file
+            montage_options = montageview.MONTAGE_BUILTINS.copy()
+            #print('starting build of montage options', montage_options)
+                        
+            # montage_options = eeghdf_file.get_montages()
+
+        # defines self.current_montage_instance 
+        if type(montage) == str: # then we have some work to do
+            if montage in montage_options:
+
+                self.current_montage_instance = montage_options[montage](self.ref_labels)
+            else:
+                raise Exception('unrecognized montage: %s' % montage)
+        else:
+            if montage: # is a class 
+                self.current_montage_instance = montage(self.ref_labels)
+                montage_options[self.current_montage_instance.name] = montage
+            else: # use default 
+
+                self.current_montage_instance = montage_options[0](self.ref_labels)
+                
+        assert self.current_montage_instance
+        self.montage_options = montage_options # save the montage_options for later
+
+        # display related
+        self.page_width_seconds = page_width_seconds
+        
+        ## bokeh related 
+
+
+        self.page_width_secs = page_width_seconds
+        if start_seconds < 0:
+            self.loc_sec = page_width_seconds / 2.0  # default location in file by default at start if possible
+        else:
+            self.loc_sec = start_seconds 
+        self.elabels = self.ref_labels
+        #self.init_kwargs = kwargs
+
+        if 'yscale' in kwargs:
+            self.yscale = kwargs['yscale']
+        else:
+            self.yscale = 3.0
+
+        self.bk_handle = None
+        self.fig = None
+        self.fs = rec.attrs['sample_frequency']
+
+        self.update_title()
+
+        self.num_rows, self.num_samples = self.signals.shape
+        self.line_glyphs = [] # not used?
+        self.multi_line_glyph = None
+
+
+        self.ch_start = 0
+        self.ch_stop = self.current_montage_instance.shape[0]
+
+        ####### set up filter cache: first try
+        self.current_hp_filter = None
+        self.current_lp_filter = None
+        self._highpass_cache = OrderedDict()
+        ff = esfilters.fir_highpass_remez_zerolag(fs=self.fs, cutoff_freq=1.0, transition_width=0.5, numtaps=int(2*self.fs))
+        self._highpass_cache['None'] = None
+        self._highpass_cache['1 Hz'] = ff
+        ff = esfilters.fir_highpass_remez_zerolag(fs=self.fs, cutoff_freq=5.0, transition_width=2.0, numtaps=int(0.2*self.fs))
+        self._highpass_cache['5 Hz'] = ff
+
+        firstkey = '1 Hz' # list(self._highpass_cache.keys())[0]
+        self.current_hp_filter = self._highpass_cache[firstkey]
+
+        
+        self._lowpass_cache = OrderedDict()
+        
+
+
+
+
+
+    @property
+    def signals(self):
+        return self.eeghdf_file.phys_signals
+

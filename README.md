@@ -10,18 +10,22 @@
 - web (bokeh) applications to browse and annotate EEGs
 
 ### Status
-- currently this is completely in the experimental/prototyping stage to see what is possible
-- will likely need a big refactor
+- currently this is still experimental, but it has a useful eeg browser for the jupyter notebook
+- basic filtering added, but still need notch and low-pass filter 
 
 ### To do
 - [x] matplotlib EEG plotting (firstdraft)
 - [x] basic bokeh EEG plotting (firstdraft)
 - [x] basic montage EEG plotting, (firstdraft)
 - [x] simple browsing EEG with bokeh in jupyter (firstdraft)
-- [ ] bokeh application to browse, annotate EEG, - still experimenting
+- [x] first filtering dropdowns added to nb browser tool
+- [ ] notch and HF filters dropdowns
+- [ ] allow kwargs to set plot width and height
+- [ ] remove cruft from plotting in various widgets
+- [ ] bokeh application to browse + annotate EEG, - still experimenting
 - [ ] montage parser/loader
 - [ ] scale/calibration bars
-- [ ] keyboard responses  
+- [ ] keyboard responses, howto?
 - [ ] add ability to control scale of each electrode waveform individually
 - [ ] rewrite and package
 - [ ] publish
