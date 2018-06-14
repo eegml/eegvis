@@ -91,7 +91,7 @@ class EeghdfBrowser:
     def __init__(self, eeghdf_file, page_width_seconds=10.0, start_seconds=-1,
                  montage='trace', montage_options={},
                  yscale=1.0,
-                 plot_width=950):
+                 plot_width=950, plot_height=600):
         """
         @eegfile is an eeghdf.Eeghdf() class instance representing the file
         @montage is either a string in the standard list or a montageview factory
@@ -123,6 +123,7 @@ class EeghdfBrowser:
         # other ones
         self.yscale = yscale
         self.ui_plot_width = plot_width
+        self.ui_plot_height = plot_height
 
         self.bk_handle = None
         self.fig = None
@@ -226,7 +227,8 @@ class EeghdfBrowser:
             pass
 
         self.montage_options = montage_options # save the montage_options for later
-
+        self.update_title()
+        # note this does not do any plotting or update the plot 
 
     def update_title(self):
         self.title = "hdf %s - montage: %s" % (
@@ -265,7 +267,7 @@ class EeghdfBrowser:
         self.bk_handle = bplt.show(self.fig, notebook_handle=True)
         self.register_bottom_bar_ui()
 
-    def update(self, goto_sec=None):
+    def update(self):
         """
         updates the data in the plot and does push_notebook
         so that it will show up
@@ -311,8 +313,11 @@ class EeghdfBrowser:
         #self.data_source.data['xs'] = xs
         #self.data_source.data['ys'] = ys
         
-        push_notebook(handle=self.bk_handle)
+        self.push_notebook()
 
+    def push_notebook(self):
+        push_notebook(handle=self.bk_handle)
+        
     def stackplot_t(self,
                     tarray,
                     seconds=None,
@@ -352,8 +357,8 @@ class EeghdfBrowser:
         ticklocs = []
         if not 'plot_width' in kwargs:
             kwargs['plot_width'] = self.ui_plot_width # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
-        # if not 'plot_height' in kwargs and self:
-        #     kwargs['plot_height'
+        if not 'plot_height' in kwargs:
+            kwargs['plot_height'] = self.ui_plot_height
 
         if not self.fig:
             #print('creating figure')
