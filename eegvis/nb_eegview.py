@@ -104,41 +104,7 @@ class EeghdfBrowser:
         """
 
         self.eeghdf_file = eeghdf_file
-        hdf = eeghdf_file.hdf
-        rec=hdf['record-0']
-        # self.signals = rec['signals']
-        blabels = rec['signal_labels'] # byte labels
-        # self.electrode_labels = [str(ss,'ascii') for ss in blabels]
-        self.electrode_labels = eeghdf_file.electrode_labels
-
-        # reference labels are used for montages, since this is an eeghdf file, it can provide these 
-
-        self.ref_labels = eeghdf_file.shortcut_elabels
-
-        if not montage_options:
-            # then use builtins and/or ones in the file
-            montage_options = montageview.MONTAGE_BUILTINS.copy()
-            #print('starting build of montage options', montage_options)
-                        
-            # montage_options = eeghdf_file.get_montages()
-
-        # defines self.current_montage_instance 
-        if type(montage) == str: # then we have some work to do
-            if montage in montage_options:
-
-                self.current_montage_instance = montage_options[montage](self.ref_labels)
-            else:
-                raise Exception('unrecognized montage: %s' % montage)
-        else:
-            if montage: # is a class 
-                self.current_montage_instance = montage(self.ref_labels)
-                montage_options[self.current_montage_instance.name] = montage
-            else: # use default 
-
-                self.current_montage_instance = montage_options[0](self.ref_labels)
-                
-        assert self.current_montage_instance
-        self.montage_options = montage_options # save the montage_options for later
+        self.update_eeghdf_file(eeghdf_file, montage, montage_options)
 
         # display related
         self.page_width_seconds = page_width_seconds
@@ -151,7 +117,7 @@ class EeghdfBrowser:
             self.loc_sec = page_width_seconds / 2.0  # default location in file by default at start if possible
         else:
             self.loc_sec = start_seconds 
-        self.elabels = self.ref_labels
+
         # self.init_kwargs = kwargs
 
         # other ones
@@ -160,7 +126,7 @@ class EeghdfBrowser:
 
         self.bk_handle = None
         self.fig = None
-        self.fs = rec.attrs['sample_frequency']
+
 
         self.update_title()
 
@@ -207,6 +173,55 @@ class EeghdfBrowser:
     @property
     def signals(self):
         return self.eeghdf_file.phys_signals
+
+    def update_eeghdf_file(self, eeghdf_file, montage='trace', montage_options={}):
+        self.eeghdf_file = eeghdf_file
+        hdf = eeghdf_file.hdf
+        rec=hdf['record-0']
+        self.fs = rec.attrs['sample_frequency']
+        # self.signals = rec['signals']
+        blabels = rec['signal_labels'] # byte labels
+        # self.electrode_labels = [str(ss,'ascii') for ss in blabels]
+        self.electrode_labels = eeghdf_file.electrode_labels
+        # fill in any missing ones
+        if len(self.electrode_labels) < eeghdf_file.phys_signals.shape[0]:
+            d =  eeghdf_file.phys_signals.shape[0] - len(self.electrode_labels)
+            ll = len(self.electrode_labels)
+            suppl = [str(ii) for ii in range(ll, ll+d)]
+            self.electrode_labels += suppl
+            print('extending electrode lables:', suppl)
+            
+        # reference labels are used for montages, since this is an eeghdf file, it can provide these 
+
+        self.ref_labels = eeghdf_file.shortcut_elabels
+
+        if not montage_options:
+            # then use builtins and/or ones in the file
+            montage_options = montageview.MONTAGE_BUILTINS.copy()
+            #print('starting build of montage options', montage_options)
+                        
+            # montage_options = eeghdf_file.get_montages()
+
+        # defines self.current_montage_instance 
+        self.current_montage_instance = None
+        if type(montage) == str: # then we have some work to do
+            if montage in montage_options:
+
+                self.current_montage_instance = montage_options[montage](self.ref_labels)
+            else:
+                raise Exception('unrecognized montage: %s' % montage)
+        else:
+            if montage: # is a class 
+                self.current_montage_instance = montage(self.ref_labels)
+                montage_options[self.current_montage_instance.name] = montage
+            else: # use default 
+
+                self.current_montage_instance = montage_options[0](self.ref_labels)
+                
+        assert self.current_montage_instance
+        
+        self.montage_options = montage_options # save the montage_options for later
+
 
     def update_title(self):
         self.title = "hdf %s - montage: %s" % (
@@ -621,6 +636,16 @@ class EeghdfBrowser:
             layout = mlayout,
         )       
 
+        def on_dropdown_change(change, parent=self):
+            #print('change observed: %s' % pprint.pformat(change))
+            if change['name'] == 'value': # the value changed
+                if change['new'] != change['old']:
+                    # print('*** should change the montage to %s from %s***' % (change['new'], change['old']))
+                    parent.update_montage(change['new']) # change to the montage keyed by change['new']
+                    parent.update_plot_after_montage_change()
+                    parent.update() #                    
+        self.montage_dropdown.observe(on_dropdown_change)
+
         flayout= ipywidgets.Layout()
         flayout.width = '12em'
         self.ui_low_freq_filter_dropdown = ipywidgets.Dropdown(
@@ -637,8 +662,8 @@ class EeghdfBrowser:
             if change['name'] == 'value': # the value changed
                 if change['new'] != change['old']:
                     # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
-                    self.current_hp_filter = self._highpass_cache[change['new']]
-                    self.update() #                    
+                    parent.current_hp_filter = parent._highpass_cache[change['new']]
+                    parent.update() #                    
         self.ui_low_freq_filter_dropdown.observe(lf_dropdown_on_change)
 
         ###
@@ -665,15 +690,6 @@ class EeghdfBrowser:
                 self.loc_sec = change['new']
                 self.update()
 
-        def on_dropdown_change(change, parent=self):
-            #print('change observed: %s' % pprint.pformat(change))
-            if change['name'] == 'value': # the value changed
-                if change['new'] != change['old']:
-                    # print('*** should change the montage to %s from %s***' % (change['new'], change['old']))
-                    self.update_montage(change['new']) # change to the montage keyed by change['new']
-                    self.update_plot_after_montage_change()
-                    self.update() #                    
-        self.montage_dropdown.observe(on_dropdown_change)
 
         self.ui_gain_bounded_float = ipywidgets.BoundedFloatText(
             value=1.0,
@@ -735,7 +751,7 @@ class EeghdfBrowser:
         
     def update_montage(self, montage_name):
         Mv = self.montage_options[montage_name]
-        new_montage = Mv(self.elabels)
+        new_montage = Mv(self.ref_labels)
         self.current_montage_instance = new_montage
         self.ch_start = 0
         self.ch_stop = new_montage.shape[0]
@@ -852,7 +868,7 @@ class EegBrowser(EeghdfBrowser):
             self.loc_sec = page_width_seconds / 2.0  # default location in file by default at start if possible
         else:
             self.loc_sec = start_seconds 
-        self.elabels = self.ref_labels
+
         #self.init_kwargs = kwargs
 
         if 'yscale' in kwargs:
