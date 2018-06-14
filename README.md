@@ -19,12 +19,14 @@
 - [x] basic montage EEG plotting, (firstdraft)
 - [x] simple browsing EEG with bokeh in jupyter (firstdraft)
 - [x] first filtering dropdowns added to nb browser tool
-- [ ] notch and HF filters dropdowns
-- [ ] allow kwargs to set plot width and height
+- [x] allow kwargs to set plot width and height
+- [/] notch and HF filters dropdowns - problem with ringing on current firwin filters
+- [ ] need scale/calibration bars
+- [ ] catch when current displayed data is not big enough to filter
+
 - [ ] remove cruft from plotting in various widgets
 - [ ] bokeh application to browse + annotate EEG, - still experimenting
 - [ ] montage parser/loader
-- [ ] scale/calibration bars
 - [ ] keyboard responses, howto?
 - [ ] add ability to control scale of each electrode waveform individually
 - [ ] rewrite and package
