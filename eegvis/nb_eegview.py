@@ -219,7 +219,12 @@ class EeghdfBrowser:
                 self.current_montage_instance = montage_options[0](self.ref_labels)
                 
         assert self.current_montage_instance
-        
+        try: # to update ui display
+            self.ui_montage_dropdown.value = self.current_montage_instance.name
+        except AttributeError:
+            # guess is not yet instantiated
+            pass
+
         self.montage_options = montage_options # save the montage_options for later
 
 
@@ -628,7 +633,7 @@ class EeghdfBrowser:
     def register_top_bar_ui(self):
         mlayout= ipywidgets.Layout()
         mlayout.width = '15em'
-        self.montage_dropdown = ipywidgets.Dropdown(
+        self.ui_montage_dropdown = ipywidgets.Dropdown(
             #options={'One': 1, 'Two': 2, 'Three': 3},
             options = self.montage_options.keys(), # or .montage_optins.keys() 
             value=self.current_montage_instance.name,
@@ -644,7 +649,7 @@ class EeghdfBrowser:
                     parent.update_montage(change['new']) # change to the montage keyed by change['new']
                     parent.update_plot_after_montage_change()
                     parent.update() #                    
-        self.montage_dropdown.observe(on_dropdown_change)
+        self.ui_montage_dropdown.observe(on_dropdown_change)
 
         flayout= ipywidgets.Layout()
         flayout.width = '12em'
@@ -707,7 +712,7 @@ class EeghdfBrowser:
                     self.update()
         self.ui_gain_bounded_float.observe(ui_gain_on_change)
         
-        display(ipywidgets.HBox([self.montage_dropdown, 
+        display(ipywidgets.HBox([self.ui_montage_dropdown, 
                                  self.ui_low_freq_filter_dropdown,
                                  self.ui_high_freq_filter_dropdown,
                                  self.ui_gain_bounded_float
