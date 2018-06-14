@@ -165,10 +165,10 @@ class EeghdfBrowser:
         
         self._lowpass_cache = OrderedDict()
         self._lowpass_cache['None'] = None
-        self._lowpass_cache['15 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=15.0, numtaps=int(self.fs))
-        self._lowpass_cache['30 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=30.0, numtaps=int(self.fs))
-        self._lowpass_cache['50 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=50.0, numtaps=int(self.fs))
-        self._lowpass_cache['70 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=70.0, numtaps=int(self.fs))
+        self._lowpass_cache['15 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=15.0, numtaps=int(self.fs/2.0))
+        self._lowpass_cache['30 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=30.0, numtaps=int(self.fs/4.0))
+        self._lowpass_cache['50 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=50.0, numtaps=int(self.fs/4.0))
+        self._lowpass_cache['70 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=70.0, numtaps=int(self.fs/4.0))
         
         
 
