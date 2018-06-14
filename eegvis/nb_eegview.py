@@ -149,6 +149,9 @@ class EeghdfBrowser:
         self._highpass_cache['0.1 Hz'] = esfilters.fir_highpass_firwin_ff(self.fs, cutoff_freq=0.1,
                                                                        numtaps=int(self.fs)) 
 
+        self._highpass_cache['0.3 Hz'] = esfilters.fir_highpass_firwin_ff(self.fs, cutoff_freq=0.3,
+                                                                       numtaps=int(self.fs)) 
+
         #ff = esfilters.fir_highpass_remez_zerolag(fs=self.fs, cutoff_freq=1.0, transition_width=0.5, numtaps=int(2*self.fs))
         ff = esfilters.fir_highpass_firwin_ff(fs=self.fs, cutoff_freq=1.0, numtaps=int(2*self.fs))
         self._highpass_cache['1 Hz'] = ff
