@@ -673,13 +673,30 @@ class EeghdfBrowser:
                     self.update_montage(change['new']) # change to the montage keyed by change['new']
                     self.update_plot_after_montage_change()
                     self.update() #                    
-
-
-
         self.montage_dropdown.observe(on_dropdown_change)
+
+        self.ui_gain_bounded_float = ipywidgets.BoundedFloatText(
+            value=1.0,
+            min=0.01,
+            max=50.0,
+            step=0.1,
+            description='gain',
+            disabled=False, 
+            continuous_update=False, # only trigger when done
+            layout=flayout)
+        def ui_gain_on_change(change, parent=self):
+            if change['name'] == 'value':
+                if change['new'] != change['old']:
+                    self.yscale = float(change['new'])
+                    self.update()
+        self.ui_gain_bounded_float.observe(ui_gain_on_change)
         
-        display(ipywidgets.HBox([self.montage_dropdown, self.ui_low_freq_filter_dropdown,
-                    self.ui_high_freq_filter_dropdown]))
+        display(ipywidgets.HBox([self.montage_dropdown, 
+                                 self.ui_low_freq_filter_dropdown,
+                                 self.ui_high_freq_filter_dropdown,
+                                 self.ui_gain_bounded_float
+        ]))
+
 
     def register_bottom_bar_ui(self):
         self.ui_buttonf = ipywidgets.Button(description="go forward 10s")
