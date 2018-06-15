@@ -9,7 +9,7 @@ import ipywidgets
 
 import bokeh.plotting as bplt
 from bokeh.models import FuncTickFormatter, Range1d
-from bokeh.models.tickers import FixedTicker
+from bokeh.models.tickers import FixedTicker, SingleIntervalTicker
 
 from . import montageview
 from . import stackplot_bokeh
@@ -263,6 +263,8 @@ class EeghdfBrowser:
             yscale=self.yscale,
             montage=self.current_montage_instance)
         self.fig.xaxis.axis_label = 'seconds'
+        # make the xgrid mark every second 
+        self.fig.xgrid.ticker =SingleIntervalTicker(interval=1.0) #  bokeh.models.tickers.SingleIntervalTicker
 
     def show(self):
         self.plot()
