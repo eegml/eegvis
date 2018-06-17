@@ -537,6 +537,119 @@ laplacian_xml = """
 <AvgRef Name="aO2" Definition="T6+P4+PZ"/>
 """
 
+
+class CommonAvgRefMontageView(MontageView):
+    """
+    I can think of various ways to define this. For starters
+    will have one which uses a specific set of 10-20 channels that are common
+
+    and another "generic one" which uses all the identified channels by default
+    """
+    CAR_LABELS = [
+        'Fp1-AVG',
+        'F7-AVG',
+        'T3-AVG',
+        'T5-O1',
+        # spacer
+
+        'Fp2-AVG',
+        'F8-AVG',
+        'T4-AVG',
+        'T6-AVG',
+
+        'Fp1-AVG',
+        'F3-AVG',
+        'C3-AVG',
+        'P3-AVG',
+        'O1-AVG',
+
+        'Fp2-AVG',
+        'F4-AVG',
+        'C4-AVG',
+        'P4-AVG',
+        'O2-AVG',
+        
+        'Fz-AVG',
+        'Cz-AVG',
+        'Pz-AVG'
+        ]
+    AVG_REFERENCE_LABELS = list(set([    # electrodes used to calculate the average reference
+        'Fp1',
+        'F7',
+        'T3',
+        'T5',
+        # spacer
+
+        'Fp2',
+        'F8',
+        'T4',
+        'T6',
+
+        'Fp1',
+        'F3',
+        'C3',
+        'P3',
+        'O1',
+
+        'Fp2',
+        'F4',
+        'C4',
+        'P4',
+        'O2',
+        
+        'Fz',
+        'Cz',
+        'Pz' ]))
+    # should I include A1 and A2? sometimes T1/T2 (FT9/FT10)
+    
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(self.CAR_LABELS, rec_labels)
+        self.tcp_set_matrix(self.V) # define connection matrix
+        
+        poschoice = {
+            False : 'pos',
+            True : 'neg'}
+        if reversed_polarity:
+            self.V = (-1) * self.V
+
+        self.name = 'avg' # or common average reference ?
+        self.full_name = '%s, up=%s' % (self.name, poschoice[reversed_polarity])
+
+
+    def setall_to_avg(self,V):
+        N = len(self.AVG_REFERENCE_LABELS) - 1
+        avg = 1.0/N
+        for label in self.AVG_REFERENCE_LABELS:
+            V[label, :] = -avg
+
+    def set_matrix(self, V):
+        self.setall_to_avg(V)
+        
+        V.loc['Fp1-AVG', 'Fp1'] = 1
+        V.loc['F7-AVG', 'F7'] = 1
+        V.loc['T3-AVG', 'T3'] = 1
+        V.loc['T5-AVG', 'T5'] = 1
+        V.loc['O1-AVG', 'O1'] = 1
+
+        V.loc['Fp2-AVG', 'Fp2'] = 1
+        V.loc['F8-AVG', 'F8'] = 1
+        V.loc['T4-AVG', 'T4'] = 1
+        V.loc['T6-AVG', 'T6'] = 1
+        V.loc['O2-AVG', 'O2'] = 1
+
+
+        V.loc['F3-AVG', 'F3'] = 1
+        V.loc['C3-AVG', 'C3'] = 1
+        V.loc['P3-AVG', 'P3'] = 1
+        
+        V.loc['F4-AVG', 'F4'] = 1
+        V.loc['C4-AVG', 'C4'] = 1
+        V.loc['P4-AVG', 'P4'] = 1
+
+        V.loc['Fz-AVG', 'Fz'] = 1
+        V.loc['Cz-AVG', 'Cz'] = 1
+        V.loc['Pz-AVG', 'Pz'] = 1
+
 # these are montageview factor functions which require a spcific channel label list
 MONTAGE_BUILTINS = OrderedDict([
     ('trace',TraceMontageView), 
@@ -547,14 +660,15 @@ MONTAGE_BUILTINS = OrderedDict([
 
 
 if __name__ == '__main__':
-    print("with ipython 0.10 run this with ipython -wthread")
-    print("with ipython 0.11 run with ipython --pylab=wx")
-    print("run montages.py")
-    print("display_10_10_on_sphere()")
-    print("mlab.show()")
-    print("""might also want to try: nx.draw_spectral(G20)""")
+    pass
+    # print("with ipython 0.10 run this with ipython -wthread")
+    # print("with ipython 0.11 run with ipython --pylab=wx")
+    # print("run montages.py")
+    # print("display_10_10_on_sphere()")
+    # print("mlab.show()")
+    # print("""might also want to try: nx.draw_spectral(G20)""")
 
-    import mayavi.mlab as mlab
-    display_10_10_on_sphere()
+    # import mayavi.mlab as mlab
+    # display_10_10_on_sphere()
     # display_10_5_on_sphere()
-    mlab.show()
+    #mlab.show()
