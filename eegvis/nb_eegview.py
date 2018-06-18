@@ -708,8 +708,8 @@ class EeghdfBrowser:
 
         self.ui_gain_bounded_float = ipywidgets.BoundedFloatText(
             value=1.0,
-            min=0.01,
-            max=50.0,
+            min=0.001,
+            max=1000.0,
             step=0.1,
             description='gain',
             disabled=False, 
