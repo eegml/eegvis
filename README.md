@@ -23,6 +23,7 @@
 - [/] notch and HF filters dropdowns - problem with ringing on current firwin filters
 - [ ] need scale/calibration bars
 - [ ] catch when current displayed data is not big enough to filter
+- [ ] add common avg reference montage (CAR)
 
 - [ ] remove cruft from plotting in various widgets
 - [ ] bokeh application to browse + annotate EEG, - still experimenting
@@ -44,4 +45,11 @@
     cd eegvis
     pip install -e .
 ```   
+
+### jupyter notebook use
+conda install ipywidgets
+conda install widgetsnbextension
     
+### jupyter lab use
+jupyter labextension install jupyterlab_bokeh
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
