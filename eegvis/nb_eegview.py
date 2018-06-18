@@ -170,8 +170,8 @@ class EeghdfBrowser:
         self._lowpass_cache['50 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=50.0, numtaps=int(self.fs/4.0))
         self._lowpass_cache['70 Hz'] = esfilters.fir_lowpass_firwin_ff(fs=self.fs, cutoff_freq=70.0, numtaps=int(self.fs/4.0))
         
-        
-
+        self._notch_filter = esfilters.notch_filter_iir_ff(notch_freq=60.0, fs=self.fs, Q=60)
+        self.current_notch_filter = None
 
 
     @property
@@ -291,6 +291,10 @@ class EeghdfBrowser:
         numRows = inmontage_view.shape[0]
         ########## do filtering here ############
         # start primative filtering
+        if self.current_notch_filter:
+            for ii in range(numRows):
+                data[ii, :] = self.current_notch_filter(data[ii, :])
+                
         if self.current_hp_filter:
             for ii in range(numRows):
                 data[ii,:] = self.current_hp_filter(data[ii,:])
@@ -415,7 +419,10 @@ class EeghdfBrowser:
         ########## do filtering here ############
         # start primative filtering
         # remember we are in the stackplot_t so channels and samples are flipped -- !!! eliminate this junk
-        
+        if self.current_notch_filter:
+            for ii in range(numRows):
+                data[ii, :] = self.current_notch_filter(data[ii, :])
+
         if self.current_hp_filter:
             # print("doing filtering")
             for ii in range(numRows):
@@ -705,7 +712,17 @@ class EeghdfBrowser:
                 self.loc_sec = change['new']
                 self.update()
 
-
+        self.ui_notch_option = ipywidgets.Checkbox(value=False, description='60Hz Notch', disabled=False)
+        def notch_change(change):
+            if change['name'] == 'value':
+                if change['new']:
+                    self.current_notch_filter = self._notch_filter
+                else:
+                    self.current_notch_filter = None
+                self.update()
+                
+        self.ui_notch_option.observe(notch_change)
+        
         self.ui_gain_bounded_float = ipywidgets.BoundedFloatText(
             value=1.0,
             min=0.001,
@@ -725,6 +742,7 @@ class EeghdfBrowser:
         display(ipywidgets.HBox([self.ui_montage_dropdown, 
                                  self.ui_low_freq_filter_dropdown,
                                  self.ui_high_freq_filter_dropdown,
+                                 self.ui_notch_option,
                                  self.ui_gain_bounded_float
         ]))
 
