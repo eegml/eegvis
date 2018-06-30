@@ -159,7 +159,7 @@ class EeghdfBrowser:
         ff = esfilters.fir_highpass_firwin_ff(fs=self.fs, cutoff_freq=5.0, numtaps=int(0.2*self.fs))
         self._highpass_cache['5 Hz'] = ff
 
-        firstkey = '1 Hz' # list(self._highpass_cache.keys())[0]
+        firstkey = '0.3 Hz' # list(self._highpass_cache.keys())[0]
         self.current_hp_filter = self._highpass_cache[firstkey]
 
         
@@ -606,18 +606,27 @@ class EeghdfBrowser:
                               ylabels=None,
                               yscale=1.0,
                               montage=None,
-                              topdown=True):
+                              topdown=True,
+                              **kwargs):
         """
+        plot an eeg segment using current montage, center the plot at @goto_sec
+        with @page_width_sec shown
+
         @signals array-like object with signals[ch_num, sample_num]
-        @montage object
+
         @goto_sec where to go in the signal to show the feature
         @page_width_sec length of the window to show in secs
         @chstart   which channel to start
         @chstop    which channel to end
-        @labels_by_channel
-        @yscale
+
         @fs sample frequency (num samples per second)
+
+        @ylabels a list of labels for each row ("channel") in marray
+        @yscale with increase (mutiply) the signals in each row by this amount
+        @montage instance 
+
         """
+
 
         goto_sample = int(fs * goto_sec)
         hw = half_width_epoch_sample = int(page_width_sec * fs / 2)
@@ -629,22 +638,142 @@ class EeghdfBrowser:
 
         s0 = limit_sample_check(goto_sample - hw, signals)
         s1 = limit_sample_check(goto_sample + hw, signals)
-        duration = (s1 - s0) / fs
+        duration_sec = (s1 - s0) / fs
         start_time_sec = s0 / fs
 
         # signals[ch0:ch1, s0:s1]
         signal_view = signals[:, s0:s1]
         inmontage_view = np.dot(montage.V.data, signal_view)
-
         rlabels = montage.montage_labels
+        # topdown = True
+        
+        # return self.stackplot(
+        #     signals[ch0:ch1, s0:s1],
+        #     start_time=start_time_sec,
+        #     seconds=duration_sec,
+        #     ylabels=ylabels[ch0:ch1],
+        #     yscale=yscale)
+        ### to here start stackplot_t
+        # self.stackplot_t(
+        #     tarray,
+        #     seconds=seconds,
+        #     start_time=start_time,
+        #     ylabels=ylabels,
+        #     yscale=yscale,
+        #     topdown=True,
+        #     **kwargs)
 
-        return self.stackplot(
-            inmontage_view[ch0:ch1,:],
-            start_time=start_time_sec,
-            seconds=duration,
-            ylabels=rlabels,
-            yscale=yscale,
-            topdown=topdown)
+
+        data = inmontage_view[chstart:chstop,:]
+        numRows, numSamples = data.shape
+        # data = np.random.randn(numSamples,numRows) # test data
+        # data.shape =  numRows, numSamples
+
+        t = duration_sec * np.arange(numSamples, dtype=float) / numSamples
+
+        t = t + start_time_sec # shift over
+        xlm = (start_time_sec, start_time_sec + duration_sec)
+
+        ticklocs = []
+        if not 'plot_width' in kwargs:
+            kwargs['plot_width'] = self.ui_plot_width # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
+        if not 'plot_height' in kwargs:
+            kwargs['plot_height'] = self.ui_plot_height
+
+        if not self.fig:
+            #print('creating figure')
+            fig = bplt.figure(title=self.title,
+                tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
+                **kwargs)  # subclass of Plot that simplifies plot creation
+            self.fig = fig
+        
+        
+
+        ## xlim(*xlm)
+        # xticks(np.linspace(xlm, 10))
+        dmin = data.min()
+        dmax = data.max()
+        dr = (dmax - dmin) * 0.7  # Crowd them a bit.
+        y0 = dmin
+        y1 = (numRows - 1) * dr + dmax
+        ## ylim(y0, y1)
+
+        ticklocs = [ii * dr for ii in range(numRows)]
+        bottom = -dr/0.7 
+        top = (numRows-1) * dr + dr/0.7
+        self.y_range = Range1d(bottom, top)
+        self.fig.y_range = self.y_range
+
+        if topdown == True:
+            ticklocs.reverse()  #inplace
+
+        
+        # print("ticklocs:", ticklocs)
+
+        offsets = np.zeros((numRows, 2), dtype=float)
+        offsets[:, 1] = ticklocs
+        self.ticklocs = ticklocs
+        self.time = t
+        ## segs = []
+        # note could also duplicate time axis then use p.multi_line
+        # line_glyphs = []
+        # for ii in range(numRows):
+        #     ## segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, i, np.newaxis])))
+        #     line_glyphs.append(
+        #         fig.line(t[:],yscale * data[:, ii] + offsets[ii, 1] ) # adds line glyphs to figure
+        #     )
+
+        #     # print("segs[-1].shape:", segs[-1].shape)
+        #     ##ticklocs.append(i * dr)
+        # self.line_glyphs = line_glyphs
+
+        ########## do filtering here ############
+        # start primative filtering
+        # remember we are in the stackplot_t so channels and samples are flipped -- !!! eliminate this junk
+        if self.current_notch_filter:
+            for ii in range(numRows):
+                data[ii, :] = self.current_notch_filter(data[ii, :])
+
+        if self.current_hp_filter:
+            # print("doing filtering")
+            for ii in range(numRows):
+                data[ii,:] = self.current_hp_filter(data[ii,:])
+
+        if self.current_lp_filter:
+            for ii in range(numRows):
+                data[ii,:] = self.current_lp_filter(data[ii,:])
+                
+        ## end filtering
+
+
+        ## instead build a data_dict and use datasource with multi_line
+        xs = [t for ii in range(numRows)]
+        ys = [yscale * data[ii, :] + ticklocs[ii] for ii in range(numRows)]
+
+        self.multi_line_glyph = self.fig.multi_line(
+                xs=xs, ys=ys)  # , line_color='firebrick')
+        self.data_source = self.multi_line_glyph.data_source
+
+        # set the yticks to use axes coords on the y axis
+        if not ylabels:
+            ylabels = ["%d" % ii for ii in range(numRows)]
+        ylabel_dict = dict(zip(ticklocs, ylabels))
+        # print('ylabel_dict:', ylabel_dict)
+        self.fig.yaxis.ticker = FixedTicker(
+            ticks=ticklocs)  # can also short cut to give list directly
+        self.fig.yaxis.formatter = FuncTickFormatter(code="""
+            var labels = %s;
+            return labels[tick];
+        """ % ylabel_dict)
+        return self.fig
+
+        # return self.stackplot(
+        #     inmontage_view[ch0:ch1,:],
+        #     start_time=start_time_sec,
+        #     seconds=duration_sec,
+        #     ylabels=rlabels,
+        #     yscale=yscale,
+        #     topdown=topdown)
 
 
     def register_top_bar_ui(self):
@@ -674,7 +803,7 @@ class EeghdfBrowser:
             #options = ['None', '0.1 Hz', '0.3 Hz', '1 Hz', '5 Hz', '15 Hz', 
             #           '30 Hz', '50 Hz', '100 Hz', '150Hz'],
             options = self._highpass_cache.keys(),
-            value = '0.1 Hz',
+            value = '0.3 Hz',
             description = 'LF',
             layout = flayout
             )
