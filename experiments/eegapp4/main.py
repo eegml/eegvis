@@ -28,13 +28,21 @@ from bokeh.models import LayoutDOM
 from bokeh.util.compiler import TypeScript
 from bokeh.core.properties import Int # String, Instance 
 
+import eeghdf
+import eegvis.nb_eegview
 
+ARCHIVEDIR = r'../../eeg-hdfstorage/data/'
+#EEGFILE = ARCHIVEDIR + 'spasms.eeghdf'
+EEGFILE = ARCHIVEDIR + 'absence_epilepsy.eeghdf'
+hf = eeghdf.Eeghdf(EEGFILE)
+
+eegbrow = eegvis.nb_eegview.EeghdfBrowser(hf, montage='double banana', start_seconds=1385, plot_width=1800, plot_height=800)
 ## set up some synthetic data
 
-N = 200
-x = np.linspace(0, 4*np.pi, N)
-y = np.sin(x)
-source = bokeh.models.ColumnDataSource(data=dict(x=x, y=y))
+# N = 200
+# x = np.linspace(0, 4*np.pi, N)
+# y = np.sin(x)
+# source = bokeh.models.ColumnDataSource(data=dict(x=x, y=y))
 
 ## 
 
@@ -44,17 +52,19 @@ SIZING_MODE =  'fixed' # 'scale_width' also an option, 'scale_both', 'scale_widt
 
 
 #placeholder figure
-mainfig = figure(tools="previewsave",  width=1200)
+mainfig = figure(tools="previewsave",  width=600, height=400)
 
 #desc = bokeh.models.Div(text=open(path.join(path.dirname(__file__), "description.html")).read(), width=800)
 desc = bokeh.models.Div(text="""Some placeholder text""")
 
 ### layout ###
 # there are unicode labels which would look better
-bBackward10 = bokeh.models.widgets.Button(label='<<') # ,width=1)
-bBackward1 = bokeh.models.widgets.Button(label='\u25C0')  # <-
-bForward10 = bokeh.models.widgets.Button(label='>>')
-bForward1 = bokeh.models.widgets.Button(label='\u25B6') # -> or '\u279F'
+MVT_BWIDTH = 50
+# note am setting button width as same as widget box (wbox50) to make one abut the next
+bBackward10 = bokeh.models.widgets.Button(label='<<', width=MVT_BWIDTH)
+bBackward1 = bokeh.models.widgets.Button(label='\u25C0', width=MVT_BWIDTH)  # <-
+bForward10 = bokeh.models.widgets.Button(label='>>', width=MVT_BWIDTH)
+bForward1 = bokeh.models.widgets.Button(label='\u25B6', width=MVT_BWIDTH) # -> or '\u279F'
 
 bottomrowctrls = [bBackward10,bBackward1,bForward1, bForward10]
 toprowctrls = [bokeh.models.widgets.Select(title='Montage',value='trace', options=['trace', 'db','tcp']),
@@ -71,12 +81,13 @@ toprowctrls = [bokeh.models.widgets.Select(title='Montage',value='trace', option
 
 
 #inputs = widgetbox(*controls[:3], sizing_mode=SIZING_MODE)
-wbox = functools.partial(layouts.widgetbox, sizing_mode=SIZING_MODE)
-wbox20 = functools.partial(layouts.widgetbox, sizing_mode=SIZING_MODE)
+wbox50 = functools.partial(layouts.widgetbox, sizing_mode=SIZING_MODE, width=MVT_BWIDTH)
+wbox20 = functools.partial(layouts.widgetbox, sizing_mode=SIZING_MODE, width=150)
 toprow = layouts.row(*map(wbox20, toprowctrls))
 # toprow = layouts.row(wbox(layouts.row(children=toprowctrls)))
 print(toprow)
-bottomrow = layouts.row(*map(wbox, bottomrowctrls))
+bottomrow = layouts.row(*map(wbox50, bottomrowctrls))
+
 L = layouts.layout([
     [desc],
     [toprow],
