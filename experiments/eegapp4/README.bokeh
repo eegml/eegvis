@@ -1,0 +1,28 @@
+When executing your main.py Bokeh server ensures that the standard __file__ module attribute works as you would expect. So it is possible to include data files or custom user defined models in your directory however you like. Additionally, the application directory is also added to sys.path so that python modules in the application directory may be easily imported.
+
+myapp
+   |
+   +---data
+   |    +---things.csv
+   |
+   +---helpers.py
+   +---main.py
+   |---models
+   |    +---custom.js
+   |
+   +---server_lifecycle.py
+   +---static
+   |    +---css
+   |    |    +---special.css
+   |    |
+   |    +---images
+   |    |    +---foo.png
+   |    |    +---bar.png
+   |    |
+   |    +---js
+   |        +---special.js
+   |
+   |---templates
+   |    +---index.html
+   |
+   +---theme.yaml
