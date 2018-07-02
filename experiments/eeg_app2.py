@@ -127,7 +127,7 @@ class EEGBrowser:
 
     def __init__(self, page_width_sec=15):
         # data related
-        self.hdf = h5py.File('archive/YA2741BS_1-1+.eeghdf')
+        self.hdf = h5py.File('../../eeg-hdfstorage/data/absence_epilepsy.eeghdf')
         self.rec = self.hdf['record-0']
         self.signals = self.rec['signals']
         self.num_rows, self.num_samples = self.signals.shape
@@ -227,7 +227,7 @@ class EEGBrowser:
         ticklocs = []
         if not 'width' in kwargs:
             kwargs['width'] = 950  # a default width that is wider but can just fit in jupyter
-        fig = bplt.figure(tools="pan,box_zoom,reset,resize,previewsave,lasso_select",
+        fig = bplt.figure(tools="pan,box_zoom,reset,previewsave,lasso_select",
                           **kwargs)  # subclass of Plot that simplifies plot creation
 
         ## xlim(*xlm)
@@ -369,7 +369,7 @@ kbr = KeyboardResponder()
 
 
 l = layouts.layout([
-    [eeg.fig],
+#    [eeg.fig],
     [buttonB,buttonB1, buttonF1, buttonF],
     [button5,kbr]
     ], sizing_mode='stretch_both') # stretch_both expands to fill size of container
