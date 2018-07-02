@@ -266,6 +266,10 @@ class EeghdfBrowser:
         # make the xgrid mark every second 
         self.fig.xgrid.ticker =SingleIntervalTicker(interval=1.0) #  bokeh.models.tickers.SingleIntervalTicker
 
+    def show_for_bokeh_app(self):
+        """try running intside a bokeh app, so don't need notebook stuff"""
+        self.plot()
+
     def show(self):
         self.plot()
         self.register_top_bar_ui()  # create the buttons
@@ -325,7 +329,8 @@ class EeghdfBrowser:
         self.push_notebook()
 
     def push_notebook(self):
-        push_notebook(handle=self.bk_handle)
+        if self.bk_handle:
+            push_notebook(handle=self.bk_handle)
         
     def stackplot_t(self,
                     tarray,
