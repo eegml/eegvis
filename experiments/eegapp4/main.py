@@ -36,7 +36,8 @@ ARCHIVEDIR = r'../../eeg-hdfstorage/data/'
 EEGFILE = ARCHIVEDIR + 'absence_epilepsy.eeghdf'
 hf = eeghdf.Eeghdf(EEGFILE)
 
-eegbrow = eegvis.nb_eegview.EeghdfBrowser(hf, montage='double banana', start_seconds=1385, plot_width=1800, plot_height=800)
+eegbrow = eegvis.nb_eegview.EeghdfBrowser(hf, montage='double banana', start_seconds=1385, plot_width=1024, plot_height=800)
+eegbrow.show_for_bokeh_app()
 ## set up some synthetic data
 
 # N = 200
@@ -45,6 +46,88 @@ eegbrow = eegvis.nb_eegview.EeghdfBrowser(hf, montage='double banana', start_sec
 # source = bokeh.models.ColumnDataSource(data=dict(x=x, y=y))
 
 ## 
+KEYBOARDRESPONDERCODE_TS = """
+import {div, empty} from "core/dom"
+import * as p from "core/properties"
+import {LayoutDOM, LayoutDOMView} from "models/layouts/layout_dom"
+
+//import {jQuery} from "jquery.min.js"
+// import * as $ from "jquery";
+var url = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js";
+
+// load jQuery by hand
+var script = document.createElement('script');
+script.src = url;
+script.async = false;
+script.onreadystatechange = script.onload = function() {jQuery.noConflict(); };
+document.querySelector("head").appendChild(script);
+
+
+
+export class KeyboardResponderView extends LayoutDOMView {
+
+  initialize(options) {
+    super.initialize(options)
+
+    console.log("setting up jQuery");
+    console.log(jQuery);
+    jQuery('body').keydown( // same as .on('keydown', handler);
+      function(ev) {
+          console.log("got key", ev.keyCode);
+	  // jQuery('#output').text(JSON.stringify(ev.keyCode));
+	  // jQuery('#which').text(ev.which);
+      });
+
+    this.render()
+
+    // Set listener so that when the a change happens
+    // event, we can process the new data
+    // this.connect(this.model.slider.change, () => this.render())
+  }
+
+  render() {
+    // Backbone Views create <div> elements by default, accessible as @el.
+    // Many Bokeh views ignore this default <div>, and instead do things
+    // like draw to the HTML canvas. In this case though, we change the
+    // contents of the <div>, based on the current slider value.
+    // empty(this.el)
+    //this.el.appendChild(div({
+    //  style: {
+    //    color: '#686d8e',
+    //    'background-color': '#2a3153',
+    //  },
+    //}, `${this.model.text}: ${this.model.slider.value}`))
+  }
+}
+
+export class KeyboardResponder extends LayoutDOM {
+
+  // If there is an associated view, this is boilerplate.
+  default_view = KeyboardResponderView
+
+  // The ``type`` class attribute should generally match exactly the name
+  // of the corresponding Python class.
+  type = "KeyboardResponder"
+}
+
+// The @define block adds corresponding "properties" to the JS model. These
+// should basically line up 1-1 with the Python model class. Most property
+// types have counterparts, e.g. bokeh.core.properties.String will be
+// p.String in the JS implementation. Where the JS type system is not yet
+// as rich, you can use p.Any as a "wildcard" property type.
+KeyboardResponder.define({
+  // text:   [ p.String ],
+  // slider: [ p.Any    ],
+  keycode : [ p.Int ],
+})
+
+"""
+class KeyboardResponder(LayoutDOM):
+    __implementation__ = TypeScript(KEYBOARDRESPONDERCODE_TS)
+    keycode = Int(default=0)
+keyboard = KeyboardResponder()
+
+
 
 DOC = curdoc() # hold on to an instance of current doc in case need multithreads
 SIZING_MODE =  'fixed' # 'scale_width' also an option, 'scale_both', 'scale_width', 'scale_height', 'stretch_both'
@@ -52,7 +135,8 @@ SIZING_MODE =  'fixed' # 'scale_width' also an option, 'scale_both', 'scale_widt
 
 
 #placeholder figure
-mainfig = figure(tools="previewsave",  width=600, height=400)
+#mainfig = figure(tools="previewsave",  width=600, height=400)
+mainfig = eegbrow.fig
 
 #desc = bokeh.models.Div(text=open(path.join(path.dirname(__file__), "description.html")).read(), width=800)
 desc = bokeh.models.Div(text="""Some placeholder text""")
@@ -65,6 +149,19 @@ bBackward10 = bokeh.models.widgets.Button(label='<<', width=MVT_BWIDTH)
 bBackward1 = bokeh.models.widgets.Button(label='\u25C0', width=MVT_BWIDTH)  # <-
 bForward10 = bokeh.models.widgets.Button(label='>>', width=MVT_BWIDTH)
 bForward1 = bokeh.models.widgets.Button(label='\u25B6', width=MVT_BWIDTH) # -> or '\u279F'
+
+def forward1():
+    eegbrow.loc_sec += 1
+    eegbrow.update()
+
+def backward1():
+    eegbrow.loc_sec -= 1
+    eegbrow.update()
+    
+bForward1.on_click(forward1)
+bBackward1.on_click(backward1)
+
+
 
 bottomrowctrls = [bBackward10,bBackward1,bForward1, bForward10]
 toprowctrls = [bokeh.models.widgets.Select(title='Montage',value='trace', options=['trace', 'db','tcp']),
@@ -92,7 +189,8 @@ L = layouts.layout([
     [desc],
     [toprow],
     [mainfig],
-    [bottomrow]
+    [bottomrow],
+    [keyboard],
     ], sizing_mode=SIZING_MODE)
 
 DOC.add_root(L)
