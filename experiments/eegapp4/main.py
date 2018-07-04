@@ -11,6 +11,7 @@ import h5py
 
 import bokeh.plotting as bplt
 import bokeh.models
+
 import bokeh.models.widgets
 import bokeh.layouts as layouts  # column, row, ?grid
 # import bokeh.models.widgets as bmw
@@ -26,7 +27,8 @@ from bokeh.plotting import figure, curdoc
 # stuff to define new widget 
 from bokeh.models import LayoutDOM
 from bokeh.util.compiler import TypeScript
-from bokeh.core.properties import Int # String, Instance 
+#from bokeh.core.properties import Int # String, Instance
+import bokeh.core.properties as properties # import Int # String, Instance 
 
 import eeghdf
 import eegvis.nb_eegview
@@ -36,7 +38,7 @@ ARCHIVEDIR = r'../../eeg-hdfstorage/data/'
 EEGFILE = ARCHIVEDIR + 'absence_epilepsy.eeghdf'
 hf = eeghdf.Eeghdf(EEGFILE)
 
-eegbrow = eegvis.nb_eegview.EeghdfBrowser(hf, montage='double banana', start_seconds=1385, plot_width=1024, plot_height=800)
+eegbrow = eegvis.nb_eegview.EeghdfBrowser(hf, montage='double banana', start_seconds=1385, plot_width=1024, plot_height=700)
 eegbrow.show_for_bokeh_app()
 ## set up some synthetic data
 
@@ -61,9 +63,9 @@ script.src = url;
 script.async = false;
 script.onreadystatechange = script.onload = function() {jQuery.noConflict(); };
 document.querySelector("head").appendChild(script);
+var gLastKeyCode = undefined
 
-
-
+// create custom Bokeh model based upon example
 export class KeyboardResponderView extends LayoutDOMView {
 
   initialize(options) {
@@ -71,9 +73,14 @@ export class KeyboardResponderView extends LayoutDOMView {
 
     console.log("setting up jQuery");
     console.log(jQuery);
+    this.model.keyCode = 0
     jQuery('body').keydown( // same as .on('keydown', handler);
       function(ev) {
           console.log("got key", ev.keyCode);
+          // this.model.keyCode = ev.keyCode
+          gLastKeyCode = ev.keyCode
+          // this.render()
+          // how to set lastKeyCode = ev.keyCode
 	  // jQuery('#output').text(JSON.stringify(ev.keyCode));
 	  // jQuery('#which').text(ev.which);
       });
@@ -86,17 +93,15 @@ export class KeyboardResponderView extends LayoutDOMView {
   }
 
   render() {
-    // Backbone Views create <div> elements by default, accessible as @el.
+    // Bokehjs Views (like Backbone) create <div> elements by default, accessible as
+    // this.el
     // Many Bokeh views ignore this default <div>, and instead do things
     // like draw to the HTML canvas. In this case though, we change the
-    // contents of the <div>, based on the current slider value.
-    // empty(this.el)
-    //this.el.appendChild(div({
-    //  style: {
-    //    color: '#686d8e',
-    //    'background-color': '#2a3153',
-    //  },
-    //}, `${this.model.text}: ${this.model.slider.value}`))
+    // contents of the <div>, based on the current value.
+    console.log('trying render', this.el)
+    empty(this.el)
+    // this.el.appendChild(document.createTextNode(gLastKeyCode))
+
   }
 }
 
@@ -118,18 +123,36 @@ export class KeyboardResponder extends LayoutDOM {
 KeyboardResponder.define({
   // text:   [ p.String ],
   // slider: [ p.Any    ],
-  keycode : [ p.Int ],
+  keycode : [ p.Int, 0 ]
 })
 
 """
-class KeyboardResponder(LayoutDOM):
-    __implementation__ = TypeScript(KEYBOARDRESPONDERCODE_TS)
-    keycode = Int(default=0)
-keyboard = KeyboardResponder()
 
+class KeyboardResponder(LayoutDOM):
+    #__implementation__ = TypeScript(KEYBOARDRESPONDERCODE_TS)
+    __implementation__ = "keyboardresponder.ts"
+    # can use # __css__ = '<a css file.css>'
+    # can use # __javascript__ = 'katex.min.js'
+    keycode = properties.Int(default=0) # this should match with javascript
+    my_callback = properties.Instance(bokeh.models.callbacks.Callback,
+                                   help="""
+    A callback to run in the browser whenever the current Slider value changes.
+                                   """)
+
+keyboard = KeyboardResponder()
+keyboard.css_classes = ['keyboard']
+callback_keyboard = bokeh.models.callbacks.CustomJS(
+    args=dict(keyboard=keyboard, code="""
+    console.log('in callback_keyboard')
+    console.log('keycode:', keyboard.keycode)
+    // keyboard.change.emit();
+    """))
+
+# keyboard.js_on_change('keydown', callback_keyboard)
 
 
 DOC = curdoc() # hold on to an instance of current doc in case need multithreads
+
 SIZING_MODE =  'fixed' # 'scale_width' also an option, 'scale_both', 'scale_width', 'scale_height', 'stretch_both'
 
 
@@ -152,10 +175,12 @@ bForward1 = bokeh.models.widgets.Button(label='\u25B6', width=MVT_BWIDTH) # -> o
 
 def forward1():
     eegbrow.loc_sec += 1
+    print('keycode: ', keyboard.keycode)
     eegbrow.update()
 
 def backward1():
     eegbrow.loc_sec -= 1
+    print('keycode: ', keyboard.keycode)
     eegbrow.update()
     
 bForward1.on_click(forward1)
@@ -193,4 +218,5 @@ L = layouts.layout([
     [keyboard],
     ], sizing_mode=SIZING_MODE)
 
+L.js_on_event
 DOC.add_root(L)
