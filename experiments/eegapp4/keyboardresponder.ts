@@ -54,17 +54,18 @@ export class KeyboardResponderView extends LayoutDOMView {
 	// Set listener so that when the a change happens
 	// event, we can process the new data
 	// this.connect(this.model.slider.change, () => this.render())
+	this.connect(this.model.change, () => this.render())
     }
 
   render() {
-    // Bokehjs Views (like Backbone) create <div> elements by default, accessible as
-    // this.el
-    // Many Bokeh views ignore this default <div>, and instead do things
-    // like draw to the HTML canvas. In this case though, we change the
-    // contents of the <div>, based on the current value.
-    // console.log('trying render', this.el)
-    empty(this.el)
-      this.el.appendChild(div({style: 'kbd'}, 'keyboard responder placeholder text'))
+      // Bokehjs Views (like Backbone) create <div> elements by default, accessible as
+      // this.el
+      // Many Bokeh views ignore this default <div>, and instead do things
+      // like draw to the HTML canvas. In this case though, we change the
+      // contents of the <div>, based on the current value.
+      // this is mostly for debug purposes
+      empty(this.el)
+      this.el.appendChild(div({style: 'kbd'}, 'KeyboardResponder key: ' + this.model.keycode))
 
   }
 }
@@ -84,10 +85,18 @@ export class KeyboardResponder extends LayoutDOM {
 	console.log("checking that jQuery is loaded in KeyboardResponder");
 	console.log(jQuery('body'))
 
-	// set up to listen for keydown events
+	// set up to listen for keydown events, using jQuery to start but
+	// may want to switch to builtin javascript 
+	// bodies = document.getElementByTagName('body')
+	// body = bodies[0]  // OR docuent.addEventListener
+	// body.addEventListener('keydown', (ev) => this.keydown(ev))
 	// need to use => function to get right this refence (or use .bind?)
-	jQuery('body').keydown( // same as .on('keydown', handler);
-	    (ev) =>  this.keydown(ev))
+	// this works
+	// jQuery('body').keydown( // same as .on('keydown', handler);
+	// (ev) =>  this.keydown(ev))
+	document.addEventListener('keydown',
+				  (ev) =>  this.keydown(ev))
+	// possible events keydown, keypress, keyup
      
     }
 
