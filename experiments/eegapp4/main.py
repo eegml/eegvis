@@ -145,10 +145,14 @@ callback_keyboard = bokeh.models.callbacks.CustomJS(
     args=dict(keyboard=keyboard, code="""
     console.log('in callback_keyboard')
     console.log('keycode:', keyboard.keycode)
-    // keyboard.change.emit();
+    /* keyboard.change.emit() */
     """))
 
-# keyboard.js_on_change('keydown', callback_keyboard)
+keyboard.js_on_change('keycode', callback_keyboard)
+def keycallback(attr, old, new):
+    print('python callback: ', attr, old, new)
+    
+keyboard.on_change('keycode',keycallback)
 
 
 DOC = curdoc() # hold on to an instance of current doc in case need multithreads

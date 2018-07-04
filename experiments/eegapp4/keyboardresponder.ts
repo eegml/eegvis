@@ -17,18 +17,7 @@ script.onreadystatechange = script.onload = function() {
     // attach event listener to <body> in dom
     jQuery('body').keydown( // same as .on('keydown', handler);
 	function(ev) {
-            console.log("got keydown on body via jQuery ", ev.keyCode);
-	
-	    /* this does not work:
-	    var kbd = jQuery('#keyboard_id');
-            if (kbd.length) {
-		console.log('found #keyboard_id')
-		kbd.keycode = ev.keyCode
-	    }
-	    */
-            // how to set lastKeyCode = ev.keyCode
-	    // jQuery('#output').text(JSON.stringify(ev.keyCode));
-	    // jQuery('#which').text(ev.which);
+            // console.log("got keydown on body via jQuery ", ev.keyCode);
 	});
 
 };
@@ -103,8 +92,8 @@ export class KeyboardResponder extends LayoutDOM {
     keydown(ev) {
 	console.log('got keydown in KeyboardResponder:', ev)
 	this.keycode = ev.keyCode
-	
-	// this.
+	// try this
+	this.change.emit()
     }
 
 }
