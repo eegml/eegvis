@@ -163,7 +163,7 @@ callback_keydown = bokeh.models.callbacks.CustomJS(
     console.log('in keydown_callback')
     console.log('keycode:', keyboard.keycode)
     console.log('cb_obj:', cb_obj)
-    keyboard.change.emit() 
+    keyboard.change.emit() // is this needed?
     """)
 keyboard.keypress_callback = callback_keydown
 
@@ -192,22 +192,22 @@ bForward1 = bokeh.models.widgets.Button(label='\u25B6', width=MVT_BWIDTH) # -> o
 
 def forward1():
     eegbrow.loc_sec += 1
-    print('keycode: ', keyboard.keycode)
+    # print('keycode: ', keyboard.keycode)
     eegbrow.update()
 
 def forward10():
     eegbrow.loc_sec += 10
-    print('keycode: ', keyboard.keycode)
+    # print('keycode: ', keyboard.keycode)
     eegbrow.update()
 
 def backward1():
     eegbrow.loc_sec -= 1
-    print('keycode: ', keyboard.keycode)
+    # print('keycode: ', keyboard.keycode)
     eegbrow.update()
 
 def backward10():
     eegbrow.loc_sec -= 10
-    print('keycode: ', keyboard.keycode)
+    # print('keycode: ', keyboard.keycode)
     eegbrow.update()
     
 bForward1.on_click(forward1)
