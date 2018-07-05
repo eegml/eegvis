@@ -134,11 +134,12 @@ class KeyboardResponder(LayoutDOM):
     # can use # __css__ = '<a css file.css>'
     # can use # __javascript__ = 'katex.min.js'
     keycode = properties.Int(default=0) # this should match with javascript
-    my_callback = properties.Instance(bokeh.models.callbacks.Callback,
-                                   help="""
-    A callback to run in the browser whenever the current Slider value changes.
+    key_num_presses = properties.Int(default=0)
+    keypress_callback = properties.Instance(bokeh.models.callbacks.Callback,
+                                   help=""" A callback to run in the browser whenever a key is pressed
                                    """)
-
+# keycodes
+# ArrowRight 
 keyboard = KeyboardResponder()
 keyboard.css_classes = ['keyboard']
 callback_keyboard = bokeh.models.callbacks.CustomJS(
@@ -147,12 +148,24 @@ callback_keyboard = bokeh.models.callbacks.CustomJS(
     console.log('keycode:', keyboard.keycode)
     /* keyboard.change.emit() */
     """))
-
-keyboard.js_on_change('keycode', callback_keyboard)
+# keyboard.js_on_event('change:keycode', callback_keyboard)
+#keyboard.js_on_change('keycode', callback_keyboard)
 def keycallback(attr, old, new):
     print('python callback: ', attr, old, new)
-    
-keyboard.on_change('keycode',keycallback)
+
+        
+
+# the CustomJS args dict maps string names to Bkeh models, any models on python side
+# will be avaiable in the javascript code string (@code) cb_obj is also available which represents
+# the model triggering the callback 
+callback_keydown = bokeh.models.callbacks.CustomJS(
+    args=dict(keyboard=keyboard), code="""
+    console.log('in keydown_callback')
+    console.log('keycode:', keyboard.keycode)
+    console.log('cb_obj:', cb_obj)
+    keyboard.change.emit() 
+    """)
+keyboard.keypress_callback = callback_keydown
 
 
 DOC = curdoc() # hold on to an instance of current doc in case need multithreads
@@ -182,16 +195,41 @@ def forward1():
     print('keycode: ', keyboard.keycode)
     eegbrow.update()
 
+def forward10():
+    eegbrow.loc_sec += 10
+    print('keycode: ', keyboard.keycode)
+    eegbrow.update()
+
 def backward1():
     eegbrow.loc_sec -= 1
+    print('keycode: ', keyboard.keycode)
+    eegbrow.update()
+
+def backward10():
+    eegbrow.loc_sec -= 10
     print('keycode: ', keyboard.keycode)
     eegbrow.update()
     
 bForward1.on_click(forward1)
 bBackward1.on_click(backward1)
 
+def keycallback(attr, old, new):
+    print('keycallback: ', attr, old, new, 'keycode:', keyboard.keycode)
+    if keyboard.keycode == 70: # KeyF
+        forward10()
+    if keyboard.keycode == 65: # KeyA
+        backward10()
+    if keyboard.keycode == 68: # KeyD
+        forward1()
+    if keyboard.keycode == 83: # KeyS
+        backward1()
 
+def keycallback_print(attr, old, new):
+    print('keycallback: ', attr, old, new, 'keycode:', keyboard.keycode)
 
+keyboard.on_change('key_num_presses',keycallback)
+# keyboard.on_change('keycode',keycallback_print)
+        
 bottomrowctrls = [bBackward10,bBackward1,bForward1, bForward10]
 toprowctrls = [bokeh.models.widgets.Select(title='Montage',value='trace', options=['trace', 'db','tcp']),
                bokeh.models.widgets.Select(title='Sensitivity',value='7uV/div', options=['1uV/div', '3uV/div','7uV/div','10uV/div']),

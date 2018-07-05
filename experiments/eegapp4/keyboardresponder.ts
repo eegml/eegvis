@@ -55,7 +55,6 @@ export class KeyboardResponderView extends LayoutDOMView {
       // this is mostly for debug purposes
       empty(this.el)
       this.el.appendChild(div({style: 'kbd'}, 'KeyboardResponder key: ' + this.model.keycode))
-
   }
 }
 
@@ -90,10 +89,17 @@ export class KeyboardResponder extends LayoutDOM {
     }
 
     keydown(ev) {
-	console.log('got keydown in KeyboardResponder:', ev)
+	console.log('got keydown in KeyboardResponder:', ev, this)
 	this.keycode = ev.keyCode
+	this.key_num_presses += 1
+	// this.keypress_callback() this does not work
+	// this.change.emit() // this does not work
+
 	// try this
-	this.change.emit()
+	// this.change.emit(this.keycode)
+	// console.log('emit change')
+	// this.trigger_event(Event('change:keycode'))
+
     }
 
 }
@@ -107,7 +113,8 @@ KeyboardResponder.define({
     // text:   [ p.String ],
     // slider: [ p.Any    ],
     keycode : [ p.Int, -2 ],
-    my_callback : [ p.Any]
+    key_num_presses : [ p.Int, 0 ],
+    keypress_callback : [ p.Any]
 })
 
 
