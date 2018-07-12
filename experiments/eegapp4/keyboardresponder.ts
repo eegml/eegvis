@@ -85,15 +85,24 @@ export class KeyboardResponder extends LayoutDOM {
 	document.addEventListener('keydown',
 				  (ev) =>  this.keydown(ev))
 	// possible events keydown, keypress, keyup
+	// make it easier to find this
+	document.keyboardsingleton = this
      
     }
 
     keydown(ev) {
 	console.log('got keydown in KeyboardResponder:', ev, this)
 	this.keycode = ev.keyCode
-	this.key_num_presses += 1
-	// this.keypress_callback() this does not work
-	// this.change.emit() // this does not work
+	this.key_num_presses += 1  // works! work around to trigger change events
+	
+	// stuff that does not work
+	// this.change.emit(void 0) // based upon analogy to phosphorjs
+	// try old api
+	// console.log('this.change.emit:', this.change.emit) // this does not work either
+
+	// this.keypress_callback() // this does not work it is an object not a func
+	// this.keypress_callback.func() 
+	// this.change.emit() // this does not work, why?
 
 	// try this
 	// this.change.emit(this.keycode)

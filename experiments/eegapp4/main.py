@@ -138,8 +138,6 @@ class KeyboardResponder(LayoutDOM):
     keypress_callback = properties.Instance(bokeh.models.callbacks.Callback,
                                    help=""" A callback to run in the browser whenever a key is pressed
                                    """)
-# keycodes
-# ArrowRight 
 keyboard = KeyboardResponder()
 keyboard.css_classes = ['keyboard']
 callback_keyboard = bokeh.models.callbacks.CustomJS(
@@ -149,9 +147,7 @@ callback_keyboard = bokeh.models.callbacks.CustomJS(
     /* keyboard.change.emit() */
     """))
 # keyboard.js_on_event('change:keycode', callback_keyboard)
-#keyboard.js_on_change('keycode', callback_keyboard)
-def keycallback(attr, old, new):
-    print('python callback: ', attr, old, new)
+keyboard.js_on_change('keycode', callback_keyboard)
 
         
 
@@ -159,11 +155,12 @@ def keycallback(attr, old, new):
 # will be avaiable in the javascript code string (@code) cb_obj is also available which represents
 # the model triggering the callback 
 callback_keydown = bokeh.models.callbacks.CustomJS(
-    args=dict(keyboard=keyboard), code="""
+    args=dict(keyboard=keyboard),
+    code="""
     console.log('in keydown_callback')
-    console.log('keycode:', keyboard.keycode)
-    console.log('cb_obj:', cb_obj)
-    keyboard.change.emit() // is this needed?
+    // console.log('keycode:', keyboard.keycode)
+    // console.log('cb_obj:', cb_obj)
+    // keyboard.change.emit() // is this needed?
     """)
 keyboard.keypress_callback = callback_keydown
 
@@ -213,6 +210,12 @@ def backward10():
 bForward1.on_click(forward1)
 bBackward1.on_click(backward1)
 
+# keycodes
+# {'ArrowRight': 39,
+#  'ArrowLeft' : 37,
+#  'ArrowUp' : 38,
+#  'ArrowDown' : 40}
+
 def keycallback(attr, old, new):
     print('keycallback: ', attr, old, new, 'keycode:', keyboard.keycode)
     if keyboard.keycode == 70: # KeyF
@@ -223,7 +226,15 @@ def keycallback(attr, old, new):
         forward1()
     if keyboard.keycode == 83: # KeyS
         backward1()
-
+    if keyboard.keycode == 39: # ArrowRight
+        forward10()
+    if keyboard.keycode == 37: # ArrowLeft
+        backward10()
+    if keyboard.keycode == 38: # ArrowUp
+        pass # increase gain
+    if keyboard.keycode == 40: # ArrowDown
+        pass # decrease gain
+    
 def keycallback_print(attr, old, new):
     print('keycallback: ', attr, old, new, 'keycode:', keyboard.keycode)
 

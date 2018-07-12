@@ -76,3 +76,19 @@ cb_cselect = bokeh.models.CustomJS(args=dict(cir=cir,csource=csource), code ="""
 extending bokeh
 ===============
 https://bokeh.pydata.org/en/latest/docs/user_guide/extensions.html
+
+
+---
+in debugger of chrome
+
+doc = Bokeh.documents[0]
+msg = { kind: "ModelChanged", model: document.keyboardsingleton.ref(), attr: 'keycode', 'new': -5}
+
+doc.event_manager.send_event(msg)
+
+# running bokeh serve --log-level trace eegapp4
+get this when hit key
+2018-07-07 16:06:52,552 Not sending notification back to client <bokeh.server.connection.ServerConnection object at 0x7f741494e128> for a change it requested
+2018-07-07 16:06:52,556 Patching attribute 'key_num_presses' of KeyboardResponder(id='1044', ...) with 1
+keycallback:  key_num_presses 0 1 keycode: 74
+2018-07-07 16:06:52,556 Not sending notification back to client <bokeh.server.connection.ServerConnection object at 0x7f741494e128> for a change it requested
