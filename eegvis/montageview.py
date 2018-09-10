@@ -496,6 +496,122 @@ class TCPMontageView(MontageView):
         V.loc['C4-P4', 'P4'] = -1
 
 
+### A Neonatal montage (modified 10-20)
+class NeonatalMontageView(MontageView):
+    """
+    10-20 montage modified for neonatal head sizes 
+    This is more or less Montage 1 in Shellhaas (2011) table 3 of
+    https://www.acns.org/pdf/guidelines/Guideline-13.pdf plus it adds
+    the [ 'T3-O1','O1-O2','O2-T4'] chain to visualize the occipital
+    region a bit better. It is used at Stanford/LPCH for neonates around PMA ~24-44 weeks
+
+       https://journals.lww.com/clinicalneurophys/fulltext/2011/12000/The_American_Clinical_Neurophysiology_Society_s.12.aspx?casa_token=_R8Fm9J6mp8AAAAA:OdoEUvYFNLVLg0Kr7WGN-j1sj5bHRvSsNf7EJP9NAFXLqbmCwGygbD9XQKEnIo2uU_PkzgInlBdfIZhlT4-UoLI
+
+    """
+    NEONATAL_LABELS = [
+        'Fp1-T3',
+        'T3-O1',
+        
+        'Fp2-T4',
+        'T4-O2',
+
+        'Fp1-C3',
+        'C3-O1',
+
+        'Fp2-C4',
+        'C4-O2',
+
+        'T3-C3',
+        'C3-Cz',
+        'Cz-C4',
+        'C4-T4',
+
+        'Fz-Cz',
+        'Cz-Pz',
+
+        'T3-O1',
+        'O1-O2',
+        'O2-T4']
+        #'PG1-A1' # LLC
+        #'PG2-A2'
+        #'X3-X4' # EMG-CHIN
+        #'X5-E'  # RESP
+        #'X1-A1' # EKG
+    
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(self.NEONATAL_LABELS, rec_labels)
+        self.neonatal_set_matrix(self.V) # define connection matrix
+        
+        poschoice = {
+            False : 'pos',
+            True : 'neg'}
+        if reversed_polarity:
+            self.V = (-1) * self.V
+
+        self.name = 'neonatal'
+        self.full_name = '%s, up=%s' % (self.name, poschoice[reversed_polarity])
+
+
+    def neonatal_set_matrix(self, V):
+        V.loc['Fp1-T3', 'Fp1'] = 1
+        V.loc['Fp1-T3', 'T3'] = -1
+
+        V.loc['T3-O1', 'T3'] = 1
+        V.loc['T3-O1', 'O1'] = -1
+
+
+        V.loc['Fp2-T4', 'Fp2'] = 1
+        V.loc['Fp2-T4', 'T4'] = -1
+
+        V.loc['T4-O2', 'T4'] = 1
+        V.loc['T4-O2', 'O2'] = -1
+
+
+        V.loc['Fp1-C3', 'Fp1'] = 1
+        V.loc['Fp1-C3', 'C3'] = -1
+
+        V.loc['C3-O1', 'C3'] = 1
+        V.loc['C3-O1', 'O1'] = -1
+
+        V.loc['Fp2-C4', 'Fp2'] = 1
+        V.loc['Fp2-C4', 'C4'] = -1
+
+        V.loc['C4-O2', 'C4'] = 1
+        V.loc['C4-O2', 'O2'] = -1
+
+
+        V.loc['T3-C3', 'T3'] = 1
+        V.loc['T3-C3', 'C3'] = -1
+
+        V.loc['C3-Cz', 'C3'] = 1
+        V.loc['C3-Cz', 'Cz'] = -1
+
+        V.loc['Cz-C4', 'Cz'] = 1
+        V.loc['Cz-C4', 'C4'] = -1
+
+        V.loc['C4-T4', 'Cz'] = 1
+        V.loc['C4-T4', 'T4'] = -1
+
+        V.loc['C4-T4', 'C4'] = 1
+        V.loc['C4-T4', 'T4'] = -1
+
+        V.loc['Fz-Cz', 'Fz'] = 1
+        V.loc['Fz-Cz', 'Cz'] = -1
+
+
+        V.loc['T3-O1', 'T3'] = 1
+        V.loc['T3-O1', 'O1'] = -1
+        
+        V.loc['O1-O2', 'O1'] = 1
+        V.loc['O1-O2', 'O2'] = -1
+
+        V.loc['O2-T4', 'O2'] = 1
+        V.loc['O2-T4', 'T4'] = -1
+
+
+
+
+
 ####################
 
 laplacian_xml = """
@@ -655,7 +771,8 @@ MONTAGE_BUILTINS = OrderedDict([
     ('trace',TraceMontageView), 
     ('tcp', TCPMontageView),
     ('double banana', DoubleBananaMontageView),
-    ('laplacian', LaplacianMontageView)
+    ('laplacian', LaplacianMontageView),
+    ('neonatal', NeonatalMontageView),
     ])
 
 
