@@ -1,4 +1,35 @@
 
+### References:
+- definitely typed (http://definitelytyped.org/)
+- TypeScript Deep Dive (https://legacy.gitbook.com/book/basarat/typescript/details)
+  - (https://basarat.gitbooks.io/typescript/content/docs/getting-started.html)
+
+### "this" insanity in javascript/typescript
+- ?? to control "this" in classes so it is like C++ this or "self" in python, use () => functions for class functions -- the closure captures what I think it should
+- in javascript this is determined by the caller:
+  - it can default to the "window" or document glboal
+  - it can point back to the caller or for events it may point to the listener I think
+
+
+### "==" vs "==="
+
+### undefined  VS  null  and "falsy" values
+
+### default arguments to functions
+f(x = 1: Number)
+g(x: Number, y?: Number)
+
+### Partial<T>
+Partial<T> is used to specify a type which much include the attributes of class T (or namespace?)
+see https://netbasal.com/getting-to-know-the-partial-type-in-typescript-ecfcfbc87cb6
+
+
+
+
+### Dump of bokeh generated code
+================================
+- this is all javascript
+
 (function(root, factory) {
     //  if(typeof exports === 'object' && typeof module === 'object')
     //    factory(require("Bokeh"));
@@ -154,5 +185,3 @@
 })();
 
 
-Partial<T> is used to specify a type which much include the attributes of class T (or namespace?)
-see https://netbasal.com/getting-to-know-the-partial-type-in-typescript-ecfcfbc87cb6

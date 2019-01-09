@@ -13,6 +13,12 @@ focuses on occipital events.
 # [x] double banana, [x] TCP, [x] laplacian
 # [ ] DB-avg, [ ] sphenoidal [ ] circle
 
+# thoughts: want to have core names for signals which are standard then some
+# optional ones which we try to add if possible: EKG, EMG, Resp PG1 or RUC LLC,
+# extra leads
+
+
+
 from collections import OrderedDict
 import numpy as np
 import xarray
