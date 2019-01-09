@@ -2,6 +2,6 @@
 xarray
 ipywidgets >= 7.0
 #bokeh<=0.12.9,>=0.12.6
-bokeh=0.12.16
+bokeh=0.12.16 # need to update for bokeh 1.0 !!!
 matplotlib
 h5py

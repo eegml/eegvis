@@ -33,6 +33,7 @@
 - [ ] rewrite and package
 - [ ] publish
 - [ ] possible re-write/extend Bokeh for canvas widget
+- [ ] update to bokeh 1.0.x
 
 ### Other notes
 - Note, to respond to keyboard commands in bokeh, probably need an extension:
