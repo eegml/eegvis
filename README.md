@@ -41,6 +41,7 @@
   https://groups.google.com/a/continuum.io/forum/#!searchin/bokeh/keypress/bokeh/XCLqg1nyIgE/CU7lJGcuBgAJ
 
 ### Developer Install
+currently this is developer only package
 ```
     hg clone https://bitbucket.org/cleemesser/eegvis
     cd eegvis
