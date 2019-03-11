@@ -983,7 +983,7 @@ class EeghdfBrowser:
         self.ui_buttonback.on_click(go_backward)
 
         def go_forward1(b, parent=self):
-            self.loc = self._limit_time_check(self.loc_sec + 1)
+            self.loc_sec = self._limit_time_check(self.loc_sec + 1)
             self.update()
 
         self.ui_buttonf1.on_click(go_forward1)
