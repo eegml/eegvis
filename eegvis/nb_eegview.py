@@ -999,7 +999,6 @@ class EeghdfBrowser:
             if change["name"] == "value":
                 self.loc_sec = change["new"]
                 self.update()
-
         display(
             ipywidgets.HBox(
                 [
@@ -1010,6 +1009,8 @@ class EeghdfBrowser:
                 ]
             )
         )
+        #print('displayed buttons')
+                
 
     def update_montage(self, montage_name):
         Mv = self.montage_options[montage_name]

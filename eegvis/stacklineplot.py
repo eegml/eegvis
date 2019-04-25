@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 """ based on multilineplot example in matplotlib with MRI data (I think)
 uses line collections (might actually be from pbrain example)
 - clm """
-
+# TODO: probably want to modernize this to newer maptlotlib interface for better control
 import numpy as np
 from matplotlib.pyplot import *
 from matplotlib.collections import LineCollection
