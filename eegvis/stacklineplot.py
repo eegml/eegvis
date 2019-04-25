@@ -24,7 +24,7 @@ def stackplot(marray, seconds=None, start_time=None, ylabels=None, yscale=1.0, t
     @yscale with increase (mutiply) the signals in each row by this amount
     """
     tarray = np.transpose(marray)
-    stackplot_t(tarray, seconds=seconds, start_time=start_time, ylabels=ylabels, yscale=yscale, topdown=topdown)
+    return stackplot_t(tarray, seconds=seconds, start_time=start_time, ylabels=ylabels, yscale=yscale, topdown=topdown)
 
 
 def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0, topdown=False):
@@ -97,6 +97,7 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0,
     ax.set_yticklabels(ylabels)
 
     xlabel('time (s)')
+    return ax
 
 
 def test_stacklineplot():
