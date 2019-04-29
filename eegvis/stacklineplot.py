@@ -179,7 +179,7 @@ def show_epoch_centered(
     duration = (s1 - s0) / fs
     start_time_sec = s0 / fs
 
-    stackplot(
+    return stackplot(
         signals[ch0:ch1, s0:s1],
         start_time=start_time_sec,
         seconds=duration,
@@ -231,7 +231,7 @@ def show_montage_centered(
     inmontage_view = np.dot(montage.V.data, signal_view)
 
     rlabels = montage.montage_labels
-    stackplot(
+    return stackplot(
         inmontage_view,
         start_time=start_time_sec,
         seconds=duration,
