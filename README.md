@@ -33,7 +33,8 @@
 - [ ] rewrite and package
 - [ ] publish
 - [ ] possible re-write/extend Bokeh for canvas widget
-- [ ] update to bokeh 1.0.x
+- [x] update to bokeh 1.0.x
+- [ ] tests for mpl_helpers
 
 ### Other notes
 - Note, to respond to keyboard commands in bokeh, probably need an extension:
