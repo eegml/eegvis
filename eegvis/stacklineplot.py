@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*
 from __future__ import division, print_function, absolute_import
 
@@ -11,7 +10,15 @@ from matplotlib.pyplot import *
 from matplotlib.collections import LineCollection
 
 
-def stackplot(marray, seconds=None, start_time=None, ylabels=None, yscale=1.0, topdown=False):
+def stackplot(
+    marray,
+    seconds=None,
+    start_time=None,
+    ylabels=None,
+    yscale=1.0,
+    topdown=False,
+    ax=None,
+):
     """
     will plot a stack of traces one above the other assuming
     @marray contains the data you want to plot
@@ -24,10 +31,26 @@ def stackplot(marray, seconds=None, start_time=None, ylabels=None, yscale=1.0, t
     @yscale with increase (mutiply) the signals in each row by this amount
     """
     tarray = np.transpose(marray)
-    return stackplot_t(tarray, seconds=seconds, start_time=start_time, ylabels=ylabels, yscale=yscale, topdown=topdown)
+    return stackplot_t(
+        tarray,
+        seconds=seconds,
+        start_time=start_time,
+        ylabels=ylabels,
+        yscale=yscale,
+        topdown=topdown,
+        ax=ax,
+    )
 
 
-def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0, topdown=False):
+def stackplot_t(
+    tarray,
+    seconds=None,
+    start_time=None,
+    ylabels=None,
+    yscale=1.0,
+    topdown=False,
+    ax=None,
+):
     """
     will plot a stack of traces one above the other assuming
     @tarray is an nd-array like object with format
@@ -38,6 +61,8 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0,
 
     @ylabels a list of labels for each row ("channel") in marray
     @yscale with increase (mutiply) the signals in each row by this amount
+
+    @ax is the option to pass in a matplotlib axis to draw with
     """
     data = tarray
     numSamples, numRows = tarray.shape
@@ -57,8 +82,13 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0,
         t = np.arange(numSamples, dtype=float)
         xlm = (0, numSamples)
 
+    # if want to add ability to space by label
+    # would do it here, check if labels; make sure right number
+    # then interate, use special label to indicate a space
     ticklocs = []
-    ax = subplot(111)
+    if not ax:
+        ax = subplot(111)
+
     xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
     dmin = data.min()
@@ -68,35 +98,32 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0,
     y1 = (numRows - 1) * dr + dmax
     ylim(y0, y1)
 
-
     segs = []
-    for i in range(numRows):
-        segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, i, np.newaxis])))
+    for ii in range(numRows):
+        segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, ii, np.newaxis])))
         # print("segs[-1].shape:", segs[-1].shape)
-        ticklocs.append(i * dr)
+        ticklocs.append(ii * dr)
 
     offsets = np.zeros((numRows, 2), dtype=float)
     offsets[:, 1] = ticklocs
     if topdown == True:
         segs.reverse()
-        
-    lines = LineCollection(segs, offsets=offsets,
-                           transOffset=None,
-                           )
+
+    lines = LineCollection(segs, offsets=offsets, transOffset=None)
 
     ax.add_collection(lines)
 
     # set the yticks to use axes coords on the y axis
     ax.set_yticks(ticklocs)
-    # ax.set_yticklabels(['PG3', 'PG5', 'PG7', 'PG9'])
+    # ax.set_yticklabels(['PG3', 'PG5', 'PG7', 'PG9']) # testing
     if not ylabels:
         ylabels = ["%d" % ii for ii in range(numRows)]
     if topdown == True:
         ylabels = ylabels.copy()
-        ylabels.reverse() # this acts on ylabels in place 
+        ylabels.reverse()  # this acts on ylabels in place
     ax.set_yticklabels(ylabels)
 
-    xlabel('time (s)')
+    xlabel("time (s)")
     return ax
 
 
@@ -115,9 +142,18 @@ def limit_sample_check(x, signals):
     return x
 
 
-def show_epoch_centered(signals, goto_sec,
-                        epoch_width_sec,
-                        chstart, chstop, fs, ylabels=None, yscale=1.0, topdown=True):
+def show_epoch_centered(
+    signals,
+    goto_sec,
+    epoch_width_sec,
+    chstart,
+    chstop,
+    fs,
+    ylabels=None,
+    yscale=1.0,
+    topdown=True,
+    ax=None,
+):
     """
     @signals array-like object with signals[ch_num, sample_num]
     @goto_sec where to go in the signal to show the feature
@@ -143,13 +179,30 @@ def show_epoch_centered(signals, goto_sec,
     duration = (s1 - s0) / fs
     start_time_sec = s0 / fs
 
-    stackplot(signals[ch0:ch1, s0:s1], start_time=start_time_sec, seconds=duration, ylabels=ylabels[ch0:ch1],
-              yscale=yscale, topdown=topdown)
+    stackplot(
+        signals[ch0:ch1, s0:s1],
+        start_time=start_time_sec,
+        seconds=duration,
+        ylabels=ylabels[ch0:ch1],
+        yscale=yscale,
+        topdown=topdown,
+        ax=ax,
+    )
 
 
-def show_montage_centered(signals, montage, goto_sec,
-                          epoch_width_sec,
-                          chstart, chstop, fs, ylabels=None, yscale=1.0,topdown=True):
+def show_montage_centered(
+    signals,
+    montage,
+    goto_sec,
+    epoch_width_sec,
+    chstart,
+    chstop,
+    fs,
+    ylabels=None,
+    yscale=1.0,
+    topdown=True,
+    ax=None,
+):
     """
     @signals array-like object with signals[ch_num, sample_num]
     @goto_sec where to go in the signal to show the feature
@@ -177,8 +230,13 @@ def show_montage_centered(signals, montage, goto_sec,
     signal_view = signals[:, s0:s1]
     inmontage_view = np.dot(montage.V.data, signal_view)
 
-    rlabels = montage.montage_labels 
-    stackplot(inmontage_view, start_time=start_time_sec, seconds=duration, 
-              ylabels=rlabels,
-              yscale=yscale, topdown=topdown)
-    
+    rlabels = montage.montage_labels
+    stackplot(
+        inmontage_view,
+        start_time=start_time_sec,
+        seconds=duration,
+        ylabels=rlabels,
+        yscale=yscale,
+        topdown=topdown,
+        ax=ax,
+    )
