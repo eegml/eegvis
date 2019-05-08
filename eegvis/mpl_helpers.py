@@ -18,6 +18,7 @@ The important thing to remember is that the transforms all convert from the sour
 """
 import matplotlib 
 import matplotlib.pyplot as plt
+import numpy as np
 
 def transformAxesCoord2FigureCoord(coordarr, ax, fig=None):
     """ 
@@ -59,18 +60,29 @@ def new_blank_axis_full_figure():
 
 
 def overlay_image_on_plot(ax, imarr, frameon=True, aspect="auto", alpha=None, zorder=2):
-    """plot imarr as an image over the plot section used in
+    """assume that you make a regular matplotlib plot using axis @ax
+    then take the image array @imarr and replace the inside of the plot
+    with the image
+
+    I have not figured out how to blend this directly
+
+    plot imarr as an image over the plot section used in
     axis object ax
     if was originally a (pillow) PIL.Image, then use_default_template
 
     imarr = numpy.array(im)
+
+    Note this function is not quite right yet. The extent is being set for
+    the axes image as 0,0,1,0 but which acts like it is display
+    coordinates at first but is actually data coordinates from what I
+    can tell. It works in narrow cases but does not make sense more generally
+
     """
 
     fig = ax.figure
     # find lower left and upper right corners of ax "canvas" in display coords
     x0y0 = transformAxesCoord2FigureCoord((0.0, 0.0), ax)
     x1y1 = transformAxesCoord2FigureCoord((1.0, 1.0), ax)
-
     # create an Axes object just to hold the image
     im_ax = plt.Axes(
         fig,
@@ -102,3 +114,24 @@ def overlay_image_on_plot(ax, imarr, frameon=True, aspect="auto", alpha=None, zo
     fig.add_axes(im_ax)
 
     return im_ax  # return the new axes object in case want to do more with it
+
+
+def test_overlay_image_on_plot(frameon=True, aspect="auto", alpha=None, zorder=2):
+    # create a sine plot
+    # wonder if I should be specifcying backend at this point
+    # note this shows that this works, but there is something not right
+    # if another plot is done after the image is added
+    t = np.arange(10.0,step=0.01)
+    y = np.sin(2*np.pi * t)
+
+    fig1 = plt.figure()
+    ax1 = plt.subplot(111)
+
+    ax1.plot(t,y)
+
+    q = np.arange(1,10)
+    Q = np.outer(q,q)
+
+    overlay_image_on_plot(ax1, Q, frameon=frameon, aspect=aspect, alpha=alpha, zorder=zorder)
+    return fig1, ax1
+    
