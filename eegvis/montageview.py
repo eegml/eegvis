@@ -25,6 +25,11 @@ from collections import OrderedDict
 import numpy as np
 import xarray
 
+POSCHOICE = {
+    False: "pos",
+    True: "neg",
+}  # humanized representation of postive vs negative polarity convention
+
 # Anyone may wish to define a montageview, but there are quite a few standard ones
 # to define these we need a standard ordering of electrodes in which to define them.
 
@@ -160,7 +165,7 @@ class MontageView(object):
 
     """
 
-    def __init__(self, montage_labels, rec_labels, **kwargs):
+    def __init__(self, montage_labels, rec_labels, reversed_polarity, **kwargs):
         self.rec_labels = rec_labels
         self.montage_labels = montage_labels
         self.name = kwargs["name"] if "name" in kwargs else ""
@@ -174,6 +179,8 @@ class MontageView(object):
         )
 
         self.V = V
+        self.reversed_polarity = reversed_polarity
+
         #  standard text (i.e. with
         # label-2-standard-index enumerate them
         # l2si = {elabels[ii]: ii for ii in range(len(elabels))}
@@ -194,14 +201,13 @@ class TraceMontageView(MontageView):
     maybe this should be the "raw" montage view"""
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(rec_labels, rec_labels)
+        super().__init__(rec_labels, rec_labels, reversed_polarity=reversed_polarity)
         self.set_trace_matrix(self.V)  # define connection matrix
 
-        poschoice = {False: "pos", True: "neg"}
         if reversed_polarity:
             self.V = (-1) * self.V
         self.name = "trace"
-        self.full_name = "%s, up=%s" % (self.name, poschoice[reversed_polarity])
+        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def set_trace_matrix(self, V):
         for label in self.montage_labels:
@@ -303,13 +309,58 @@ class DoubleBananaMontageView(MontageView):
     ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.DB_LABELS, rec_labels)
+        super().__init__(self.DB_LABELS, rec_labels, reversed_polarity=reversed_polarity)
         double_banana_set_matrix(self.V)  # define connection matrix
-        poschoice = {False: "pos", True: "neg"}
+
         if reversed_polarity:
             self.V = (-1) * self.V
-        self.full_name = "double banana, up=%s" % poschoice[reversed_polarity]
+        self.full_name = "double banana, up=%s" % POSCHOICE[reversed_polarity]
         self.name = "double banana"
+
+
+class DBrefMontageView(MontageView):
+    """This montage derivation uses the same electrodes as double banana but uses the as recorded reference
+    so it is very simple 
+    """
+
+    DBREF_LABELS = [
+        "Fp1",
+        "F7",
+        "T3",
+        "T5",
+        "O1",
+        "Fp2",
+        "F8",
+        "T4",
+        "T6",
+        "O2",
+        "F3",
+        "C3",
+        "P3",
+        "F4",
+        "C4",
+        "P4",
+        "Fz",
+        "Cz",
+        "Pz",
+    ]
+
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(self.DBREF_LABELS, rec_labels, reversed_polarity=reversed_polarity)
+        self.set_matrix()
+        if reversed_polarity:
+            self.V = (-1) * self.V
+        self.full_name = "db-ref, up=%s" % POSCHOICE[reversed_polarity]
+
+    def set_matrix(self):
+        """specify the double banana-inspired reference montage
+        transformation for raw input labels
+        this is very simple as we are assuming that the list of labels have the same
+        name as their corresponding electrode label (self.rec_labels)
+        """
+
+        for label in self.montage_labels:
+            self.V.loc[label, label] = 1
 
 
 class LaplacianMontageView(MontageView):
@@ -334,14 +385,13 @@ class LaplacianMontageView(MontageView):
     ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.LAPLACIAN_LABELS, rec_labels)
+        super().__init__(self.LAPLACIAN_LABELS, rec_labels, reversed_polarity=reversed_polarity)
         self.laplacian_set_matrix(self.V)  # define connection matrix
 
-        poschoice = {False: "pos", True: "neg"}
         if reversed_polarity:
             self.V = (-1) * self.V
         self.name = "laplacian"
-        self.full_name = "%s, up=%s" % (self.name, poschoice[reversed_polarity])
+        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def laplacian_set_matrix(self, V):
         """expect an xarray-like matrix V"""
@@ -485,15 +535,14 @@ class TCPMontageView(MontageView):
     ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.TCP_LABELS, rec_labels)
+        super().__init__(self.TCP_LABELS, rec_labels, reversed_polarity=reversed_polarity)
         self.tcp_set_matrix(self.V)  # define connection matrix
 
-        poschoice = {False: "pos", True: "neg"}
         if reversed_polarity:
             self.V = (-1) * self.V
 
         self.name = "tcp"
-        self.full_name = "%s, up=%s" % (self.name, poschoice[reversed_polarity])
+        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def tcp_set_matrix(self, V):
         V.loc["Fp1-F7", "Fp1"] = 1
@@ -592,15 +641,14 @@ class NeonatalMontageView(MontageView):
     #'X1-A1' # EKG
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.NEONATAL_LABELS, rec_labels)
+        super().__init__(self.NEONATAL_LABELS, rec_labels, reversed_polarity=reversed_polarity)
         self.neonatal_set_matrix(self.V)  # define connection matrix
 
-        poschoice = {False: "pos", True: "neg"}
         if reversed_polarity:
             self.V = (-1) * self.V
 
         self.name = "neonatal"
-        self.full_name = "%s, up=%s" % (self.name, poschoice[reversed_polarity])
+        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def neonatal_set_matrix(self, V):
         V.loc["Fp1-T3", "Fp1"] = 1
@@ -760,15 +808,14 @@ class CommonAvgRefMontageView(MontageView):
     # should I include A1 and A2? sometimes T1/T2 (FT9/FT10)
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.CAR_LABELS, rec_labels)
+        super().__init__(self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity)
         self.tcp_set_matrix(self.V)  # define connection matrix
 
-        poschoice = {False: "pos", True: "neg"}
         if reversed_polarity:
             self.V = (-1) * self.V
 
         self.name = "avg"  # or common average reference ?
-        self.full_name = "%s, up=%s" % (self.name, poschoice[reversed_polarity])
+        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def setall_to_avg(self, V):
         N = len(self.AVG_REFERENCE_LABELS) - 1
@@ -812,6 +859,7 @@ MONTAGE_BUILTINS = OrderedDict(
         ("double banana", DoubleBananaMontageView),
         ("laplacian", LaplacianMontageView),
         ("neonatal", NeonatalMontageView),
+        ("DB-REF", DBrefMontageView),
     ]
 )
 

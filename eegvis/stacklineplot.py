@@ -46,7 +46,7 @@ def stackplot_t(
     tarray,
     seconds=None,
     start_time=None,
-    ylabels=None,
+    ylabels=[],
     yscale=1.0,
     topdown=False,
     ax=None,
@@ -62,7 +62,7 @@ def stackplot_t(
     @ylabels a list of labels for each row ("channel") in marray
     @yscale with increase (mutiply) the signals in each row by this amount
 
-    @ax is the option to pass in a matplotlib axis to draw with
+    @ax is the option to pass in a matplotlib axes obj to draw with
     """
     data = tarray
     numSamples, numRows = tarray.shape
@@ -116,7 +116,7 @@ def stackplot_t(
     # set the yticks to use axes coords on the y axis
     ax.set_yticks(ticklocs)
     # ax.set_yticklabels(['PG3', 'PG5', 'PG7', 'PG9']) # testing
-    if not ylabels:
+    if len(ylabels) == 0:
         ylabels = ["%d" % ii for ii in range(numRows)]
     if topdown == True:
         ylabels = ylabels.copy()
@@ -149,7 +149,7 @@ def show_epoch_centered(
     chstart,
     chstop,
     fs,
-    ylabels=None,
+    ylabels=[],
     yscale=1.0,
     topdown=True,
     ax=None,
@@ -166,14 +166,14 @@ def show_epoch_centered(
     """
 
     goto_sample = int(fs * goto_sec)
-    hw = half_width_epoch_sample = int(epoch_width_sec * fs / 2)
+    hw = int(epoch_width_sec * fs / 2)  # half_width_epoch_sample
 
     # plot epochs of width epoch_width_sec centered on (multiples in DE)
     ch0, ch1 = chstart, chstop
 
-    epoch = 53
-    ptepoch = int(10 * fs)
-    dp = int(0.5 * ptepoch)
+    # epoch = 53
+    # ptepoch = int(10 * fs)
+    # dp = int(0.5 * ptepoch)
     s0 = limit_sample_check(goto_sample - hw, signals)
     s1 = limit_sample_check(goto_sample + hw, signals)
     duration = (s1 - s0) / fs
@@ -198,7 +198,7 @@ def show_montage_centered(
     chstart,
     chstop,
     fs,
-    ylabels=None,
+    ylabels=[],
     yscale=1.0,
     topdown=True,
     ax=None,
@@ -215,19 +215,21 @@ def show_montage_centered(
     """
 
     goto_sample = int(fs * goto_sec)
-    hw = half_width_epoch_sample = int(epoch_width_sec * fs / 2)
+    hw = int(epoch_width_sec * fs / 2)  # half_width_epoch_sample
 
     # plot epochs of width epoch_width_sec centered on (multiples in DE)
     ch0, ch1 = chstart, chstop
 
-    ptepoch = int(10 * fs)
-    dp = int(0.5 * ptepoch)
+    # ptepoch = int(10 * fs)
+    # dp = int(0.5 * ptepoch)
     s0 = limit_sample_check(goto_sample - hw, signals)
     s1 = limit_sample_check(goto_sample + hw, signals)
     duration = (s1 - s0) / fs
     start_time_sec = s0 / fs
     # signals[ch0:ch1, s0:s1]
-    signal_view = signals[:, s0:s1]
+    # signal_view will not work if channels are not contiguous
+    # TODO: use fancy indexing instead?
+    signal_view = signals[:, s0:s1]  
     inmontage_view = np.dot(montage.V.data, signal_view)
 
     rlabels = montage.montage_labels
