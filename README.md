@@ -44,7 +44,7 @@
 ### Developer Install
 currently this is developer only package
 ```
-    hg clone https://bitbucket.org/cleemesser/eegvis
+    hg clone https://github.com/eegml/eegvis
     cd eegvis
     pip install -e .
 ```   
