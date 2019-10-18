@@ -123,7 +123,7 @@ class EeghdfBrowser:
         @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
         @start_seconds - center view on this point in time
 
-        BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw'
+        BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
         """
 
         self.eeghdf_file = eeghdf_file
@@ -999,6 +999,7 @@ class EeghdfBrowser:
             if change["name"] == "value":
                 self.loc_sec = change["new"]
                 self.update()
+
         display(
             ipywidgets.HBox(
                 [
@@ -1009,8 +1010,7 @@ class EeghdfBrowser:
                 ]
             )
         )
-        #print('displayed buttons')
-                
+        # print('displayed buttons')
 
     def update_montage(self, montage_name):
         Mv = self.montage_options[montage_name]

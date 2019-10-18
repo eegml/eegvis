@@ -16,9 +16,10 @@ The important thing to remember is that the transforms all convert from the sour
 
 
 """
-import matplotlib 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 def transformAxesCoord2FigureCoord(coordarr, ax, fig=None):
     """ 
@@ -36,11 +37,11 @@ def transformAxesCoord2FigureCoord(coordarr, ax, fig=None):
 
     # transform display -> figure coords [0,1]x[0,1]
     figtrans_inv = fig.transFigure.inverted()
-    
+
     return figtrans_inv.transform(ax.transAxes.transform(coordarr))
 
 
-def new_blank_axis_full_figure():
+def new_blank_axis_full_figure(frameon=False):
     """create a figure with out the background frame
     create an axis object for drawing which uses the full extent of the figure
     so that extent=[0,0, 0.0, 1.0, 1.0]
@@ -50,7 +51,7 @@ def new_blank_axis_full_figure():
 
     return (figure, axis) objects
     """
-    fig = plt.figure(frameon=False)
+    fig = plt.figure(frameon=frameon)
     # fig.set_tight_layout(True)
     ax = plt.Axes(fig, [0.0, 0.0, 1.0, 1.0])  # origin [x,y, w,h]
     ax.set_axis_off()
@@ -99,18 +100,18 @@ def overlay_image_on_plot(ax, imarr, frameon=True, aspect="auto", alpha=None, zo
 
     axesimage = matplotlib.image.AxesImage(
         im_ax,
-        extent=[ # need to make extent 1x1 square or won't use whole image
+        extent=[  # need to make extent 1x1 square or won't use whole image
             0.0,
             1.0,
             0.0,
             1.0,
-        ],  
+        ],
         zorder=zorder,  # make sure it is ontop
     )
-    
+
     axesimage.set_data(imarr)
     im_ax.add_image(axesimage)
-    im_ax.set_axis_off() # don't draw the splines
+    im_ax.set_axis_off()  # don't draw the splines
     fig.add_axes(im_ax)
 
     return im_ax  # return the new axes object in case want to do more with it
@@ -121,17 +122,18 @@ def test_overlay_image_on_plot(frameon=True, aspect="auto", alpha=None, zorder=2
     # wonder if I should be specifcying backend at this point
     # note this shows that this works, but there is something not right
     # if another plot is done after the image is added
-    t = np.arange(10.0,step=0.01)
-    y = np.sin(2*np.pi * t)
+    t = np.arange(10.0, step=0.01)
+    y = np.sin(2 * np.pi * t)
 
     fig1 = plt.figure()
     ax1 = plt.subplot(111)
 
-    ax1.plot(t,y)
+    ax1.plot(t, y)
 
-    q = np.arange(1,10)
-    Q = np.outer(q,q)
+    q = np.arange(1, 10)
+    Q = np.outer(q, q)
 
-    overlay_image_on_plot(ax1, Q, frameon=frameon, aspect=aspect, alpha=alpha, zorder=zorder)
+    overlay_image_on_plot(
+        ax1, Q, frameon=frameon, aspect=aspect, alpha=alpha, zorder=zorder
+    )
     return fig1, ax1
-    

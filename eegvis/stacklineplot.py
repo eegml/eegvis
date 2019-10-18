@@ -6,7 +6,7 @@ uses line collections (might actually be from pbrain example)
 - clm """
 # TODO: probably want to modernize this to newer maptlotlib interface for better control
 import numpy as np
-from matplotlib.pyplot import *
+import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 
 
@@ -14,10 +14,11 @@ def stackplot(
     marray,
     seconds=None,
     start_time=None,
-    ylabels=None,
+    ylabels=[],
     yscale=1.0,
     topdown=False,
     ax=None,
+    **kwargs
 ):
     """
     will plot a stack of traces one above the other assuming
@@ -39,6 +40,7 @@ def stackplot(
         yscale=yscale,
         topdown=topdown,
         ax=ax,
+        **kwargs
     )
 
 
@@ -50,6 +52,8 @@ def stackplot_t(
     yscale=1.0,
     topdown=False,
     ax=None,
+    linecolor=None,
+    linestyle=None,
 ):
     """
     will plot a stack of traces one above the other assuming
@@ -87,16 +91,16 @@ def stackplot_t(
     # then interate, use special label to indicate a space
     ticklocs = []
     if not ax:
-        ax = subplot(111)
+        ax = plt.subplot(111)
 
-    xlim(*xlm)
+    plt.xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
     dmin = data.min()
     dmax = data.max()
     dr = (dmax - dmin) * 0.7  # Crowd them a bit.
     y0 = dmin
     y1 = (numRows - 1) * dr + dmax
-    ylim(y0, y1)
+    plt.ylim(y0, y1)
 
     segs = []
     for ii in range(numRows):
@@ -109,7 +113,13 @@ def stackplot_t(
     if topdown == True:
         segs.reverse()
 
-    lines = LineCollection(segs, offsets=offsets, transOffset=None)
+    linekwargs = {}
+    if linecolor:
+        linekwargs["color"] = linecolor
+    if linestyle:
+        linekwargs["linestyle"] = linestyle
+
+    lines = LineCollection(segs, offsets=offsets, transOffset=None, **linekwargs)
 
     ax.add_collection(lines)
 
@@ -123,7 +133,7 @@ def stackplot_t(
         ylabels.reverse()  # this acts on ylabels in place
     ax.set_yticklabels(ylabels)
 
-    xlabel("time (s)")
+    plt.xlabel("time (s)")
     return ax
 
 
@@ -132,6 +142,13 @@ def test_stacklineplot():
     data = np.random.randn(numRows, numSamples)  # test data
     stackplot(data, 10.0)
 
+
+
+def test_stacklineplot_colors():
+    numSamples, numRows = 800, 5
+    data = np.random.randn(numRows, numSamples)  # test data
+    stackplot(data, 10.0, linecolor="green")
+    plt.title('this plot should have green lines')
 
 def limit_sample_check(x, signals):
     if x < 0:
@@ -153,6 +170,7 @@ def show_epoch_centered(
     yscale=1.0,
     topdown=True,
     ax=None,
+    **kwargs
 ):
     """
     @signals array-like object with signals[ch_num, sample_num]
@@ -187,6 +205,7 @@ def show_epoch_centered(
         yscale=yscale,
         topdown=topdown,
         ax=ax,
+        **kwargs
     )
 
 
@@ -202,6 +221,7 @@ def show_montage_centered(
     yscale=1.0,
     topdown=True,
     ax=None,
+    **kwargs
 ):
     """
     @signals array-like object with signals[ch_num, sample_num]
@@ -229,7 +249,7 @@ def show_montage_centered(
     # signals[ch0:ch1, s0:s1]
     # signal_view will not work if channels are not contiguous
     # TODO: use fancy indexing instead?
-    signal_view = signals[:, s0:s1]  
+    signal_view = signals[:, s0:s1]
     inmontage_view = np.dot(montage.V.data, signal_view)
 
     rlabels = montage.montage_labels

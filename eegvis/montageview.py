@@ -309,7 +309,9 @@ class DoubleBananaMontageView(MontageView):
     ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.DB_LABELS, rec_labels, reversed_polarity=reversed_polarity)
+        super().__init__(
+            self.DB_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
         double_banana_set_matrix(self.V)  # define connection matrix
 
         if reversed_polarity:
@@ -346,7 +348,9 @@ class DBrefMontageView(MontageView):
     ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.DBREF_LABELS, rec_labels, reversed_polarity=reversed_polarity)
+        super().__init__(
+            self.DBREF_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
         self.set_matrix()
         if reversed_polarity:
             self.V = (-1) * self.V
@@ -385,7 +389,9 @@ class LaplacianMontageView(MontageView):
     ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.LAPLACIAN_LABELS, rec_labels, reversed_polarity=reversed_polarity)
+        super().__init__(
+            self.LAPLACIAN_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
         self.laplacian_set_matrix(self.V)  # define connection matrix
 
         if reversed_polarity:
@@ -535,7 +541,9 @@ class TCPMontageView(MontageView):
     ]
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.TCP_LABELS, rec_labels, reversed_polarity=reversed_polarity)
+        super().__init__(
+            self.TCP_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
         self.tcp_set_matrix(self.V)  # define connection matrix
 
         if reversed_polarity:
@@ -641,7 +649,9 @@ class NeonatalMontageView(MontageView):
     #'X1-A1' # EKG
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.NEONATAL_LABELS, rec_labels, reversed_polarity=reversed_polarity)
+        super().__init__(
+            self.NEONATAL_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
         self.neonatal_set_matrix(self.V)  # define connection matrix
 
         if reversed_polarity:
@@ -808,7 +818,9 @@ class CommonAvgRefMontageView(MontageView):
     # should I include A1 and A2? sometimes T1/T2 (FT9/FT10)
 
     def __init__(self, rec_labels, reversed_polarity=True):
-        super().__init__(self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity)
+        super().__init__(
+            self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
         self.tcp_set_matrix(self.V)  # define connection matrix
 
         if reversed_polarity:
