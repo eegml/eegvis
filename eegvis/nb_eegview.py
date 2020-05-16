@@ -426,7 +426,7 @@ class EeghdfBrowser:
             # print('creating figure')
             fig = bplt.figure(
                 title=self.title,
-                #tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
+                # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
                 tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
                 **kwargs
             )  # subclass of Plot that simplifies plot creation
@@ -749,7 +749,7 @@ class EeghdfBrowser:
             # print('creating figure')
             fig = bplt.figure(
                 title=self.title,
-                #tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
+                # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
                 tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
                 **kwargs
             )  # subclass of Plot that simplifies plot creation

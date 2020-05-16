@@ -2,10 +2,10 @@
 import numpy as np
 import bokeh.plotting as bplt
 
-#p = bplt.figure()
-#p.line([1,2,3,4,5], [6,7,2,4,5], line_width=2)
+# p = bplt.figure()
+# p.line([1,2,3,4,5], [6,7,2,4,5], line_width=2)
 
-#bplt.show(p)
+# bplt.show(p)
 
 
 def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0):
@@ -40,7 +40,7 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0)
 
     ticklocs = []
     ## ax = subplot(111)
-    fig = bplt.figure() # subclass of Plot that simplifies plot creation
+    fig = bplt.figure()  # subclass of Plot that simplifies plot creation
 
     ## xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
@@ -51,7 +51,7 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0)
     y1 = (numRows - 1) * dr + dmax
     ## ylim(y0, y1)
 
-    ticklocs = [ii*dr for ii in range(numRows)]
+    ticklocs = [ii * dr for ii in range(numRows)]
 
     offsets = np.zeros((numRows, 2), dtype=float)
     offsets[:, 1] = ticklocs
@@ -60,12 +60,12 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0)
     # note could also duplicate time axis then use p.multi_line
     for ii in range(numRows):
         ## segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, i, np.newaxis])))
-        fig.line(t[:],yscale * data[:, ii] + offsets[ii, 1] ) # adds line glyphs to figure
+        fig.line(
+            t[:], yscale * data[:, ii] + offsets[ii, 1]
+        )  # adds line glyphs to figure
 
         # print("segs[-1].shape:", segs[-1].shape)
         ##ticklocs.append(i * dr)
-
-
 
     ##lines = LineCollection(segs, offsets=offsets,
     #                        transOffset=None,
@@ -84,6 +84,7 @@ def stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0)
     ## xlabel('time (s)')
     return fig
 
+
 def test_stackplot_t_1():
     NumRows = 2
 
@@ -96,6 +97,7 @@ def test_stackplot_t_1():
     return fig
     # bplt.show(p)
 
+
 def test_stackplot_t_2():
     NumRows = 2
 
@@ -106,7 +108,9 @@ def test_stackplot_t_2():
     data[:, 1] = 3.0 * np.random.normal(size=1000)
     fig = stackplot_t(data, seconds=5.0, start_time=47)
     return fig
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     # stackplot_t(tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0)
     fig = test_stackplot_t_2()
     bplt.show(fig)

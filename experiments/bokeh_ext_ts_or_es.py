@@ -1,7 +1,7 @@
 from bokeh.core.properties import String, Instance
 from bokeh.models import LayoutDOM, Slider
 
-CODE ="""
+CODE = """
 import {div, empty} from "core/dom"
 import * as p from "core/properties"
 import {LayoutDOM, LayoutDOMView} from "models/layouts/layout_dom"
@@ -56,6 +56,7 @@ Custom.define({
 
 from bokeh.util.compiler import TypeScript
 
+
 class Custom(LayoutDOM):
 
     __implementation__ = TypeScript(CODE)
@@ -63,6 +64,7 @@ class Custom(LayoutDOM):
     text = String(default="Custom text")
 
     slider = Instance(Slider)
+
 
 from bokeh.io import show, output_file
 

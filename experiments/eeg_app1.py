@@ -11,6 +11,7 @@ from pprint import pprint
 import bokeh.plotting as bplt
 import bokeh.models
 import bokeh.layouts as layouts  # column, row, ?grid
+
 # import bokeh.models.widgets as bmw
 # import bokeh.models.sources as bms
 from bokeh.models import FuncTickFormatter
@@ -20,7 +21,7 @@ from bokeh.models import Button
 from bokeh.palettes import RdYlBu3
 from bokeh.plotting import figure, curdoc
 
-import eegvis.montageview 
+import eegvis.montageview
 
 doc = curdoc()
 
@@ -44,14 +45,14 @@ class EEGBrowser:
 
     def __init__(self, page_width_sec=15):
         # data related
-        self.hdf = h5py.File('archive/YA2741BS_1-1+.eeghdf')
-        self.rec = self.hdf['record-0']
-        self.signals = self.rec['signals']
+        self.hdf = h5py.File("archive/YA2741BS_1-1+.eeghdf")
+        self.rec = self.hdf["record-0"]
+        self.signals = self.rec["signals"]
         self.num_rows, self.num_samples = self.signals.shape
-        self.fs = self.rec.attrs['sample_frequency']
+        self.fs = self.rec.attrs["sample_frequency"]
 
         # extract bytes to strings
-        self.electrode_labels = [str(s, 'ascii') for s in self.rec['signal_labels']]
+        self.electrode_labels = [str(s, "ascii") for s in self.rec["signal_labels"]]
 
         # plot display related
         self.page_width_secs = page_width_sec
@@ -64,7 +65,9 @@ class EEGBrowser:
         self.multi_line_glyph = None
 
         # controling models
-        self.data_source = bokeh.models.ColumnDataSource(data=dict(xs=[0], ys=[0]))  # is this ok?
+        self.data_source = bokeh.models.ColumnDataSource(
+            data=dict(xs=[0], ys=[0])
+        )  # is this ok?
 
         self.loc_sec = self.page_width_secs / 2.0  # default start for current location
         self.ch_start = 0  # change this to a list of channels for fancy slicing
@@ -72,7 +75,7 @@ class EEGBrowser:
 
     def create_plot(self):
         self.fig = self.show_epoch_centered()
-        self.fig.xaxis.axis_label = 'seconds'
+        self.fig.xaxis.axis_label = "seconds"
 
     def show(self):
         # self.bk_handle = bplt.show(self.fig,notebook_handle=True)
@@ -89,8 +92,12 @@ class EEGBrowser:
         s0 = self.limit_sample_check(goto_sample - hw)
         s1 = self.limit_sample_check(goto_sample + hw)
         window_samples = s1 - s0
-        data = self.signals[self.ch_start:self.ch_stop, s0:s1]  # note transposed
-        t = self.page_width_secs * np.arange(window_samples, dtype=float) / window_samples
+        data = self.signals[self.ch_start : self.ch_stop, s0:s1]  # note transposed
+        t = (
+            self.page_width_secs
+            * np.arange(window_samples, dtype=float)
+            / window_samples
+        )
         t = t + s0 / self.fs  # t = t + start_time
         # t = t[:s1-s0]
         ## this is not quite right if ch_start is not 0
@@ -104,13 +111,22 @@ class EEGBrowser:
 
         #     # print("segs[-1].shape:", segs[-1].shape)
         #     ##ticklocs.append(i * dr)
-        new_data = {'xs': xs, 'ys': ys}
+        new_data = {"xs": xs, "ys": ys}
         self.data_source.data = new_data
         # print(new_data)
 
         # push_notebook(handle=self.bk_handle)
 
-    def stackplot_t(self, tarray, seconds=None, start_time=None, ylabels=None, yscale=1.0, topdown=True, **kwargs):
+    def stackplot_t(
+        self,
+        tarray,
+        seconds=None,
+        start_time=None,
+        ylabels=None,
+        yscale=1.0,
+        topdown=True,
+        **kwargs
+    ):
         """
         will plot a stack of traces one above the other assuming
         @tarray is an nd-array like object with format
@@ -144,10 +160,13 @@ class EEGBrowser:
             xlm = (0, numSamples)
 
         ticklocs = []
-        if not 'width' in kwargs:
-            kwargs['width'] = 950  # a default width that is wider but can just fit in jupyter
-        fig = bplt.figure(tools="pan,box_zoom,reset,resize,previewsave,lasso_select",
-                          **kwargs)  # subclass of Plot that simplifies plot creation
+        if not "width" in kwargs:
+            kwargs[
+                "width"
+            ] = 950  # a default width that is wider but can just fit in jupyter
+        fig = bplt.figure(
+            tools="pan,box_zoom,reset,resize,previewsave,lasso_select", **kwargs
+        )  # subclass of Plot that simplifies plot creation
 
         ## xlim(*xlm)
         # xticks(np.linspace(xlm, 10))
@@ -173,7 +192,9 @@ class EEGBrowser:
         ys = [yscale * data[:, ii] + ticklocs[ii] for ii in range(numRows)]
         print("creating figure lines")
         # self.data_source.data = dict(xs=xs,ys=ys)
-        self.multi_line_glyph = fig.multi_line(xs=xs, ys=ys)  # , line_color='firebrick')
+        self.multi_line_glyph = fig.multi_line(
+            xs=xs, ys=ys
+        )  # , line_color='firebrick')
         self.data_source = self.multi_line_glyph.data_source
 
         # set the yticks to use axes coords on the y axis
@@ -183,15 +204,22 @@ class EEGBrowser:
             ylabels = ["%d" % ii for ii in range(numRows)]
         ylabel_dict = dict(zip(ticklocs, ylabels))
         # print('ylabel_dict:', ylabel_dict)
-        fig.yaxis.ticker = FixedTicker(ticks=ticklocs)  # can also short cut to give list directly
-        fig.yaxis.formatter = FuncTickFormatter(code="""
+        fig.yaxis.ticker = FixedTicker(
+            ticks=ticklocs
+        )  # can also short cut to give list directly
+        fig.yaxis.formatter = FuncTickFormatter(
+            code="""
             var labels = %s;
             return labels[tick];
-        """ % ylabel_dict)
+        """
+            % ylabel_dict
+        )
 
         return fig
 
-    def stackplot(self, marray, seconds=None, start_time=None, ylabels=None, yscale=1.0, **kwargs):
+    def stackplot(
+        self, marray, seconds=None, start_time=None, ylabels=None, yscale=1.0, **kwargs
+    ):
         """
         will plot a stack of traces one above the other assuming
         @marray contains the data you want to plot
@@ -204,8 +232,14 @@ class EEGBrowser:
         @yscale with increase (mutiply) the signals in each row by this amount
         """
         tarray = np.transpose(marray)
-        return self.stackplot_t(tarray, seconds=seconds, start_time=start_time, ylabels=ylabels, yscale=yscale,
-                                **kwargs)
+        return self.stackplot_t(
+            tarray,
+            seconds=seconds,
+            start_time=start_time,
+            ylabels=ylabels,
+            yscale=yscale,
+            **kwargs
+        )
 
     def show_epoch_centered(self):
 
@@ -231,9 +265,13 @@ class EEGBrowser:
         duration = (s1 - s0) / fs
         start_time_sec = s0 / fs
 
-        return self.stackplot(self.signals[ch0:ch1, s0:s1], start_time=start_time_sec,
-                              seconds=self.page_width_secs,
-                              ylabels=self.ylabels[ch0:ch1], yscale=self.yscale)
+        return self.stackplot(
+            self.signals[ch0:ch1, s0:s1],
+            start_time=start_time_sec,
+            seconds=self.page_width_secs,
+            ylabels=self.ylabels[ch0:ch1],
+            yscale=self.yscale,
+        )
 
     def limit_sample_check(self, x):
         """
@@ -254,22 +292,27 @@ eeg.create_plot()
 # doc.add_root(layouts.column([buttonF,buttonB, eeg.fig]))
 # doc.add_root(eeg.fig)
 
+
 def forward1sec():
     eeg.loc_sec = eeg.limit_sample_check(eeg.loc_sec + 1)
     eeg.update()
+
 
 def forward10():
     eeg.loc_sec = eeg.limit_sample_check(eeg.loc_sec + 10)
     # eeg.loc_sec += 10
     eeg.update()
 
+
 def backward1sec():
     eeg.loc_sec = eeg.limit_sample_check(eeg.loc_sec - 1)
     eeg.update()
-    
+
+
 def backward10(eeg=eeg):
     eeg.loc_sec = eeg.limit_sample_check(eeg.loc_sec - 10)
     eeg.update()
+
 
 buttonF = Button(label="forward 10s")
 buttonF.on_click(forward10)
@@ -284,9 +327,8 @@ buttonB1 = Button(label="<")
 buttonB1.on_click(backward1sec)
 
 
-
-l = layouts.layout([
-    [eeg.fig],
-    [buttonB,buttonB1, buttonF1, buttonF]], sizing_mode='stretch_both') # stretch_both expands to fill size of container
+l = layouts.layout(
+    [[eeg.fig], [buttonB, buttonB1, buttonF1, buttonF]], sizing_mode="stretch_both"
+)  # stretch_both expands to fill size of container
 
 doc.add_root(l)

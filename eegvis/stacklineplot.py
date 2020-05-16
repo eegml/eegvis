@@ -143,12 +143,12 @@ def test_stacklineplot():
     stackplot(data, 10.0)
 
 
-
 def test_stacklineplot_colors():
     numSamples, numRows = 800, 5
     data = np.random.randn(numRows, numSamples)  # test data
     stackplot(data, 10.0, linecolor="green")
-    plt.title('this plot should have green lines')
+    plt.title("this plot should have green lines")
+
 
 def limit_sample_check(x, signals):
     if x < 0:
