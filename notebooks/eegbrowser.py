@@ -20,6 +20,9 @@ import bokeh
 from bokeh.io import output_notebook, push_notebook
 
 output_notebook()
+# %% [markdown]
+# #### This is a demonstration of a simple browser for eegs in the eeg.h5/eeghdf format
+
 # %%
 
 import eegvis.nb_eegview as nb_eegview
@@ -29,7 +32,7 @@ import eeghdf
 # use full browser width
 nb_eegview.setNotebookWidth100()
 # %%
-# load your eeg file
+# load your eeg file (use one that comes with the eeg-hdfstorage package)
 hf = eeghdf.Eeghdf("../../eeg-hdfstorage/data/absence_epilepsy.eeghdf")
 
 # %%
