@@ -11,7 +11,9 @@
 
 ### Status
 - currently this is still experimental, but it has a useful eeg browser for the jupyter notebook
-- basic filtering added, but still need notch and low-pass filter 
+- basic filtering added, with notch and low-pass/high-pass filter 
+
+- version 0.2.1 works with bokeh 2.0.2 !
 
 ### To do
 - [x] matplotlib EEG plotting (firstdraft)
@@ -40,6 +42,8 @@
 - Note, to respond to keyboard commands in bokeh, probably need an extension:
   see: 
   https://groups.google.com/a/continuum.io/forum/#!searchin/bokeh/keypress/bokeh/XCLqg1nyIgE/CU7lJGcuBgAJ
+
+
 
 ### Developer Install
 currently this is developer only package
