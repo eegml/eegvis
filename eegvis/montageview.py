@@ -165,7 +165,7 @@ class MontageView(object):
 
     """
 
-    def __init__(self, montage_labels, rec_labels, reversed_polarity, **kwargs):
+    def __init__(self, montage_labels, rec_labels, reversed_polarity=True, **kwargs):
         self.rec_labels = rec_labels
         self.montage_labels = montage_labels
         self.name = kwargs["name"] if "name" in kwargs else ""
