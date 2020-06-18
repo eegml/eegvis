@@ -15,6 +15,10 @@
 
 - version 0.2.1 works with bokeh 2.0.2 !
 
+### install
+jupyter nbextension enable --py widgetsnbextension  --sys-prefix
+
+
 ### To do
 - [x] matplotlib EEG plotting (firstdraft)
 - [x] basic bokeh EEG plotting (firstdraft)
