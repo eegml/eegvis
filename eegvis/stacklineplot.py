@@ -18,7 +18,7 @@ def stackplot(
     yscale=1.0,
     topdown=False,
     ax=None,
-    **kwargs
+    **kwargs,
 ):
     """
     will plot a stack of traces one above the other assuming
@@ -40,7 +40,7 @@ def stackplot(
         yscale=yscale,
         topdown=topdown,
         ax=ax,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -170,7 +170,7 @@ def show_epoch_centered(
     yscale=1.0,
     topdown=True,
     ax=None,
-    **kwargs
+    **kwargs,
 ):
     """
     @signals array-like object with signals[ch_num, sample_num]
@@ -193,7 +193,9 @@ def show_epoch_centered(
     # ptepoch = int(10 * fs)
     # dp = int(0.5 * ptepoch)
     s0 = limit_sample_check(goto_sample - hw, signals)
-    s1 = limit_sample_check(goto_sample + hw, signals) # TODO: fix note that this does check for end
+    s1 = limit_sample_check(
+        goto_sample + hw, signals
+    )  # TODO: fix note that this does check for end
     duration = (s1 - s0) / fs
     start_time_sec = s0 / fs
 
@@ -205,7 +207,7 @@ def show_epoch_centered(
         yscale=yscale,
         topdown=topdown,
         ax=ax,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -221,7 +223,7 @@ def show_montage_centered(
     yscale=1.0,
     topdown=True,
     ax=None,
-    **kwargs
+    **kwargs,
 ):
     """
     @signals array-like object with signals[ch_num, sample_num]
