@@ -54,6 +54,7 @@ testeeg = np.random.randn(19, Fs * NUM_CHUNKS)
 
 # %%
 # note I have pushed this change to stackplot_t to the eegvis repo
+# but I am leaving the code here for reference
 
 from matplotlib.collections import LineCollection
 
@@ -218,13 +219,15 @@ axarr[1].axis("off")
 # ## Next thing, see about fusing two plots together
 # This looks quite good and the image fills up the EEG plot completely.
 # There is the possibility of some slight misalignment, I suppose but I think it is adequate.
+#
+# I think this approach will work for most of the matplotlib based EEG plots when they need an image to back them.
 
 # %%
 fig, axarr = plt.subplots(1, 1)
 fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
 # print()
 # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
-eegax = stackplot_t(
+eegax = stacklineplot.stackplot_t(
     testeeg.T,
     seconds=clip_length * NUM_CHUNKS,
     ylabels=INCLUDED_CHANNELS,
@@ -257,9 +260,38 @@ axarr.get_xlim()
 # %%
 axarr.get_ylim()
 
-# %%
+# %% [markdown]
+# Here is the same thing but without the interpolation. You can see how the bottom squares don't completely center on the EEG trace of EEG Pz.
+# Could probably change the bottom extent a little to fix this.
 
 # %%
+fig, axarr = plt.subplots(1, 1)
+fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
+# print()
+# print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
+eegax = stacklineplot.stackplot_t(
+    testeeg.T,
+    seconds=clip_length * NUM_CHUNKS,
+    ylabels=INCLUDED_CHANNELS,
+    topdown=True,
+    ax=axarr,
+)
+# to get the image to scale to the plot, reset the extent to match the current limits
+left, right = axarr.get_xlim()
+bottom, top = axarr.get_ylim()
+# choose to overwrite plot with image but use alpha to modify blending
+# if want EEG plot on top then set zorder to lower like 0
+axarr.imshow(
+    heatmap_ex,
+    origin="upper",
+    # interpolation="bilinear",
+    aspect="auto",
+    extent=[left, right, bottom, top],
+    alpha=0.5,
+    zorder=3,
+    cmap="inferno",
+)  # inferno, magma, viridis, cividis, etc
+
 
 # %%
 
