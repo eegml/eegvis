@@ -93,14 +93,14 @@ def stackplot_t(
     if not ax:
         ax = plt.subplot(111)
 
-    plt.xlim(*xlm)
+    ax.set_xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
     dmin = data.min()
     dmax = data.max()
     dr = (dmax - dmin) * 0.7  # Crowd them a bit.
     y0 = dmin
     y1 = (numRows - 1) * dr + dmax
-    plt.ylim(y0, y1)
+    ax.set_ylim(y0, y1)
 
     segs = []
     for ii in range(numRows):
@@ -133,7 +133,7 @@ def stackplot_t(
         ylabels.reverse()  # this acts on ylabels in place
     ax.set_yticklabels(ylabels)
 
-    plt.xlabel("time (s)")
+    ax.set_xlabel("time (s)")
     return ax
 
 
@@ -193,7 +193,7 @@ def show_epoch_centered(
     # ptepoch = int(10 * fs)
     # dp = int(0.5 * ptepoch)
     s0 = limit_sample_check(goto_sample - hw, signals)
-    s1 = limit_sample_check(goto_sample + hw, signals)
+    s1 = limit_sample_check(goto_sample + hw, signals) # TODO: fix note that this does check for end
     duration = (s1 - s0) / fs
     start_time_sec = s0 / fs
 
