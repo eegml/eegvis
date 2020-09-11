@@ -5,12 +5,12 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       format_version: '1.3'
+#       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3.6 [conda metal1]
+#     display_name: pyt16:pytorch 1.6+
 #     language: python
-#     name: metal1
+#     name: pyt16
 # ---
 
 # %% [markdown]
@@ -258,10 +258,43 @@ axarr.get_xlim()
 axarr.get_ylim()
 
 # %%
+import colorcet
+
+fig, axarr = plt.subplots(1, 1)
+fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
+# print()
+# print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
+eegax = stackplot_t(
+    testeeg.T,
+    seconds=clip_length * NUM_CHUNKS,
+    ylabels=INCLUDED_CHANNELS,
+    topdown=True,
+    ax=axarr,
+)
+# to get the image to scale to the plot, reset the extent to match the current limits
+left, right = axarr.get_xlim()
+bottom, top = axarr.get_ylim()
+# choose to overwrite plot with image but use alpha to modify blending
+# if want EEG plot on top then set zorder to lower like 0
+axarr.imshow(
+    heatmap_ex,
+    origin="upper",
+    interpolation="bilinear",
+    aspect="auto",
+    extent=[left, right, bottom, top],
+    alpha=0.5,
+    zorder=3,
+    cmap=colorcet.cm.bmw,
+)  # inferno, magma, viridis, cividis, etc 
+# colorcet.cm.fire, colorcet.cm.blues, gray, bgwy, bmw, etc. 
 
 # %%
+from colorcet.plotting import swatch, swatches
+import holoviews as hv
+hv.extension('matplotlib')
 
 # %%
+swatches()
 
 # %%
 

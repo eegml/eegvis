@@ -17,8 +17,21 @@ from bokeh.models import Button, Div, Selection, Spinner, CustomJS
 import bokeh.layouts
 
 #%%
-import bokeh.plotting as bplt
+import bokeh.plotting
 from bokeh.models import FuncTickFormatter, Range1d
+
+# widgets
+from bokeh.models import (
+    Button,
+    Div,
+    Select,
+    Spinner,
+    RadioGroup,
+    CheckboxGroup,
+    CustomJS,
+)
+
+#
 from bokeh.models.tickers import FixedTicker, SingleIntervalTicker
 
 from . import montageview
@@ -98,47 +111,6 @@ def setNotebookWidth100():
     # cf jupyter themes https://github.com/dunovank/jupyter-themes
     # jt -t oceans16 -f roboto -fs 12 -cellw 100%
     # https://stackoverflow.com/questions/21971449/how-do-i-increase-the-cell-width-of-the-jupyter-ipython-notebook-in-my-browser
-
-
-class MinimalEEGRecord:
-    """
-    a basic Minimal EEG/MEG signal has uniform sampling, continuous time
-
-    essential parts:
-
-    @signals - acts like a numpy ndarray of shape = (number_of_channels, number_of_samples)
-    @sample_frequency - float in Hz sampling rate of the signal 
-
-    optional parts: useful if you have them
-
-    @electrode_labels
-    @electrode_montage_labels
-    @electrode_montage_factories
-    @electrode_positions3D
-    @start_dtime
-    @end_dtime
-
-    """
-
-    def __init__(
-        self,
-        signals,
-        sample_frequency=1.0,
-        electrode_labels=None,
-        electrode_montage_labels=None,
-        electrode_montage_factories=None,
-        electrode_positions3D=None,
-        start_dtime=None,
-        end_dtime=None,
-    ):
-
-        self.signals = signals
-        self.fs = sample_frequency
-        self.electrode_labels = electrode_labels
-        self.montage_labels = montage_labels
-        self.electrode_positions3D = electrode_positions3D
-        self.start_dtime = start_dtime
-        self.end_dtime = end_dtime
 
 
 class EeghdfBrowser:
@@ -336,7 +308,7 @@ class EeghdfBrowser:
     #         self.multi_line_glyph = None
 
     def plot(self):
-
+        """create a Bokeh figure to hold EEG"""
         self.fig = self.show_montage_centered(
             self.signals,
             self.loc_sec,
@@ -353,18 +325,19 @@ class EeghdfBrowser:
         self.fig.xgrid.ticker = SingleIntervalTicker(
             interval=1.0
         )  #  bokeh.models.tickers.SingleIntervalTicker
+        return self.fig
 
     def show_for_bokeh_app(self):
         """try running intside a bokeh app, so don't need notebook stuff"""
         self.plot()
 
-    def show(self):
+    def bokeh_show(self):
         """
         meant to run in notebook so sets up handles
         """
         self.plot()
         self.register_top_bar_ui()  # create the buttons
-        self.bk_handle = bplt.show(self.fig, notebook_handle=True)
+        self.bk_handle = bokeh.plotting.show(self.fig, notebook_handle=True)
         self.register_bottom_bar_ui()
 
     def update(self):
@@ -416,12 +389,11 @@ class EeghdfBrowser:
         # self.data_source.data['xs'] = xs
         # self.data_source.data['ys'] = ys
 
-        self.push_notebook()
+        #self.push_notebook()
+        # do pane.Bokeh::param.trigger('object') on pane holding EEG waveform plot
+        # in notebook updates without a trigger
 
-    def push_notebook(self):
-        if self.bk_handle:
-            push_notebook(handle=self.bk_handle)
-
+    
     def stackplot_t(
         self,
         tarray,
@@ -472,7 +444,8 @@ class EeghdfBrowser:
 
         if not self.fig:
             # print('creating figure')
-            fig = bplt.figure(
+            # bokeh.plotting.figure creases a subclass of plot
+            fig = bokeh.plotting.figure(
                 title=self.title,
                 # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
                 tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
@@ -795,10 +768,11 @@ class EeghdfBrowser:
 
         if not self.fig:
             # print('creating figure')
-            fig = bplt.figure(
+            fig = bokeh.plotting.figure(
                 title=self.title,
                 # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
-                tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
+                #tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
+                tools="crosshair",
                 **kwargs,
             )  # subclass of Plot that simplifies plot creation
             self.fig = fig
@@ -895,7 +869,7 @@ class EeghdfBrowser:
     def register_top_bar_ui(self):
 
         # mlayout = ipywidgets.Layout()
-        mlayout.width = "15em"
+        # mlayout.width = "15em"
         self.ui_montage_dropdown = Select(
             # options={'One': 1, 'Two': 2, 'Three': 3},
             options=self.montage_options.keys(),  # or .montage_optins.keys()
@@ -1027,18 +1001,13 @@ class EeghdfBrowser:
         )
 
         def on_dropdown_change(attr, oldvalue, newvalue, parent=self):
-            print(
-                f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
-            )
-            # if change["name"] == "value":  # the value changed
-            #    if change["new"] != change["old"]:
-            # print('*** should change the montage to %s from %s***' % (change['new'], change['old']))
+            # print(
+            #     f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
+            # )
 
-        #         parent.update_montage(
-        #             change["new"]
-        #         )  # change to the montage keyed by change['new']
-        #         parent.update_plot_after_montage_change()
-        #         parent.update()  #
+            parent.update_montage(newvalue)                   
+            parent.update_plot_after_montage_change()
+            parent.update()  
 
         self.ui_montage_dropdown.on_change("value", on_dropdown_change)
 
@@ -1055,15 +1024,11 @@ class EeghdfBrowser:
         )
 
         def lf_dropdown_on_change(attr, oldvalue, newvalue, parent=self):
-            print(
-                f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
-            )
-
-            # if change["name"] == "value":  # the value changed
-            #    if change["new"] != change["old"]:
-            #        # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
-            #        parent.current_hp_filter = parent._highpass_cache[change["new"]]
-            #        parent.update()  #
+            # print(
+            #     f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
+            # )
+            parent.current_hp_filter = parent._highpass_cache[newvalue]
+            parent.update()  #
 
         self.ui_low_freq_filter_dropdown.on_change("value", lf_dropdown_on_change)
 
@@ -1077,29 +1042,29 @@ class EeghdfBrowser:
         )
 
         def hf_dropdown_on_change(attr, oldvalue, newvalue, parent=self):
-            print(
-                f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
-            )
+            # print(
+            #     f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
+            # )
             # if change["name"] == "value":  # the value changed
             #    if change["new"] != change["old"]:
             #        # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
-            #        self.current_lp_filter = self._lowpass_cache[change["new"]]
-            #        self.update()  #
+            self.current_lp_filter = self._lowpass_cache[newvalue]
+            self.update()  #
 
         self.ui_high_freq_filter_dropdown.on_change("value", hf_dropdown_on_change)
 
         self.ui_notch_option = CheckboxGroup(
-            labels=["60Hz Notch", "50Hz Notch"], max_width=100,  # disabled=False
+            labels=["60Hz Notch"]
+            #, "50Hz Notch"], max_width=100,  # disabled=False
         )
 
         def notch_change(newvalue, parent=self):
-            print(f"on_dropdown_change: {repr(newvalue)}, {parent}")
-            # if change["name"] == "value":
-            #    if change["new"]:
-            #        self.current_notch_filter = self._notch_filter
-            #    else:
-            #       self.current_notch_filter = None
-            #    self.update()
+            #print(f"on_dropdown_change: {repr(newvalue)}, {parent}")
+            if newvalue == [0]:
+                self.current_notch_filter = self._notch_filter
+            elif newvalue == []:
+                self.current_notch_filter = None
+            self.update()
 
         self.ui_notch_option.on_click(notch_change)
 
@@ -1118,13 +1083,12 @@ class EeghdfBrowser:
         )
 
         def ui_gain_on_change(attr, oldvalue, newvalue, parent=self):
-            print(
-                f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
-            )
-            # if change["name"] == "value":
-            #    if change["new"] != change["old"]:
-            #        self.yscale = float(change["new"])
-            #        self.update()
+            # print(
+            #     f"ui_gain_on_change: {repr(oldvalue)},\n {repr(newvalue)}, {repr(type(newvalue))},{parent}"
+            # )
+            
+            self.yscale = float(newvalue)
+            self.update()
 
         self.ui_gain_bounded_float.on_change("value", ui_gain_on_change)
 
@@ -1145,12 +1109,18 @@ class EeghdfBrowser:
         return candidate
 
     def register_bottom_bar_ui(self):
-        self.ui_buttonf = ipywidgets.Button(description="go forward 10s")
-        self.ui_buttonback = ipywidgets.Button(description="go backward 10s")
-        self.ui_buttonf1 = ipywidgets.Button(description="forward 1 s")
-        self.ui_buttonback1 = ipywidgets.Button(description="back 1 s")
+        # self.ui_buttonf = ipywidgets.Button(description="go forward 10s")
+        self.ui_buttonf = Button(label="go forward 10s")
+        # self.ui_buttonback = ipywidgets.Button(description="go backward 10s")
+        self.ui_buttonback = Button(label="go backward 10s")
+        # self.ui_buttonf1 = ipywidgets.Button(description="forward 1 s")
+        self.ui_buttonf1 = Button(label="forward 1 s")
+        # self.ui_buttonback1 = ipywidgets.Button(description="back 1 s")
+        self.ui_buttonback1 = Button(label="back 1 s")
+        # could put goto input here
 
         def go_forward(b, parent=self):
+            #print(b, parent)
             self.loc_sec = self._limit_time_check(self.loc_sec + 10)
             self.update()
 
@@ -1174,22 +1144,16 @@ class EeghdfBrowser:
 
         self.ui_buttonback1.on_click(go_backward1)
 
-        def go_to_handler(change, parent=self):
+        #self.ui_current_location = FloatInput...  # keep in sync with jslink?
+        def go_to_handler(attr, oldvalue, newvalue, parent=self):
             # print("change:", change)
-            if change["name"] == "value":
-                self.loc_sec = change["new"]
-                self.update()
+            self.loc_sec = self._limit_time_check(float(newvalue))
+            self.update()
 
-        display(
-            ipywidgets.HBox(
-                [
-                    self.ui_buttonback,
-                    self.ui_buttonf,
-                    self.ui_buttonback1,
-                    self.ui_buttonf1,
-                ]
-            )
+        self.ui_bottom_bar_layout = bokeh.layouts.row(
+            self.ui_buttonback, self.ui_buttonf, self.ui_buttonback1, self.ui_buttonf1,
         )
+        return self.ui_bottom_bar_layout
         # print('displayed buttons')
 
     def update_montage(self, montage_name):
