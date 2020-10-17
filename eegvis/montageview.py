@@ -773,7 +773,7 @@ class CommonAvgRefMontageView(MontageView):
         "F8-AVG",
         "T4-AVG",
         "T6-AVG",
-        # 
+        #
         "Fp1-AVG",
         "F3-AVG",
         "C3-AVG",
@@ -828,7 +828,6 @@ class CommonAvgRefMontageView(MontageView):
             self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity
         )
         self.set_matrix(self.V)  # define positive part of connection matrix
-        self.setall_to_avg(self.V) # subtract off average of other values
         if reversed_polarity:
             self.V = (-1) * self.V
 
@@ -836,7 +835,10 @@ class CommonAvgRefMontageView(MontageView):
         self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def setall_to_avg(self, V):
-        N = len(self.AVG_REFERENCE_LABELS) - 1  # is this right ? or should it be the full N, as it is it is the avg of all the other electrodes
+        """note this overwrites all values of matrix, so do this first"""
+        N = (
+            len(self.AVG_REFERENCE_LABELS) - 1
+        )  # is this right ? or should it be the full N, as it is it is the avg of all the other electrodes
         avg = 1.0 / N
         for label in self.CAR_LABELS:
             V.loc[label, :] = -avg
