@@ -827,8 +827,8 @@ class CommonAvgRefMontageView(MontageView):
         super().__init__(
             self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity
         )
-        self.tcp_set_matrix(self.V)  # define connection matrix
-
+        self.set_matrix(self.V)  # define positive part of connection matrix
+        self.setall_to_avg(self.V) # subtract off average of other values
         if reversed_polarity:
             self.V = (-1) * self.V
 
@@ -838,8 +838,8 @@ class CommonAvgRefMontageView(MontageView):
     def setall_to_avg(self, V):
         N = len(self.AVG_REFERENCE_LABELS) - 1  # is this right ? or should it be the full N, as it is it is the avg of all the other electrodes
         avg = 1.0 / N
-        for label in self.AVG_REFERENCE_LABELS:
-            V[label, :] = -avg
+        for label in self.CAR_LABELS:
+            V.loc[label, :] = -avg
 
     def set_matrix(self, V):
         self.setall_to_avg(V)
