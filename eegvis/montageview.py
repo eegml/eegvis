@@ -767,22 +767,25 @@ class CommonAvgRefMontageView(MontageView):
         "Fp1-AVG",
         "F7-AVG",
         "T3-AVG",
-        "T5-O1",
+        "T5-AVG",
         # spacer
         "Fp2-AVG",
         "F8-AVG",
         "T4-AVG",
         "T6-AVG",
+        #
         "Fp1-AVG",
         "F3-AVG",
         "C3-AVG",
         "P3-AVG",
         "O1-AVG",
+        #
         "Fp2-AVG",
         "F4-AVG",
         "C4-AVG",
         "P4-AVG",
         "O2-AVG",
+        #
         "Fz-AVG",
         "Cz-AVG",
         "Pz-AVG",
@@ -799,16 +802,19 @@ class CommonAvgRefMontageView(MontageView):
                 "F8",
                 "T4",
                 "T6",
+                # 
                 "Fp1",
                 "F3",
                 "C3",
                 "P3",
                 "O1",
+                #
                 "Fp2",
                 "F4",
                 "C4",
                 "P4",
                 "O2",
+                #
                 "Fz",
                 "Cz",
                 "Pz",
