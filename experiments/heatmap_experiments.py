@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.4.2
-#   kernelspec:
-#     display_name: pyt16:pytorch 1.6+
-#     language: python
-#     name: pyt16
-# ---
-
 # %% [markdown]
 # # Heatmap experiments
 # In our work, we often would like to show a "heatmap" superimposed with an EEG. This may represent saliency, or a feature or where attention is directed.

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # %% put code to view whole eeg files here
-# converting from mixed bokeh/ipywidgets using push_notebook() for updates in notebook
+# moving to using panel widgets and layout instead of bokeh stuff
 # to bokeh app which runs inside a panel.pane.Bokeh()
-# the first effort will try to use just Bokeh wigets
-# it could be that it would be better to use panel widgets instead with Param > traitlet?
+# compare with eegbokeh.py which focuses on using bokeh widgets
 from __future__ import absolute_import, print_function, division, unicode_literals
 from collections import OrderedDict
 import pprint
@@ -11,7 +10,10 @@ import pprint
 import numpy as np
 
 # import ipywidgets # use bokeh widgets instead of ipywidgets to reduce dependencies
-from bokeh.models import Button, Div, Selection, Spinner, CustomJS
+# try panel instead
+import panel as pn
+import panel.widgets
+
 
 # get layouts, start ith row, column
 import bokeh.layouts
@@ -31,6 +33,8 @@ from bokeh.models import (
     CustomJS,
 )
 
+# import panel as pn
+# from panel.widgets import Button, Select, Spinner, RadioBoxGroup
 #
 from bokeh.models.tickers import FixedTicker, SingleIntervalTicker
 
@@ -307,7 +311,7 @@ class EeghdfBrowser:
     #         self.line_glyphs = []
     #         self.multi_line_glyph = None
 
-    def plot(self):
+    def plot(self, **kwargs):
         """create a Bokeh figure to hold EEG"""
         self.fig = self.show_montage_centered(
             self.signals,
@@ -319,6 +323,7 @@ class EeghdfBrowser:
             ylabels=self.current_montage_instance.montage_labels,
             yscale=self.yscale,
             montage=self.current_montage_instance,
+            **kwargs
         )
         self.fig.xaxis.axis_label = "seconds"
         # make the xgrid mark every second
@@ -389,11 +394,10 @@ class EeghdfBrowser:
         # self.data_source.data['xs'] = xs
         # self.data_source.data['ys'] = ys
 
-        #self.push_notebook()
+        # self.push_notebook()
         # do pane.Bokeh::param.trigger('object') on pane holding EEG waveform plot
         # in notebook updates without a trigger
 
-    
     def stackplot_t(
         self,
         tarray,
@@ -448,7 +452,8 @@ class EeghdfBrowser:
             fig = bokeh.plotting.figure(
                 title=self.title,
                 # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
-                tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
+                # tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
+                tools="",
                 **kwargs,
             )  # subclass of Plot that simplifies plot creation
             self.fig = fig
@@ -771,8 +776,8 @@ class EeghdfBrowser:
             fig = bokeh.plotting.figure(
                 title=self.title,
                 # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
-                #tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
-                tools="crosshair",
+                # tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
+                tools="",  # crosshair
                 **kwargs,
             )  # subclass of Plot that simplifies plot creation
             self.fig = fig
@@ -1005,9 +1010,9 @@ class EeghdfBrowser:
             #     f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
             # )
 
-            parent.update_montage(newvalue)                   
+            parent.update_montage(newvalue)
             parent.update_plot_after_montage_change()
-            parent.update()  
+            parent.update()
 
         self.ui_montage_dropdown.on_change("value", on_dropdown_change)
 
@@ -1055,11 +1060,11 @@ class EeghdfBrowser:
 
         self.ui_notch_option = CheckboxGroup(
             labels=["60Hz Notch"]
-            #, "50Hz Notch"], max_width=100,  # disabled=False
+            # , "50Hz Notch"], max_width=100,  # disabled=False
         )
 
         def notch_change(newvalue, parent=self):
-            #print(f"on_dropdown_change: {repr(newvalue)}, {parent}")
+            # print(f"on_dropdown_change: {repr(newvalue)}, {parent}")
             if newvalue == [0]:
                 self.current_notch_filter = self._notch_filter
             elif newvalue == []:
@@ -1067,32 +1072,52 @@ class EeghdfBrowser:
             self.update()
 
         self.ui_notch_option.on_click(notch_change)
-
-        self.ui_gain_bounded_float = Spinner(
+        self.ui_gain_bounded_float = pn.widgets.Spinner(
+            name="gain",
             value=1.0,
-            # min=0.001,
-            # max=1000.0,
-            step=0.1,  # Interval(interval_type: (Int, Float), start, end, default=None, help=None)
-            # page_step_multiplier=2.0, # may be supported in bokeh 2.2
-            title="gain",
-            # value_throtted=(float|int)
-            # disabled=False,
-            # continuous_update=False,  # only trigger when done
-            # layout=flayout,
-            width=100,
+            step=0.1,
+            start=0.01,
+            end=100.0,
+            min_width=50,
+            max_width=80,
+            width_policy="fit",
         )
+        # self.ui_gain_bounded_float = Spinner(
+        #     value=1.0,
+        #     # min=0.001,
+        #     # max=1000.0,
+        #     step=0.1,  # Interval(interval_type: (Int, Float), start, end, default=None, help=None)
+        #     # page_step_multiplier=2.0, # may be supported in bokeh 2.2
+        #     title="gain",
+        #     # value_throtted=(float|int)
+        #     # disabled=False,
+        #     # continuous_update=False,  # only trigger when done
+        #     # layout=flayout,
+        #     width=100,
+        # )
 
         def ui_gain_on_change(attr, oldvalue, newvalue, parent=self):
             # print(
             #     f"ui_gain_on_change: {repr(oldvalue)},\n {repr(newvalue)}, {repr(type(newvalue))},{parent}"
             # )
-            
+
             self.yscale = float(newvalue)
             self.update()
 
-        self.ui_gain_bounded_float.on_change("value", ui_gain_on_change)
+        def ui_gain_watcher(ev, parent=self):
+            "guess how to write a call back for a param watch "
+            # print(repr(ev), repr(ev.new))
+            #print(f"updating {self.yscale} -> {ev.new}")
+            self.yscale = float(ev.new)
+            self.update()
 
-        self.top_bar_layout = bokeh.layouts.row(
+        self.ui_gain_bounded_float.param.watch(
+            ui_gain_watcher, ["value"], onlychanged=True
+        )  # (callback, ['options','value'], onlychanged=False)
+        # self.ui_gain_bounded_float.on_change("value", ui_gain_on_change)
+
+        # self.top_bar_layout = bokeh.layouts.row(
+        self.top_bar_layout = pn.Row(
             self.ui_montage_dropdown,
             self.ui_low_freq_filter_dropdown,
             self.ui_high_freq_filter_dropdown,
@@ -1110,17 +1135,18 @@ class EeghdfBrowser:
 
     def register_bottom_bar_ui(self):
         # self.ui_buttonf = ipywidgets.Button(description="go forward 10s")
-        self.ui_buttonf = Button(label="go forward 10s")
+        BUTTON_WIDTH = 150
+        self.ui_buttonf = Button(label="go forward 10s", width=BUTTON_WIDTH)
         # self.ui_buttonback = ipywidgets.Button(description="go backward 10s")
-        self.ui_buttonback = Button(label="go backward 10s")
+        self.ui_buttonback = Button(label="go backward 10s", width=BUTTON_WIDTH)
         # self.ui_buttonf1 = ipywidgets.Button(description="forward 1 s")
-        self.ui_buttonf1 = Button(label="forward 1 s")
+        self.ui_buttonf1 = Button(label="forward 1 s", width=BUTTON_WIDTH)
         # self.ui_buttonback1 = ipywidgets.Button(description="back 1 s")
-        self.ui_buttonback1 = Button(label="back 1 s")
+        self.ui_buttonback1 = Button(label="back 1 s", width=BUTTON_WIDTH)
         # could put goto input here
 
         def go_forward(b, parent=self):
-            #print(b, parent)
+            # print(b, parent)
             self.loc_sec = self._limit_time_check(self.loc_sec + 10)
             self.update()
 
@@ -1144,7 +1170,7 @@ class EeghdfBrowser:
 
         self.ui_buttonback1.on_click(go_backward1)
 
-        #self.ui_current_location = FloatInput...  # keep in sync with jslink?
+        # self.ui_current_location = FloatInput...  # keep in sync with jslink?
         def go_to_handler(attr, oldvalue, newvalue, parent=self):
             # print("change:", change)
             self.loc_sec = self._limit_time_check(float(newvalue))
@@ -1337,3 +1363,5 @@ class EegBrowser(EeghdfBrowser):
 # write a class with a plot at the bottom that scrolls either stays fixed or scrolls along with the eeg
 # class EeghdfBrowserWithPlot(EeghdfBrowser):
 #    pass
+
+# %%
