@@ -6,3 +6,5 @@ bokeh>=0.12.16 # need to update for bokeh 1.0 !!!
 matplotlib
 h5py
 git+https://github.com/eegml/eegml-signal.git
+panel  # from pyviz project, allows for notebook/web page 
+# eeghdf
