@@ -45,6 +45,8 @@ from bokeh.io import push_notebook
 
 import eegml_signal.filters as esfilters
 
+import signalslot
+
 #%%
 
 # """
@@ -164,6 +166,7 @@ class EeghdfBrowser:
             self.loc_sec = start_seconds
 
         # self.init_kwargs = kwargs
+        self.move_signal = signalslot.Signal(args=['move_sec'])
 
         # other ones
         self.yscale = yscale
@@ -1148,24 +1151,28 @@ class EeghdfBrowser:
         def go_forward(b, parent=self):
             # print(b, parent)
             self.loc_sec = self._limit_time_check(self.loc_sec + 10)
+            self.move_signal.emit(move_sec=10)
             self.update()
 
         self.ui_buttonf.on_click(go_forward)
 
         def go_backward(b):
             self.loc_sec = self._limit_time_check(self.loc_sec - 10)
+            self.move_signal.emit(move_sec=-10)
             self.update()
 
         self.ui_buttonback.on_click(go_backward)
 
         def go_forward1(b, parent=self):
             self.loc_sec = self._limit_time_check(self.loc_sec + 1)
+            self.move_signal.emit(move_sec=1)
             self.update()
 
         self.ui_buttonf1.on_click(go_forward1)
 
         def go_backward1(b, parent=self):
             self.loc_sec = self._limit_time_check(self.loc_sec - 1)
+            self.move_signal.emit(move_sec=-1)
             self.update()
 
         self.ui_buttonback1.on_click(go_backward1)
