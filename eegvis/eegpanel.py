@@ -125,6 +125,8 @@ class EeghdfBrowser:
 
     just use the raw hdf file and conventions for now
 
+    Signals: move_sec
+    Slots: None
     """
 
     def __init__(
