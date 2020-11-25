@@ -309,7 +309,7 @@ def stackplot_t_with_heatmap(
     # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
     eegax = stackplot_t(
         tarray,
-        seconds=seconds, # this looks like a mistake!!!
+        seconds=seconds,  # this looks like a mistake!!!
         ylabels=ylabels,
         topdown=True,
         ax=ax,
@@ -373,13 +373,7 @@ def stackplot_t_with_rgba_heatmap(
         # fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
     # print()
     # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
-    eegax = stackplot_t(
-        tarray,
-        seconds=seconds,
-        ylabels=ylabels,
-        topdown=True,
-        ax=ax,
-    )
+    eegax = stackplot_t(tarray, seconds=seconds, ylabels=ylabels, topdown=True, ax=ax,)
     # to get the image to scale to the plot, reset the extent to match the current limits
     left, right = eegax.get_xlim()
     bottom, top = eegax.get_ylim()
