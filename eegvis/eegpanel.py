@@ -126,7 +126,7 @@ class EeghdfBrowser:
     just use the raw hdf file and conventions for now
 
     Signals: move_sec
-    Slots: None
+    Slots: receive_overviewloc_update
     """
 
     def __init__(
@@ -168,7 +168,7 @@ class EeghdfBrowser:
             self.loc_sec = start_seconds
 
         # self.init_kwargs = kwargs
-        self.move_signal = signalslot.Signal(args=['move_sec'])
+        self.move_signal = signalslot.Signal(args=["move_sec"])
 
         # other ones
         self.yscale = yscale
@@ -235,6 +235,10 @@ class EeghdfBrowser:
             notch_freq=60.0, fs=self.fs, Q=60
         )
         self.current_notch_filter = None
+
+    def receive_overviewloc_update(self, overview_loc, **kwargs):
+        self.loc_sec = overview_loc
+        self.update()
 
     @property
     def signals(self):
@@ -328,7 +332,7 @@ class EeghdfBrowser:
             ylabels=self.current_montage_instance.montage_labels,
             yscale=self.yscale,
             montage=self.current_montage_instance,
-            **kwargs
+            **kwargs,
         )
         self.fig.xaxis.axis_label = "seconds"
         # make the xgrid mark every second
@@ -1112,7 +1116,7 @@ class EeghdfBrowser:
         def ui_gain_watcher(ev, parent=self):
             "guess how to write a call back for a param watch "
             # print(repr(ev), repr(ev.new))
-            #print(f"updating {self.yscale} -> {ev.new}")
+            # print(f"updating {self.yscale} -> {ev.new}")
             self.yscale = float(ev.new)
             self.update()
 
