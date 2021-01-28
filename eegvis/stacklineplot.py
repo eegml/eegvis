@@ -54,6 +54,7 @@ def stackplot_t(
     ax=None,
     linecolor=None,
     linestyle=None,
+    ygain_uv=None,
 ):
     """
     will plot a stack of traces one above the other assuming
@@ -95,18 +96,41 @@ def stackplot_t(
         # plt.
     ax.set_xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
+    # this is where I'm doing the y-axis scaling
+    # let's supose there are so many "mm" per height of page
     dmin = data.min()
     dmax = data.max()
-    dr = (dmax - dmin) * 0.7  # Crowd them a bit.
-    y0 = dmin
-    y1 = (numRows - 1) * dr + dmax
-    ax.set_ylim(y0, y1)
+    if not ygain_uv:
+
+        dr = (dmax - dmin) * 0.7  # Crowd them a bit.
+        y0 = dmin
+        y1 = (numRows - 1) * dr + dmax
+        ax.set_ylim(y0, y1)
+    if ygain_uv:  # in this case we have an absolute number of y-units per page
+        # this is again to setting 7 uV per mm on a page or where 7 may vary
+        myfig = ax.get_figure()
+        figsizex_inch, figsizey_inch = myfig.get_size_inches()
+        dpi = myfig.dpi
+        dpmm = dpi / 25.4
+
+        figsizex_mm = 25.4 * figsizex_inch
+        figsizey_mm = 25.4 * figsizey_inch
+
+        # sensetivity such as 7 uV/mm is
+        total_uV = ygain_uv * figsizey_mm
+        # assume data is in uV
+        # is lower lim of y still dmin? No
+        perchan_uV = total_uV / numRows
+        dr = perchan_uV
+        y0 = 0
+        y1 = total_uV
+        ax.set_ylim(y0, y1)
 
     segs = []
     for ii in range(numRows):
         segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, ii, np.newaxis])))
         # print("segs[-1].shape:", segs[-1].shape)
-        ticklocs.append(ii * dr)
+        ticklocs.append(ii * dr + dr / 2.0)
 
     offsets = np.zeros((numRows, 2), dtype=float)
     offsets[:, 1] = ticklocs
@@ -263,6 +287,7 @@ def show_montage_centered(
         yscale=yscale,
         topdown=topdown,
         ax=ax,
+        **kwargs,
     )
 
 
