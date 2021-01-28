@@ -54,6 +54,7 @@ def stackplot_t(
     ax=None,
     linecolor=None,
     linestyle=None,
+    ysensitivity=None,
 ):
     """
     will plot a stack of traces one above the other assuming
@@ -67,6 +68,11 @@ def stackplot_t(
     @yscale with increase (mutiply) the signals in each row by this amount
 
     @ax is the option to pass in a matplotlib axes obj to draw with
+    
+    ysensitivity can be set to an absolute sensitivity along the y dimension in
+      terms of millimeters of the plot
+      for EEG this might be 7.0 or 10.0 to stand in for 7uV/mm
+      this prevents the automatic scaling to the data size that is the default
     """
     data = tarray
     numSamples, numRows = tarray.shape
@@ -95,18 +101,49 @@ def stackplot_t(
 
     ax.set_xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
+    # let's supose there are so many "mm" per height of page
+
     dmin = data.min()
     dmax = data.max()
-    dr = (dmax - dmin) * 0.7  # Crowd them a bit.
-    y0 = dmin
-    y1 = (numRows - 1) * dr + dmax
-    ax.set_ylim(y0, y1)
 
-    segs = []
-    for ii in range(numRows):
-        segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, ii, np.newaxis])))
-        # print("segs[-1].shape:", segs[-1].shape)
-        ticklocs.append(ii * dr)
+    if not ysensitivity:
+        dr = (dmax - dmin) * 0.7  # Crowd them a bit.
+        y0 = dmin
+        y1 = (numRows - 1) * dr + dmax
+        ax.set_ylim(y0, y1)
+        segs = []
+        for ii in range(numRows):
+            segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, ii, np.newaxis])))
+            # print("segs[-1].shape:", segs[-1].shape)
+            ticklocs.append(ii * dr)
+    elif ysensitivity:  # in this case we have an absolute number of y-units per page
+        # this is again to setting 7 uV per mm on a page or where 7 may vary
+        # basically it figure out how many mm high the plot is, figures out how many
+        # uV that covers, then divides up the available unit space among the
+        # channels. Would need to do something differen tif wanted to show a subset
+        # of channels then scroll them
+        myfig = ax.get_figure()
+        figsizex_inch, figsizey_inch = myfig.get_size_inches()
+        dpi = myfig.dpi
+        dpmm = dpi / 25.4
+
+        figsizex_mm = 25.4 * figsizex_inch
+        figsizey_mm = 25.4 * figsizey_inch
+       
+        total_uV = ysensitivity * figsizey_mm
+        # assume data is in uV
+        # is lower lim of y still dmin? No
+        perchan_uV = total_uV / numRows
+        dr = perchan_uV
+        y0 = 0
+        y1 = total_uV
+        ax.set_ylim(y0, y1)
+
+        segs = []
+        for ii in range(numRows):
+            segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, ii, np.newaxis])))
+            # print("segs[-1].shape:", segs[-1].shape)
+            ticklocs.append(ii * dr + dr/2.0)
 
     offsets = np.zeros((numRows, 2), dtype=float)
     offsets[:, 1] = ticklocs
@@ -263,4 +300,5 @@ def show_montage_centered(
         yscale=yscale,
         topdown=topdown,
         ax=ax,
+        **kwargs,
     )
