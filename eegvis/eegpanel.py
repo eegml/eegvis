@@ -24,6 +24,7 @@ from bokeh.models import FuncTickFormatter, Range1d
 
 # widgets
 from bokeh.models import (
+    BoxAnnotation,
     Button,
     Div,
     Select,
@@ -125,13 +126,14 @@ class EeghdfBrowser:
 
     just use the raw hdf file and conventions for now
 
-    Signals: move_sec
+    Signals: move_sec, file_name
     Slots: receive_overviewloc_update
     """
 
     def __init__(
         self,
-        eeghdf_file,
+        eeghdf_file_names,
+        eeghdf_files,
         page_width_seconds=10.0,
         start_seconds=-1,
         montage="trace",
@@ -143,16 +145,17 @@ class EeghdfBrowser:
         """
         @eegfile is an eeghdf.Eeghdf() class instance representing the file
         @montage is either a string in the standard list or a montageview factory
-        @eeghdf_file - an eeghdf.Eeeghdf instance
+        @eeghdf_files - a list of eeghdf.Eeeghdf instances
         @page_width_seconds = how big to make the view in seconds
         @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
         @start_seconds - center view on this point in time
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
         """
-
-        self.eeghdf_file = eeghdf_file
-        self.update_eeghdf_file(eeghdf_file, montage, montage_options)
+        self.eeghdf_file_names = eeghdf_file_names
+        self.eeghdf_files = eeghdf_files
+        self.eeghdf_file = eeghdf_files[0]
+        self.update_eeghdf_file(self.eeghdf_file, montage, montage_options)
 
         # display related
         self.page_width_seconds = page_width_seconds
@@ -169,6 +172,7 @@ class EeghdfBrowser:
 
         # self.init_kwargs = kwargs
         self.move_signal = signalslot.Signal(args=["move_sec"])
+        self.filename_signal = signalslot.Signal(args=["filename"])
 
         # other ones
         self.yscale = yscale
@@ -396,16 +400,11 @@ class EeghdfBrowser:
         ys = [self.yscale * data[ii, :] + self.ticklocs[ii] for ii in range(numRows)]
         # print('len(xs):', len(xs), 'len(ys):', len(ys))
 
-        # is this the best way to update the data? should it be done both at once
-        # {'xs':xs, 'ys':ys}
         self.data_source.data.update(dict(xs=xs, ys=ys))  # could just use equals?
-        # old way
-        # self.data_source.data['xs'] = xs
-        # self.data_source.data['ys'] = ys
 
-        # self.push_notebook()
-        # do pane.Bokeh::param.trigger('object') on pane holding EEG waveform plot
-        # in notebook updates without a trigger
+        # # update seizure box indicator
+        # green_box = BoxAnnotation(left=4, right=10, fill_color="green", fill_alpha=0.1)
+        # self.fig.add_layout(green_box)
 
     def stackplot_t(
         self,
@@ -882,128 +881,27 @@ class EeghdfBrowser:
 
     def register_top_bar_ui(self):
 
-        # mlayout = ipywidgets.Layout()
-        # mlayout.width = "15em"
-        self.ui_montage_dropdown = Select(
-            # options={'One': 1, 'Two': 2, 'Three': 3},
-            options=self.montage_options.keys(),  # or .montage_optins.keys()
-            value=self.current_montage_instance.name,
-            title="Montage:",
-            # layout=mlayout, # set width to "15em"
+        self.ui_filename_dropdown = Select(
+            options=self.eeghdf_file_names,
+            value=self.eeghdf_file_names[0],
+            title="File Name:",
         )
 
-        def on_dropdown_change(attr, oldvalue, newvalue, parent=self):
-            print(f"on_dropdown_change: {attr}, {oldvalue}, {newvalue}, {parent}")
-            if change["name"] == "value":  # the value changed
-                if change["new"] != change["old"]:
-                    # print('*** should change the montage to %s from %s***' % (change['new'], change['old']))
-                    parent.update_montage(
-                        change["new"]
-                    )  # change to the montage keyed by change['new']
-                    parent.update_plot_after_montage_change()
-                    parent.update()  #
+        def on_filename_dropdown_change(attr, oldvalue, newvalue, parent=self):
+            new_file_index = self.eeghdf_file_names.index(newvalue)
+            self.eeghdf_file = self.eeghdf_files[new_file_index]
+            self.update_eeghdf_file(
+                self.eeghdf_file,
+                self.current_montage_instance.name,
+                self.montage_options,
+            )
+            self.update_plot_after_montage_change()
+            self.loc_sec = 0
+            self.update()
+            self.filename_signal.emit(filename=newvalue)
 
-        self.ui_montage_dropdown.on_change("value", on_dropdown_change)
+        self.ui_filename_dropdown.on_change("value", on_filename_dropdown_change)
 
-        # flayout = ipywidgets.Layout()
-        # flayout.width = "12em"
-        self.ui_low_freq_filter_dropdown = ipywidgets.Dropdown(
-            # options = ['None', '0.1 Hz', '0.3 Hz', '1 Hz', '5 Hz', '15 Hz',
-            #           '30 Hz', '50 Hz', '100 Hz', '150Hz'],
-            options=self._highpass_cache.keys(),
-            value="0.3 Hz",
-            description="LF",
-            layout=flayout,
-        )
-
-        def lf_dropdown_on_change(change, parent=self):
-            # print('change observed: %s' % pprint.pformat(change))
-            if change["name"] == "value":  # the value changed
-                if change["new"] != change["old"]:
-                    # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
-                    parent.current_hp_filter = parent._highpass_cache[change["new"]]
-                    parent.update()  #
-
-        self.ui_low_freq_filter_dropdown.observe(lf_dropdown_on_change)
-
-        ###
-
-        self.ui_high_freq_filter_dropdown = ipywidgets.Dropdown(
-            # options = ['None', '15 Hz', '30 Hz', '50 Hz', '70Hz', '100 Hz', '150Hz', '300 Hz'],
-            options=self._lowpass_cache.keys(),
-            # value = '70Hz',
-            description="HF",
-            layout=flayout,
-        )
-
-        def hf_dropdown_on_change(change, parent=self):
-            if change["name"] == "value":  # the value changed
-                if change["new"] != change["old"]:
-                    # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
-                    self.current_lp_filter = self._lowpass_cache[change["new"]]
-                    self.update()  #
-
-        self.ui_high_freq_filter_dropdown.observe(hf_dropdown_on_change)
-
-        def go_to_handler(change, parent=self):
-            # print("change:", change)
-            if change["name"] == "value":
-                self.loc_sec = change["new"]
-                self.update()
-
-        self.ui_notch_option = ipywidgets.Checkbox(
-            value=False, description="60Hz Notch", disabled=False
-        )
-
-        def notch_change(change):
-            if change["name"] == "value":
-                if change["new"]:
-                    self.current_notch_filter = self._notch_filter
-                else:
-                    self.current_notch_filter = None
-                self.update()
-
-        self.ui_notch_option.observe(notch_change)
-
-        self.ui_gain_bounded_float = ipywidgets.BoundedFloatText(
-            value=1.0,
-            min=0.001,
-            max=1000.0,
-            step=0.1,
-            description="gain",
-            disabled=False,
-            continuous_update=False,  # only trigger when done
-            layout=flayout,
-        )
-
-        def ui_gain_on_change(change, parent=self):
-            if change["name"] == "value":
-                if change["new"] != change["old"]:
-                    self.yscale = float(change["new"])
-                    self.update()
-
-        self.ui_gain_bounded_float.observe(ui_gain_on_change)
-        top_bar_layout = bokeh.layouts.row(
-            self.ui_montage_dropdown,
-            self.ui_low_freq_filter_dropdown,
-            self.ui_high_freq_filter_dropdown,
-            self.ui_notch_option,
-            self.ui_gain_bounded_float,
-        )
-        return top_bar_layout
-        # display(
-        #     ipywidgets.HBox(
-        #         [
-        #             self.ui_montage_dropdown,
-        #             self.ui_low_freq_filter_dropdown,
-        #             self.ui_high_freq_filter_dropdown,
-        #             self.ui_notch_option,
-        #             self.ui_gain_bounded_float,
-        #         ]
-        #     )
-        # )
-
-    def register_top_bar_ui(self):
         # mlayout = ipywidgets.Layout()
         # mlayout.width = "15em"
         self.ui_montage_dropdown = Select(
@@ -1127,6 +1025,7 @@ class EeghdfBrowser:
 
         # self.top_bar_layout = bokeh.layouts.row(
         self.top_bar_layout = pn.Row(
+            self.ui_filename_dropdown,
             self.ui_montage_dropdown,
             self.ui_low_freq_filter_dropdown,
             self.ui_high_freq_filter_dropdown,
@@ -1249,7 +1148,7 @@ class EegBrowser(EeghdfBrowser):
         page_width_seconds,
         montage=None,
         montage_options=OrderedDict(),
-        start_seconds=-1,
+        start_seconds=0,
         **kwargs,
     ):
         # def __init__(self, eeghdf_file, page_width_seconds=10.0, start_seconds=-1,
