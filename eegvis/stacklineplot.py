@@ -30,6 +30,12 @@ def stackplot(
 
     @ylabels a list of labels for each row ("channel") in marray
     @yscale with increase (mutiply) the signals in each row by this amount
+
+    @ysensitivity can be set to an absolute sensitivity along the y dimension in
+      terms of millimeters of the plot
+      for EEG this might be 7.0 or 10.0 to stand in for 7uV/mm
+      this prevents the automatic scaling to the data size that is the default
+      - should not usually be used with @yscale
     """
     tarray = np.transpose(marray)
     return stackplot_t(
@@ -69,10 +75,11 @@ def stackplot_t(
 
     @ax is the option to pass in a matplotlib axes obj to draw with
     
-    ysensitivity can be set to an absolute sensitivity along the y dimension in
+    @ysensitivity can be set to an absolute sensitivity along the y dimension in
       terms of millimeters of the plot
       for EEG this might be 7.0 or 10.0 to stand in for 7uV/mm
       this prevents the automatic scaling to the data size that is the default
+      should not usually be used with @yscale
     """
     data = tarray
     numSamples, numRows = tarray.shape
@@ -129,7 +136,7 @@ def stackplot_t(
 
         figsizex_mm = 25.4 * figsizex_inch
         figsizey_mm = 25.4 * figsizey_inch
-       
+
         total_uV = ysensitivity * figsizey_mm
         # assume data is in uV
         # is lower lim of y still dmin? No
@@ -143,7 +150,7 @@ def stackplot_t(
         for ii in range(numRows):
             segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, ii, np.newaxis])))
             # print("segs[-1].shape:", segs[-1].shape)
-            ticklocs.append(ii * dr + dr/2.0)
+            ticklocs.append(ii * dr + dr / 2.0)
 
     offsets = np.zeros((numRows, 2), dtype=float)
     offsets[:, 1] = ticklocs
