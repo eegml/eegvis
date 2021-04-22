@@ -105,9 +105,10 @@ def stackplot_t(
     ticklocs = []
     if not ax:
         ax = plt.subplot(111)
-
+        # plt.
     ax.set_xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
+    # this is where I'm doing the y-axis scaling
     # let's supose there are so many "mm" per height of page
 
     dmin = data.min()
@@ -137,6 +138,7 @@ def stackplot_t(
         figsizex_mm = 25.4 * figsizex_inch
         figsizey_mm = 25.4 * figsizey_inch
 
+        # sensetivity such as 7 uV/mm is
         total_uV = ysensitivity * figsizey_mm
         # assume data is in uV
         # is lower lim of y still dmin? No
@@ -309,3 +311,130 @@ def show_montage_centered(
         ax=ax,
         **kwargs,
     )
+
+
+def stackplot_t_with_heatmap(
+    tarray,
+    seconds=None,
+    start_time=None,
+    ylabels=[],
+    yscale=1.0,
+    topdown=False,
+    ax=None,
+    linecolor=None,
+    linestyle=None,
+    heatmap_image=None,
+    alpha=0.5,
+    cmap="magma",
+):
+    """
+    will plot a stack of traces one above the other assuming
+    @tarray is an nd-array like object with format
+    tarray.shape =  numSamples, numRows
+
+    @seconds = with of plot in seconds for labeling purposes (optional)
+    @start_time is start time in seconds for the plot (optional)
+
+    @ylabels a list of labels for each row ("channel") in marray
+    @yscale with increase (mutiply) the signals in each row by this amount
+
+    @ax is the option to pass in a matplotlib axes obj to draw with
+    @heatmap_image should be an ndarray usually this will be of shape something                    like (NUM_CH, NUM_TIME_STEPS)
+    @alpha is how to blend this 
+
+    generally want to choose a perceptually uniform colormap
+    inferno, magma, viridis, cividis, etc see also 
+    colorcet.cm.fire, .bmw etc for excellent colormaps
+
+    >>> heatmap_image = np.random.uniform(size=(NUM_CH, NUM_CHUNKS))
+    
+    """
+    if not ax:
+        fig, ax = plt.subplots(1, 1)
+        # fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
+    # print()
+    # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
+    eegax = stackplot_t(
+        tarray,
+        seconds=seconds,  # this looks like a mistake!!!
+        ylabels=ylabels,
+        topdown=True,
+        ax=ax,
+
+    )
+    # to get the image to scale to the plot, reset the extent to match the current limits
+    left, right = eegax.get_xlim()
+    bottom, top = eegax.get_ylim()
+    # choose to overwrite plot with image but use alpha to modify blending
+    # if want EEG plot on top then set zorder to lower like 0
+    if heatmap_image is not None:
+        eegax.imshow(
+            heatmap_image,
+            origin="upper",
+            interpolation="bilinear",
+            aspect="auto",
+            extent=[left, right, bottom, top],
+            alpha=alpha,
+            zorder=3,
+            cmap=cmap,
+        )  # inferno, magma, viridis, cividis, etc
+
+    return ax  # or eegax?, should there be a way to get the figure too?
+
+
+def stackplot_t_with_rgba_heatmap(
+    tarray,
+    heatmap_image,
+    seconds=None,
+    start_time=None,
+    ylabels=[],
+    yscale=1.0,
+    topdown=False,
+    ax=None,
+    linecolor=None,
+    linestyle=None,
+):
+    """
+    will plot a stack of traces one above the other assuming
+    @tarray is an nd-array like object with format
+    tarray.shape =  numSamples, numRows
+
+    @seconds = with of plot in seconds for labeling purposes (optional)
+    @start_time is start time in seconds for the plot (optional)
+
+    @ylabels a list of labels for each row ("channel") in marray
+    @yscale with increase (mutiply) the signals in each row by this amount
+
+    @ax is the option to pass in a matplotlib axes obj to draw with
+    @heatmap_image should be an ndarray usually this will be of shape something                    like (NUM_CH, NUM_TIME_STEPS, 4) so that it includes RGB and alpha values
+    this allows you to control the alpha value as part of the mask
+
+    generally want to choose a perceptually uniform colormap
+    inferno, magma, viridis, cividis, etc see also 
+    colorcet.cm.fire, .bmw etc for excellent colormaps
+
+    >>> heatmap_image = np.random.uniform(size=(NUM_CH, NUM_CHUNKS))
+    
+    """
+    if not ax:
+        fig, ax = plt.subplots(1, 1)
+        # fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
+    # print()
+    # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
+    eegax = stackplot_t(tarray, seconds=seconds, ylabels=ylabels, topdown=True, ax=ax,)
+    # to get the image to scale to the plot, reset the extent to match the current limits
+    left, right = eegax.get_xlim()
+    bottom, top = eegax.get_ylim()
+    # choose to overwrite plot with image but use alpha to modify blending
+    # if want EEG plot on top then set zorder to lower like 0
+
+    eegax.imshow(
+        heatmap_image,
+        origin="upper",
+        interpolation="bilinear",
+        aspect="auto",
+        extent=[left, right, bottom, top],
+        zorder=3,
+    )
+
+    return ax  # or eegax?, should there be a way to get the figure too?

@@ -14,7 +14,7 @@ while another focuses on occipital events.  """
 
 # start with a few hard-coded montages:
 # [x] double banana, [x] TCP, [x] laplacian
-# [ ] DB-avg, [ ] sphenoidal [ ] circle
+# [x] DB-avg, [x] DB-ref, [ ] sphenoidal [ ] circle
 
 # thoughts: want to have core names for signals which are standard then some
 # optional ones which we try to add if possible: EKG, EMG, Resp PG1 or RUC LLC,
@@ -213,6 +213,14 @@ class TraceMontageView(MontageView):
         for label in self.montage_labels:
             V.loc[label, label] = 1.0
         return V
+
+
+# TODO: need to find a way to handle multiple common reference types
+# something which is recorded with a generic reference
+# eg. Fp1-REF like channesl
+# should also be able to work with a linked-ear reference
+# e.g. Fp1-LE  or Fp1-AVG   etc.
+# distinguish channel_label vs display_label ???
 
 
 def double_banana_set_matrix(V):
@@ -827,7 +835,9 @@ class CommonAvgRefMontageView(MontageView):
         super().__init__(
             self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity
         )
-        self.set_matrix(self.V)  # define positive part of connection matrix
+
+        self.set_matrix(self.V)  
+
         if reversed_polarity:
             self.V = (-1) * self.V
 
