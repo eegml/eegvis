@@ -112,7 +112,7 @@ stacklineplot.show_epoch_centered(
     chstart=chstart,
     chstop=chstop,
     ylabels=ylabels,
-    ygain_uv=10.0,
+    ysensitivity=10.0,
 )
 
 
@@ -148,7 +148,7 @@ stacklineplot.show_epoch_centered(
     chstart=chstart,
     chstop=chstop,
     ylabels=ylabels,
-    ygain_uv=10.0,
+    ysensitivity=10.0,
 )
 
 # %%
@@ -174,7 +174,7 @@ stacklineplot.show_montage_centered(
 )  # the yscale multiples the signals by this number, it is a bit of a hack
 
 # %%
-print("plot with ygain_uv=7.0")
+print("plot with ysensitivity=7.0")
 plt.figure(figsize=(16, 8))
 stacklineplot.show_montage_centered(
     signals,
@@ -184,11 +184,11 @@ stacklineplot.show_montage_centered(
     chstart,
     chstop,
     FS,
-    ygain_uv=7.0,
+    ysensitivity=7.0,
 )  # the yscale multiples the signals by this number, it is a bit of a hack
 
 #%%
-print("plot with ygain_uv=20.0")
+print("plot with ysensitivity=20.0")
 plt.figure(figsize=(16, 8))
 stacklineplot.show_montage_centered(
     signals,
@@ -198,7 +198,7 @@ stacklineplot.show_montage_centered(
     chstart,
     chstop,
     FS,
-    ygain_uv=20.0,
+    ysensitivity=20.0,
 )  # the yscale multiples the signals by this number, it is a bit of a hack
 
 # now lets try a the simplier stackplot and heatmap
