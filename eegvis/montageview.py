@@ -215,6 +215,14 @@ class TraceMontageView(MontageView):
         return V
 
 
+# TODO: need to find a way to handle multiple common reference types
+# something which is recorded with a generic reference
+# eg. Fp1-REF like channesl
+# should also be able to work with a linked-ear reference
+# e.g. Fp1-LE  or Fp1-AVG   etc.
+# distinguish channel_label vs display_label ???
+
+
 def double_banana_set_matrix(V):
     """specify the double banana transformation for raw input labels
     return an xarray-like matrix V ?"""
