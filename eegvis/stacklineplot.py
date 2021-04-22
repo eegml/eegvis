@@ -30,6 +30,12 @@ def stackplot(
 
     @ylabels a list of labels for each row ("channel") in marray
     @yscale with increase (mutiply) the signals in each row by this amount
+
+    @ysensitivity can be set to an absolute sensitivity along the y dimension in
+      terms of millimeters of the plot
+      for EEG this might be 7.0 or 10.0 to stand in for 7uV/mm
+      this prevents the automatic scaling to the data size that is the default
+      - should not usually be used with @yscale
     """
     tarray = np.transpose(marray)
     return stackplot_t(
@@ -68,6 +74,12 @@ def stackplot_t(
     @yscale with increase (mutiply) the signals in each row by this amount
 
     @ax is the option to pass in a matplotlib axes obj to draw with
+    
+    @ysensitivity can be set to an absolute sensitivity along the y dimension in
+      terms of millimeters of the plot
+      for EEG this might be 7.0 or 10.0 to stand in for 7uV/mm
+      this prevents the automatic scaling to the data size that is the default
+      should not usually be used with @yscale
     """
     data = tarray
     numSamples, numRows = tarray.shape
@@ -98,6 +110,7 @@ def stackplot_t(
     # xticks(np.linspace(xlm, 10))
     # this is where I'm doing the y-axis scaling
     # let's supose there are so many "mm" per height of page
+
     dmin = data.min()
     dmax = data.max()
 
@@ -347,6 +360,7 @@ def stackplot_t_with_heatmap(
         ylabels=ylabels,
         topdown=True,
         ax=ax,
+
     )
     # to get the image to scale to the plot, reset the extent to match the current limits
     left, right = eegax.get_xlim()

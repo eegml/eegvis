@@ -837,6 +837,7 @@ class CommonAvgRefMontageView(MontageView):
         )
 
         self.set_matrix(self.V)  
+
         if reversed_polarity:
             self.V = (-1) * self.V
 
