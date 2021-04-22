@@ -45,7 +45,7 @@ from .stackplot_bokeh import limit_sample_check
 from bokeh.io import push_notebook
 
 import eegml_signal.filters as esfilters
-
+import pdb
 import signalslot
 
 #%%
@@ -253,6 +253,15 @@ class EeghdfBrowser:
         hdf = eeghdf_file.hdf
         rec = hdf["record-0"]
         self.fs = rec.attrs["sample_frequency"]
+
+        # TODO: this HACK is model specific, we cut out last (signal_length % 60) secs
+        # we do this b/c model does not output probs for clips < 60sec
+        signal_len = self.signals.shape[1] / self.fs
+        remaining_samples = int(self.fs * (signal_len % 60))
+        self.eeghdf_file._phys_signals = self.eeghdf_file.phys_signals[
+            :, :-remaining_samples
+        ]
+
         # self.signals = rec['signals']
         blabels = rec["signal_labels"]  # byte labels
         # self.electrode_labels = [str(ss,'ascii') for ss in blabels]
@@ -369,10 +378,15 @@ class EeghdfBrowser:
         s0 = limit_sample_check(goto_sample - hw, self.signals)
         s1 = limit_sample_check(goto_sample + hw, self.signals)
         window_samples = s1 - s0
+        if window_samples != self.page_width_seconds * self.fs:
+            # dont update
+            return None
+
         signal_view = self.signals[:, s0:s1]
         inmontage_view = np.dot(self.current_montage_instance.V.data, signal_view)
 
         data = inmontage_view[self.ch_start : self.ch_stop, :]  # note transposed
+
         numRows = inmontage_view.shape[0]
         ########## do filtering here ############
         # start primative filtering
@@ -389,16 +403,20 @@ class EeghdfBrowser:
 
         ## end filtering
         t = (
-            self.page_width_secs
+            self.page_width_seconds
             * np.arange(window_samples, dtype=float)
             / window_samples
         )
-        t = t + s0 / self.fs  # t = t + start_time
+        start_time = s0 / self.fs
+        t = t + start_time
         # t = t[:s1-s0]
         ## this is not quite right if ch_start is not 0
         xs = [t for ii in range(numRows)]
         ys = [self.yscale * data[ii, :] + self.ticklocs[ii] for ii in range(numRows)]
+
         # print('len(xs):', len(xs), 'len(ys):', len(ys))
+        # if self.loc_sec == 600:
+        #     pdb.set_trace()
 
         self.data_source.data.update(dict(xs=xs, ys=ys))  # could just use equals?
 
@@ -1054,30 +1072,33 @@ class EeghdfBrowser:
         # could put goto input here
 
         def go_forward(b, parent=self):
-            # print(b, parent)
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec + 10)
-            self.move_signal.emit(move_sec=10)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonf.on_click(go_forward)
 
         def go_backward(b):
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec - 10)
-            self.move_signal.emit(move_sec=-10)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonback.on_click(go_backward)
 
         def go_forward1(b, parent=self):
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec + 1)
-            self.move_signal.emit(move_sec=1)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonf1.on_click(go_forward1)
 
         def go_backward1(b, parent=self):
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec - 1)
-            self.move_signal.emit(move_sec=-1)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonback1.on_click(go_backward1)
