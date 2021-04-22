@@ -323,7 +323,7 @@ class EeghdfBrowser:
             ylabels=self.current_montage_instance.montage_labels,
             yscale=self.yscale,
             montage=self.current_montage_instance,
-            **kwargs
+            **kwargs,
         )
         self.fig.xaxis.axis_label = "seconds"
         # make the xgrid mark every second
@@ -1107,7 +1107,7 @@ class EeghdfBrowser:
         def ui_gain_watcher(ev, parent=self):
             "guess how to write a call back for a param watch "
             # print(repr(ev), repr(ev.new))
-            #print(f"updating {self.yscale} -> {ev.new}")
+            # print(f"updating {self.yscale} -> {ev.new}")
             self.yscale = float(ev.new)
             self.update()
 
