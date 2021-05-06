@@ -40,6 +40,7 @@ from bokeh.models import (
 from bokeh.models.tickers import FixedTicker, SingleIntervalTicker
 
 from . import montageview
+from . import montage_derivations_edf_simplified
 from . import stackplot_bokeh
 from .stackplot_bokeh import limit_sample_check
 from bokeh.io import push_notebook
@@ -138,6 +139,7 @@ class EeghdfBrowser:
         start_seconds=-1,
         montage="trace",
         montage_options={},
+        tuh = True,
         yscale=1.0,
         plot_width=950,
         plot_height=600,
@@ -149,9 +151,11 @@ class EeghdfBrowser:
         @page_width_seconds = how big to make the view in seconds
         @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
         @start_seconds - center view on this point in time
+        @tuh - bool indicating if signal is coming from tuh
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
         """
+        self.tuh = tuh
         self.eeghdf_file_names = eeghdf_file_names
         self.eeghdf_files = eeghdf_files
         self.eeghdf_file = eeghdf_files[0]
@@ -285,7 +289,11 @@ class EeghdfBrowser:
 
         if not montage_options:
             # then use builtins and/or ones in the file
-            montage_options = montageview.MONTAGE_BUILTINS.copy()
+            if self.tuh:
+                montage_options = montage_derivations_edf_simplified.EDF_SIMPLIFIED_MONTAGE_BUILTINS.copy()
+            else:
+                montage_options = montageview.MONTAGE_BUILTINS.copy()
+
             # print('starting build of montage options', montage_options)
 
             # montage_options = eeghdf_file.get_montages()
@@ -1215,7 +1223,10 @@ class EegBrowser(EeghdfBrowser):
             montage_options.update(min_eeg.montage_options)
         if not montage_options:
             # then use builtins and/or ones in the file
-            montage_options = montageview.MONTAGE_BUILTINS.copy()
+            if self.tuh:
+                montage_options = montage_derivations_edf_simplified.EDF_SIMPLIFIED_MONTAGE_BUILTINS.copy()
+            else:
+                montage_options = montageview.MONTAGE_BUILTINS.copy()
             # print('starting build of montage options', montage_options)
 
             # montage_options = eeghdf_file.get_montages()

@@ -800,11 +800,11 @@ class CommonAvgRefMontageView(montageview.MontageView):
 EDF_SIMPLIFIED_MONTAGE_BUILTINS = OrderedDict(
     [
         ("trace", montageview.TraceMontageView),
-        ("tuh-tcp", TCPMontageView),
-        ("tuh-double banana", DoubleBananaMontageView),
-        ("tuh-laplacian", LaplacianMontageView),
-        ("tuh-neonatal", NeonatalMontageView),
-        ("tuh-DBref", DBrefMontageView),
+        ("tcp", TCPMontageView),
+        ("double banana", DoubleBananaMontageView),
+        ("laplacian", LaplacianMontageView),
+        ("neonatal", NeonatalMontageView),
+        ("DBref", DBrefMontageView),
     ]
 )
 
