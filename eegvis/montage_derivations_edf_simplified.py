@@ -464,7 +464,10 @@ class TCPMontageView(montageview.MontageView):
             self.V = (-1) * self.V
 
         self.name = "tcp"
-        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
+        self.full_name = "%s, up=%s" % (
+            self.name,
+            montageview.POSCHOICE[reversed_polarity],
+        )
 
     def tcp_set_matrix(self, V):
         V.loc["Fp1-F7", "EEG FP1"] = 1
@@ -572,7 +575,10 @@ class NeonatalMontageView(montageview.MontageView):
             self.V = (-1) * self.V
 
         self.name = "neonatal"
-        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
+        self.full_name = "%s, up=%s" % (
+            self.name,
+            montageview.POSCHOICE[reversed_polarity],
+        )
 
     def neonatal_set_matrix(self, V):
         # pdb.set_trace()
@@ -748,7 +754,10 @@ class CommonAvgRefMontageView(montageview.MontageView):
             self.V = (-1) * self.V
 
         self.name = "avg"  # or common average reference ?
-        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
+        self.full_name = "%s, up=%s" % (
+            self.name,
+            montageview.POSCHOICE[reversed_polarity],
+        )
 
     def setall_to_avg(self, V):
         """note this overwrites all values of matrix, so do this first"""
