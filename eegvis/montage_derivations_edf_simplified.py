@@ -86,16 +86,16 @@ def double_banana_set_matrix(V):
 
     V.loc["Fp2-F8", "EEG FP2"] = 1
     V.loc["Fp2-F8", "EEG F8"] = -1
-    V.loc["F8-T4", "F8-ref"] = 1
-    V.loc["F8-T4", "T4-ref"] = -1
-    V.loc["T4-T6", "T4-ref"] = 1
-    V.loc["T4-T6", "T6-ref"] = -1
-    V.loc["T6-O2", "T6-ref"] = 1
-    V.loc["T6-O2", "O2-ref"] = -1
+    V.loc["F8-T4", "EEG F8"] = 1
+    V.loc["F8-T4", "EEG T4"] = -1
+    V.loc["T4-T6", "EEG T4"] = 1
+    V.loc["T4-T6", "EEG T6"] = -1
+    V.loc["T6-O2", "EEG T6"] = 1
+    V.loc["T6-O2", "EEG O2"] = -1
 
-    V.loc["Fp1-F3", "Fp1-ref"] = 1
-    V.loc["Fp1-F3", "F3-ref"] = -1
-    V.loc["F3-C3", "F3-ref"] = 1
+    V.loc["Fp1-F3", "EEG FP1"] = 1
+    V.loc["Fp1-F3", "EEG F3"] = -1
+    V.loc["F3-C3", "EEG F3"] = 1
     V.loc["F3-C3", "EEG C3"] = -1
     V.loc["C3-P3", "EEG C3"] = 1
     V.loc["C3-P3", "EEG P3"] = -1
@@ -582,25 +582,25 @@ class NeonatalMontageView(montageview.MontageView):
 
     def neonatal_set_matrix(self, V):
         # pdb.set_trace()
-        V.loc["Fp1-T3", "FP1"] = 1
+        V.loc["Fp1-T3", "EEG FP1"] = 1
         V.loc["Fp1-T3", "EEG T3"] = -1
 
         V.loc["T3-O1", "EEG T3"] = 1
         V.loc["T3-O1", "EEG O1"] = -1
 
-        V.loc["Fp2-T4", "FP2"] = 1
+        V.loc["Fp2-T4", "EEG FP2"] = 1
         V.loc["Fp2-T4", "EEG T4"] = -1
 
         V.loc["T4-O2", "EEG T4"] = 1
         V.loc["T4-O2", "EEG O2"] = -1
 
-        V.loc["Fp1-C3", "FP1"] = 1
+        V.loc["Fp1-C3", "EEG FP1"] = 1
         V.loc["Fp1-C3", "EEG C3"] = -1
 
         V.loc["C3-O1", "EEG C3"] = 1
         V.loc["C3-O1", "EEG O1"] = -1
 
-        V.loc["Fp2-C4", "FP2"] = 1
+        V.loc["Fp2-C4", "EEG FP2"] = 1
         V.loc["Fp2-C4", "EEG C4"] = -1
 
         V.loc["C4-O2", "EEG C4"] = 1
@@ -610,19 +610,19 @@ class NeonatalMontageView(montageview.MontageView):
         V.loc["T3-C3", "EEG C3"] = -1
 
         V.loc["C3-Cz", "EEG C3"] = 1
-        V.loc["C3-Cz", "CZ"] = -1
+        V.loc["C3-Cz", "EEG CZ"] = -1
 
-        V.loc["Cz-C4", "CZ"] = 1
+        V.loc["Cz-C4", "EEG CZ"] = 1
         V.loc["Cz-C4", "EEG C4"] = -1
 
-        V.loc["C4-T4", "CZ"] = 1
+        V.loc["C4-T4", "EEG CZ"] = 1
         V.loc["C4-T4", "EEG T4"] = -1
 
         V.loc["C4-T4", "EEG C4"] = 1
         V.loc["C4-T4", "EEG T4"] = -1
 
-        V.loc["Fz-Cz", "FZ"] = 1
-        V.loc["Fz-Cz", "CZ"] = -1
+        V.loc["Fz-Cz", "EEG FZ"] = 1
+        V.loc["Fz-Cz", "EEG CZ"] = -1
 
         V.loc["T3-O1", "EEG T3"] = 1
         V.loc["T3-O1", "EEG O1"] = -1
