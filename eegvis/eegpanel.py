@@ -256,11 +256,16 @@ class EeghdfBrowser:
 
         # TODO: this HACK is model specific, we cut out last (signal_length % 60) secs
         # we do this b/c model does not output probs for clips < 60sec
-        signal_len = self.signals.shape[1] / self.fs
+        #pdb.set_trace()
+        signal_len = self.eeghdf_file.phys_signals.shape[1] / self.fs
         remaining_samples = int(self.fs * (signal_len % 60))
-        self.eeghdf_file._phys_signals = self.eeghdf_file.phys_signals[
-            :, :-remaining_samples
-        ]
+        if remaining_samples > 0:
+            self.eeghdf_file._phys_signals = self.eeghdf_file.phys_signals[
+                :, :-remaining_samples
+            ]
+        self.eeghdf_file.duration_seconds = (
+            self.eeghdf_file.phys_signals.shape[1] / self.fs
+        )
 
         # self.signals = rec['signals']
         blabels = rec["signal_labels"]  # byte labels
@@ -595,6 +600,7 @@ class EeghdfBrowser:
 
         ## xlim(*xlm)
         # xticks(np.linspace(xlm, 10))
+
         dmin = data.min()
         dmax = data.max()
         dr = (dmax - dmin) * 0.7  # Crowd them a bit.
@@ -1053,10 +1059,11 @@ class EeghdfBrowser:
         return self.top_bar_layout
 
     def _limit_time_check(self, candidate):
-        if candidate > self.eeghdf_file.duration_seconds:
-            return float(self.eeghdf_file.duration_seconds)
-        if candidate < 0:
-            return 0.0
+        hw = int(self.page_width_secs / 2)
+        if candidate > self.eeghdf_file.duration_seconds - hw:
+            return float(self.eeghdf_file.duration_seconds - hw)
+        if candidate < hw:
+            return float(hw)
         return candidate
 
     def register_bottom_bar_ui(self):
