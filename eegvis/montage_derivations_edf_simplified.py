@@ -59,8 +59,7 @@ import pdb
 from collections import OrderedDict
 import numpy as np
 import xarray
-import eegvis.montageview
-from eegvis.montageview import MontageView
+import eegvis.montageview as montageview
 
 
 def double_banana_set_matrix(V):
@@ -120,7 +119,7 @@ def double_banana_set_matrix(V):
     return V
 
 
-class DoubleBananaMontageView(MontageView):
+class DoubleBananaMontageView(montageview.MontageView):
     """
     an example of using the MontageView
     useful, given how common this view
@@ -164,15 +163,38 @@ class DoubleBananaMontageView(MontageView):
 
         if reversed_polarity:
             self.V = (-1) * self.V
-        self.full_name = "double banana, up=%s" % POSCHOICE[reversed_polarity]
+        self.full_name = (
+            "double banana, up=%s" % montageview.POSCHOICE[reversed_polarity]
+        )
         self.name = "double banana"
 
 
-class DBrefMontageView(MontageView):
+class DBrefMontageView(montageview.MontageView):
     """This montage derivation uses the same electrodes as double banana but uses the as recorded reference
     so it is very simple 
     """
 
+    DBREF_LABELS_DISPLAY = [
+        "Fp1-ref",
+        "F7-ref",
+        "T3-ref",
+        "T5-ref",
+        "O1-ref",
+        "Fp2-ref",
+        "F8-ref",
+        "T4-ref",
+        "T6-ref",
+        "O2-ref",
+        "F3-ref",
+        "C3-ref",
+        "P3-ref",
+        "F4-ref",
+        "C4-ref",
+        "P4-ref",
+        "Fz-ref",
+        "Cz-ref",
+        "Pz-ref",
+    ]
     DBREF_LABELS = [
         "EEG FP1",
         "EEG F7",
@@ -202,7 +224,7 @@ class DBrefMontageView(MontageView):
         self.set_matrix()
         if reversed_polarity:
             self.V = (-1) * self.V
-        self.full_name = "db-ref, up=%s" % POSCHOICE[reversed_polarity]
+        self.full_name = "db-ref, up=%s" % montageview.POSCHOICE[reversed_polarity]
 
     def set_matrix(self):
         """specify the double banana-inspired reference montage
@@ -215,7 +237,7 @@ class DBrefMontageView(MontageView):
             self.V.loc[label, label] = 1
 
 
-class LaplacianMontageView(MontageView):
+class LaplacianMontageView(montageview.MontageView):
     # try it first the way Persyst defines it
     # this ignores some channels (except as neighbors) e.g. Fp1/Fp2
     LAPLACIAN_LABELS = [
@@ -408,7 +430,7 @@ class LaplacianMontageView(MontageView):
 
 
 #### TCP
-class TCPMontageView(MontageView):
+class TCPMontageView(montageview.MontageView):
     TCP_LABELS = [
         "Fp1-F7",
         "F7-T3",
@@ -469,7 +491,7 @@ class TCPMontageView(MontageView):
         V.loc["T6-O2", "EEG T6"] = 1
         V.loc["T6-O2", "EEG O2"] = -1
 
-        V.loc["A1-T3", "A1"] = 1
+        V.loc["A1-T3", "EEG A1"] = 1
         V.loc["A1-T3", "EEG T3"] = -1
 
         V.loc["T3-C3", "EEG T3"] = 1
@@ -485,7 +507,7 @@ class TCPMontageView(MontageView):
         V.loc["C4-T4", "EEG T4"] = -1
 
         V.loc["T4-A2", "EEG T4"] = 1
-        V.loc["T4-A2", "A2"] = -1
+        V.loc["T4-A2", "EEG A2"] = -1
 
         V.loc["Fp1-F3", "EEG FP1"] = 1
         V.loc["Fp1-F3", "EEG F3"] = -1
@@ -503,7 +525,7 @@ class TCPMontageView(MontageView):
 
 
 ### A Neonatal montage (modified 10-20)
-class NeonatalMontageView(MontageView):
+class NeonatalMontageView(montageview.MontageView):
     """
     10-20 montage modified for neonatal head sizes 
     This is more or less Montage 1 in Shellhaas (2011) table 3 of
@@ -648,7 +670,7 @@ laplacian_xml = """
 """
 
 
-class CommonAvgRefMontageView(MontageView):
+class CommonAvgRefMontageView(montageview.MontageView):
     """
     I can think of various ways to define this. For starters
     will have one which uses a specific set of 10-20 channels that are common
@@ -768,7 +790,7 @@ class CommonAvgRefMontageView(MontageView):
 # these are montageview factor functions which require a spcific channel label list
 EDF_SIMPLIFIED_MONTAGE_BUILTINS = OrderedDict(
     [
-        ("trace", eegvis.montageview.TraceMontageView),
+        ("trace", montageview.TraceMontageView),
         ("tuh-tcp", TCPMontageView),
         ("tuh-double banana", DoubleBananaMontageView),
         ("tuh-laplacian", LaplacianMontageView),
