@@ -137,7 +137,7 @@ class EeghdfBrowser:
         eeghdf_files,
         page_width_seconds=10.0,
         start_seconds=-1,
-        montage="trace",
+        montage="neonatal",
         montage_options={},
         tuh = True,
         yscale=1.0,
@@ -285,7 +285,8 @@ class EeghdfBrowser:
 
         # reference labels are used for montages, since this is an eeghdf file, it can provide these
 
-        self.ref_labels = eeghdf_file.shortcut_elabels
+        #TODO: stnaford uses shortcut labels!
+        self.ref_labels = eeghdf_file.electrode_labels #eeghdf_file.shortcut_elabels
 
         if not montage_options:
             # then use builtins and/or ones in the file
@@ -302,10 +303,13 @@ class EeghdfBrowser:
         self.current_montage_instance = None
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-
+                #try:
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
+                #except:
+                #    self.data_source.data.update(dict(xs=[0], ys=[0]))
+                #    self.current_montage_instance = montage_options[0](self.ref_labels)
             else:
                 raise Exception("unrecognized montage: %s" % montage)
         else:
@@ -426,10 +430,6 @@ class EeghdfBrowser:
         ## this is not quite right if ch_start is not 0
         xs = [t for ii in range(numRows)]
         ys = [self.yscale * data[ii, :] + self.ticklocs[ii] for ii in range(numRows)]
-
-        # print('len(xs):', len(xs), 'len(ys):', len(ys))
-        # if self.loc_sec == 600:
-        #     pdb.set_trace()
 
         self.data_source.data.update(dict(xs=xs, ys=ys))  # could just use equals?
 
@@ -608,7 +608,7 @@ class EeghdfBrowser:
 
         ## xlim(*xlm)
         # xticks(np.linspace(xlm, 10))
-
+        
         dmin = data.min()
         dmax = data.max()
         dr = (dmax - dmin) * 0.7  # Crowd them a bit.
@@ -927,8 +927,8 @@ class EeghdfBrowser:
                 self.current_montage_instance.name,
                 self.montage_options,
             )
+            self.loc_sec = int(self.page_width_secs/2)
             self.update_plot_after_montage_change()
-            self.loc_sec = 0
             self.update()
             self.filename_signal.emit(filename=newvalue)
 
