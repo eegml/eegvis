@@ -5,12 +5,12 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       format_version: '1.3'
+#       jupytext_version: 1.11.3
 #   kernelspec:
-#     display_name: Python [conda env:mne]
+#     display_name: Python [conda env:pyt181]
 #     language: python
-#     name: conda-env-mne-py
+#     name: conda-env-pyt181-py
 # ---
 
 # %%
@@ -32,8 +32,10 @@ import eeghdf
 # use full browser width
 nb_eegview.setNotebookWidth100()
 # %%
-# load your eeg file (use one that comes with the eeg-hdfstorage package)
-hf = eeghdf.Eeghdf("../../eeg-hdfstorage/data/absence_epilepsy.eeghdf")
+# load your eeg file (use one that comes with the eeghdf package)
+# configuration - will need to update DATADIR to adjust for local storage choices
+DATADIR = "../../eeghdf/data"
+hf = eeghdf.Eeghdf(DATADIR + "/absence_epilepsy.eeg.h5")
 
 # %%
 browser = nb_eegview.EeghdfBrowser(hf)

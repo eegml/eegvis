@@ -33,7 +33,7 @@ import bokeh.core.properties as properties # import Int # String, Instance
 import eeghdf
 import eegvis.nb_eegview
 
-ARCHIVEDIR = r'../../eeg-hdfstorage/data/'
+ARCHIVEDIR = r'../../eeghdf/data/'
 #EEGFILE = ARCHIVEDIR + 'spasms.eeghdf'
 EEGFILE = ARCHIVEDIR + 'absence_epilepsy.eeghdf'
 hf = eeghdf.Eeghdf(EEGFILE)

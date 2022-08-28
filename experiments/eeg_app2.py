@@ -130,7 +130,7 @@ class EEGBrowser:
 
     def __init__(self, page_width_sec=15):
         # data related
-        self.hdf = h5py.File("../../eeg-hdfstorage/data/absence_epilepsy.eeghdf")
+        self.hdf = h5py.File("../../eeghdf/data/absence_epilepsy.eeghdf")
         self.rec = self.hdf["record-0"]
         self.signals = self.rec["signals"]
         self.num_rows, self.num_samples = self.signals.shape
