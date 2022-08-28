@@ -27,7 +27,7 @@ import eegvis.montageview as montageview
 
 # p = bplt.figure()
 # p.line([1,2,3,4,5], [6,7,2,4,5], line_width=2)
-
+# bokeh.plotting.show(p)  # OR 
 # bplt.show(p)
 
 # Note from http://bokeh.pydata.org/en/latest/docs/user_guide/styling.html
@@ -98,7 +98,7 @@ def stackplot_t(
     # data = np.random.randn(numSamples,numRows) # test data
     # data.shape = numSamples, numRows
     if seconds:
-        t = seconds * np.arange(numSamples, dtype=float) / numSamples
+        t = seconds * np.arange(numSamples, dtype=float) / (numSamples-1)
         # import pdb
         # pdb.set_trace()
         if start_time:
@@ -110,7 +110,7 @@ def stackplot_t(
 
     else:
         t = np.arange(numSamples, dtype=float)
-        # xlm = (0, numSamples)
+        # xlm = (0, numSamples -1)
 
     ticklocs = []
     if "width" not in kwargs:
@@ -464,9 +464,8 @@ class IpyStackplot:
         # data = np.random.randn(numSamples,numRows) # test data
         # data.shape = numSamples, numRows
         if seconds:
-            t = seconds * np.arange(numSamples, dtype=float) / numSamples
-            # import pdb
-            # pdb.set_trace()
+            t = seconds * np.arange(numSamples, dtype=float) / (numSamples-1)
+
             if start_time:
                 t = t + start_time
                 xlm = (start_time, start_time + seconds)
@@ -1035,8 +1034,8 @@ class IpyHdfEegPlot(IpyEEGPlot):
         )
         self.title = "hdf %s - montage: %s" % (
             hdf.filename,
-            self.current_montage.full_name if self.current_montage else "",
-        )
+            self.current_montage.name if self.current_montage else "",
+        ) # try to switch from self.current_montage.full_name to .name
 
 
 class IpyHdfEegPlot2:
@@ -1119,9 +1118,16 @@ class IpyHdfEegPlot2:
         self.ch_stop = self.current_montage.shape[0]
 
     def update_title(self):
+        if 'full_name' in self.current_montage.__dict__:
+            mon_name = self.current_montage.full_name
+        elif 'name' in self.current_montage.__dict__:
+            mon_name = self.current_montage.name
+        else:
+            mon_name = ""
+            
         self.title = "hdf %s - montage: %s" % (
             self.eeghdf_file.hdf.filename,
-            self.current_montage.full_name if self.current_montage else "",
+            mon_name,
         )
 
     #     def __init__(self,

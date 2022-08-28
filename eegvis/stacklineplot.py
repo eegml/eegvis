@@ -10,6 +10,13 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 
 
+# the idea behind a stacklineplot (from pyeeg) is that we have a bunch of
+# uniformly sampled data in which we want to display one trace a little above the
+# next usually time or samples is the x-axis and we want to be able to make it so
+# the first sample data[0] sits on the leftmost edge of the frame and the last
+# data sample (data[-1]) sits on the right-most edge of the frame
+
+
 def stackplot(
     marray,
     seconds=None,
@@ -70,29 +77,29 @@ def stackplot_t(
     """
     data = tarray
     numSamples, numRows = tarray.shape
-    # data = np.random.randn(numSamples,numRows) # test data
-    # data.shape = numSamples, numRows
+
     if seconds:
-        t = seconds * np.arange(numSamples, dtype=float) / numSamples
-        # import pdb
-        # pdb.set_trace()
+        t = seconds * np.arange(numSamples, dtype=float) / (numSamples - 1)
         if start_time:
             t = t + start_time
             xlm = (start_time, start_time + seconds)
         else:
             xlm = (0, seconds)
-
     else:
-        t = np.arange(numSamples, dtype=float)
-        xlm = (0, numSamples)
+        t = np.arange(numSamples, dtype=float)  # should dtype=int?
+        xlm = (0, numSamples - 1)
 
     # if want to add ability to space by label
     # would do it here, check if labels; make sure right number
     # then interate, use special label to indicate a space
     ticklocs = []
     if not ax:
-        ax = plt.subplot(111)
-
+        ax = plt.subplot(
+            111
+        )  # would it be better to use fig=figure(), then fig.subplots(1,1)?
+    ax.set_xmargin(
+        0
+    )  # may be redundant, not we may be altering settings of an exisiting ax
     ax.set_xlim(*xlm)
     # xticks(np.linspace(xlm, 10))
     dmin = data.min()
@@ -133,7 +140,11 @@ def stackplot_t(
         ylabels.reverse()  # this acts on ylabels in place
     ax.set_yticklabels(ylabels)
 
-    ax.set_xlabel("time (s)")
+    if seconds:
+        ax.set_xlabel("time (s)")
+    else:
+        ax.set_xlabel("sample num")
+
     return ax
 
 
@@ -142,7 +153,24 @@ def test_stacklineplot():
     data = np.random.randn(numRows, numSamples)  # test data
     stackplot(data, 10.0)
 
+def test_stacklineplot0():
+    "using all default arguments"
+    numSamples, numRows = 4, 2
+    data = np.random.randn(numRows, numSamples)  # test data
+    stackplot(data)
 
+
+def test_stacklineplot1():
+    numSamples, numRows = 4, 2
+    data = np.random.randn(numRows, numSamples)  # test data
+    stackplot(data, seconds=3.0)
+
+
+def test_stacklineplot2():
+    numSamples, numRows = 2000, 5
+    data = np.random.randn(numRows, numSamples)  # test data
+    stackplot(data, seconds=10.0)
+    
 def test_stacklineplot_colors():
     numSamples, numRows = 800, 5
     data = np.random.randn(numRows, numSamples)  # test data
@@ -157,6 +185,12 @@ def limit_sample_check(x, signals):
     if x > chan_len:
         return chan_len
     return x
+
+
+# minimal EEG object needs:
+# data: signals : array-like (n_chan, n_samples)
+# sample_frequency
+# optional: channel labels
 
 
 def show_epoch_centered(
@@ -252,7 +286,7 @@ def show_montage_centered(
     # signal_view will not work if channels are not contiguous
     # TODO: use fancy indexing instead?
     signal_view = signals[:, s0:s1]
-    inmontage_view = np.dot(montage.V.data, signal_view)
+    inmontage_view = np.dot(montage.V.data, signal_view) # montage.V.data is matrix (linear transform)
 
     rlabels = montage.montage_labels
     return stackplot(
