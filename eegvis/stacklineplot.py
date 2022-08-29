@@ -16,7 +16,6 @@ from matplotlib.collections import LineCollection
 # data sample (data[-1]) sits on the right-most edge of the frame
 
 
-
 def stackplot(
     marray,
     seconds=None,
@@ -117,7 +116,7 @@ def stackplot_t(
     ax.set_xmargin(
         0
     )  # may be redundant, not we may be altering settings of an exisiting ax
-    
+
     ax.set_xlim(*xlm)
     # # xticks(np.linspace(xlm, 10))
     dmin = data.min()
@@ -171,7 +170,6 @@ def stackplot_t(
             segs.append(np.hstack((t[:, np.newaxis], yscale * data[:, ii, np.newaxis])))
             # print("segs[-1].shape:", segs[-1].shape)
             ticklocs.append(ii * dr + dr / 2.0)
-
 
     offsets = np.zeros((numRows, 2), dtype=float)
     offsets[:, 1] = ticklocs
@@ -228,7 +226,7 @@ def test_stacklineplot2():
     numSamples, numRows = 2000, 5
     data = np.random.randn(numRows, numSamples)  # test data
     stackplot(data, seconds=10.0)
-    
+
 
 def test_stacklineplot_colors():
     numSamples, numRows = 800, 5
@@ -250,6 +248,7 @@ def limit_sample_check(x, signals):
 # data: signals : array-like (n_chan, n_samples)
 # sample_frequency
 # optional: channel labels
+
 
 def show_epoch_centered(
     signals,
@@ -345,7 +344,9 @@ def show_montage_centered(
     # TODO: use fancy indexing instead?
     signal_view = signals[:, s0:s1]
 
-    inmontage_view = np.dot(montage.V.data, signal_view) # montage.V.data is matrix (linear transform)
+    inmontage_view = np.dot(
+        montage.V.data, signal_view
+    )  # montage.V.data is matrix (linear transform)
 
     rlabels = montage.montage_labels
     return stackplot(
@@ -387,14 +388,14 @@ def stackplot_t_with_heatmap(
 
     @ax is the option to pass in a matplotlib axes obj to draw with
     @heatmap_image should be an ndarray usually this will be of shape something                    like (NUM_CH, NUM_TIME_STEPS)
-    @alpha is how to blend this 
+    @alpha is how to blend this
 
     generally want to choose a perceptually uniform colormap
-    inferno, magma, viridis, cividis, etc see also 
+    inferno, magma, viridis, cividis, etc see also
     colorcet.cm.fire, .bmw etc for excellent colormaps
 
     >>> heatmap_image = np.random.uniform(size=(NUM_CH, NUM_CHUNKS))
-    
+
     """
     if not ax:
         fig, ax = plt.subplots(1, 1)
@@ -407,7 +408,6 @@ def stackplot_t_with_heatmap(
         ylabels=ylabels,
         topdown=True,
         ax=ax,
-
     )
     # to get the image to scale to the plot, reset the extent to match the current limits
     left, right = eegax.get_xlim()
@@ -457,18 +457,24 @@ def stackplot_t_with_rgba_heatmap(
     this allows you to control the alpha value as part of the mask
 
     generally want to choose a perceptually uniform colormap
-    inferno, magma, viridis, cividis, etc see also 
+    inferno, magma, viridis, cividis, etc see also
     colorcet.cm.fire, .bmw etc for excellent colormaps
 
     >>> heatmap_image = np.random.uniform(size=(NUM_CH, NUM_CHUNKS))
-    
+
     """
     if not ax:
         fig, ax = plt.subplots(1, 1)
         # fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
     # print()
     # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
-    eegax = stackplot_t(tarray, seconds=seconds, ylabels=ylabels, topdown=True, ax=ax,)
+    eegax = stackplot_t(
+        tarray,
+        seconds=seconds,
+        ylabels=ylabels,
+        topdown=True,
+        ax=ax,
+    )
     # to get the image to scale to the plot, reset the extent to match the current limits
     left, right = eegax.get_xlim()
     bottom, top = eegax.get_ylim()
@@ -485,4 +491,3 @@ def stackplot_t_with_rgba_heatmap(
     )
 
     return ax  # or eegax?, should there be a way to get the figure too?
-
