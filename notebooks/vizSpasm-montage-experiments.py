@@ -1,5 +1,18 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.4.2
+#   kernelspec:
+#     display_name: Python [conda env:py36mayavi]
+#     language: python
+#     name: conda-env-py36mayavi-py
+# ---
 
-# coding: utf-8
+# %% [markdown] slideshow={"slide_type": "slide"}
 
 # ## Introduction to visualizing data in the eeghdf files
 # ### Goals:
@@ -7,13 +20,13 @@
 # - demonstrate raw data access
 # - visualize data as waveform with montages in the notebook
 
-# In[1]:
 
-
+# %% slideshow={"slide_type": "slide"}
 # import libraries
 from __future__ import print_function, division, unicode_literals
-get_ipython().run_line_magic('matplotlib', 'inline')
-# %matplotlib notebook
+# %matplotlib inline
+# # %matplotlib notebook
+
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -30,36 +43,26 @@ matplotlib.rcParams['figure.figsize'] = (18.0, 12.0)
 #matplotlib.rcParams['figure.figsize'] = (12.0, 8.0)
 
 
-# In[2]:
+# %% slideshow={"slide_type": "skip"}
+# ls "../../eeg-hdfstorage/data"
 
+# %% slideshow={"slide_type": "slide"}
+hdf = h5py.File('../../eeg-hdfstorage/data/spasms.eeghdf') # 5mo boy 
 
-ls "../../eeghdf/data"
-
-
-# In[3]:
-
-
-hdf = h5py.File('../../eeghdf/data/spasms.eeghdf') # 5mo boy 
-
-
-# In[4]:
-
-
+# %% slideshow={"slide_type": "skip"}
 hdf
 
-
-# In[5]:
-
+# %% slideshow={"slide_type": "slide"}
 
 rec = hdf['record-0']
 years_old = rec.attrs['patient_age_days']/365
 pprint("age in years: %s" % years_old)
 
 
+# %% [markdown] slideshow={"slide_type": "slide"}
 # ### Access the raw signals and electrode labels
 
-# In[6]:
-
+# %% slideshow={"slide_type": "fragment"}
 
 signals = rec['signals']
 labels = rec['signal_labels']
@@ -67,10 +70,10 @@ electrode_labels = [str(s,'ascii') for s in labels]
 numbered_electrode_labels = ["%d:%s" % (ii, str(labels[ii], 'ascii')) for ii in range(len(labels))]
 
 
+# %% [markdown] slideshow={"slide_type": "slide"}
 # #### Simple visualization of EEG (electrodecrement seizure pattern)
 
-# In[7]:
-
+# %% slideshow={"slide_type": "fragment"}
 
 # plot 10s epochs (multiples in DE)
 ch0, ch1 = (0,19)
@@ -81,14 +84,10 @@ dp = int(0.5*ptepoch)
 print("epoch:", epoch)
 
 
-# In[8]:
-
-
+# %%
 matplotlib.rcParams['figure.figsize'] = (18.0, 12.0)
 
-
-# In[9]:
-
+# %% slideshow={"slide_type": "slide"}
 
 # search identified spasms at 1836, 1871, 1901, 1939
 stacklineplot.show_epoch_centered(signals, 1836,
@@ -97,56 +96,35 @@ stacklineplot.show_epoch_centered(signals, 1836,
                         ylabels=electrode_labels, yscale=3.0)
 
 
-# In[10]:
 
+# %% slideshow={"slide_type": "slide"}
 
-electrode_labels
-r_labels = [ss.replace('EEG ','') for ss in electrode_labels]
-r_labels
-
-
-# In[11]:
-
-
+# %% slideshow={"slide_type": "slide"}
 montageview.DB_LABELS
 
-
-# In[12]:
-
-
+# %% slideshow={"slide_type": "slide"}
 monv = montageview.MontageView(montageview.DB_LABELS, r_labels)
 
-
-# In[13]:
-
+# %% slideshow={"slide_type": "fragment"}
 
 v = montageview.double_banana_set_matrix(monv.V)
 v
 dfv = v.to_dataframe(name='doublebanana')
 
 
-# In[14]:
-
-
+# %%
 res = np.dot(monv.V.data,signals[:, 10000:10099]) # example of how to do transformation
 signals.dtype
 
-
-# In[15]:
-
-
+# %%
 # access the coordinate labels in the xarray
 [xx for xx in monv.V.coords['x'].data]
 
-
-# In[16]:
-
-
+# %%
 [yy for yy in monv.V.coords['y'].data]
 
 
-# In[17]:
-
+# %% slideshow={"slide_type": "slide"}
 
 stacklineplot.show_montage_centered(signals, monv,1836,
                         epoch_width_sec=15,
@@ -154,8 +132,7 @@ stacklineplot.show_montage_centered(signals, monv,1836,
                         ylabels=electrode_labels, yscale=3.0) 
 
 
-# In[18]:
-
+# %% slideshow={"slide_type": "skip"}
 
 stacklineplot.show_montage_centered(signals, monv,1836,
                         epoch_width_sec=15,
@@ -165,112 +142,76 @@ fg = plt.gcf()
 fg.savefig('spasm_example.eps')
 
 
-# In[19]:
+# %% slideshow={"slide_type": "skip"}
+# # plt.figure?
 
-
-# plt.figure?
-
-
-# In[20]:
-
+# %% slideshow={"slide_type": "skip"}
 
 annot = rec['edf_annotations']
 #print(list(annot.items()))
 #annot['texts'][:]
 
 
-# In[21]:
+# %% slideshow={"slide_type": "skip"}
 
+# %% slideshow={"slide_type": "skip"}
 
+# %% slideshow={"slide_type": "skip"}
 signals.shape
 
-
-# In[22]:
-
+# %% slideshow={"slide_type": "skip"}
 
 antext = [s.decode('utf-8') for s in annot['texts'][:]]
 starts100ns = [xx for xx in annot['starts_100ns'][:]]
 len(starts100ns), len(antext)
 
 
-# In[23]:
-
-
+# %% slideshow={"slide_type": "slide"}
 import pandas as pd
 
-
-# In[24]:
-
+# %% slideshow={"slide_type": "fragment"}
 
 df = pd.DataFrame(data=antext, columns=['text'])
 df['starts100ns'] = starts100ns
 df['starts_sec'] = df['starts100ns']/10**7
 
 
-# In[25]:
-
-
+# %% slideshow={"slide_type": "slide"}
 df # look at the annotations
 
-
-# In[26]:
-
-
+# %% slideshow={"slide_type": "skip"}
 df[df.text.str.contains('sz',case=False)]
 
-
-# In[27]:
-
-
+# %% slideshow={"slide_type": "skip"}
 df[df.text.str.contains('seizure',case=False)] # find the seizure
 
-
-# In[28]:
-
-
+# %% slideshow={"slide_type": "slide"}
 df[df.text.str.contains('spasm',case=False)] # find the seizure
 
-
-# In[29]:
-
-
+# %% slideshow={"slide_type": "skip"}
 list(annot.items())
 
+# %% slideshow={"slide_type": "skip"}
 
+# %% [markdown] slideshow={"slide_type": "skip"}
 # 2.6*10**12 /10
 
-# In[30]:
-
-
+# %% slideshow={"slide_type": "slide"}
 monv.V
 
-
-# In[31]:
-
-
+# %% slideshow={"slide_type": "slide"}
 import matplotlib.pyplot as plt
 
-
-# In[32]:
-
-
+# %% slideshow={"slide_type": "fragment"}
 plt.imshow(monv.V)
 
-
-# In[33]:
-
-
+# %% slideshow={"slide_type": "skip"}
 lapmv = montageview.LaplacianMontageView(r_labels)
 
-
-# In[34]:
-
-
+# %% slideshow={"slide_type": "skip"}
 plt.imshow(lapmv.V)
 
-
-# In[35]:
-
+# %% slideshow={"slide_type": "skip"}
 
 stacklineplot.show_montage_centered(signals, lapmv,1836,
                         epoch_width_sec=15,
@@ -279,20 +220,13 @@ stacklineplot.show_montage_centered(signals, lapmv,1836,
 fg = plt.gcf()
 
 
-# In[36]:
+# %%
+# # %pdb on
 
-
-# %pdb on
-
-
-# In[37]:
-
-
+# %%
 tcpmv = montageview.TCPMontageView(r_labels)
 
-
-# In[38]:
-
+# %%
 
 stacklineplot.show_montage_centered(signals, tcpmv,1836,
                         epoch_width_sec=15,

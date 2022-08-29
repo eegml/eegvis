@@ -1,10 +1,21 @@
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.4.2
+#   kernelspec:
+#     display_name: Python [conda env:py36mayavi]
+#     language: python
+#     name: conda-env-py36mayavi-py
+# ---
 
-# coding: utf-8
-
+# %% [markdown] slideshow={"slide_type": "slide"}
 # ## Introduction to browsing data in the eeghdf files in "raw" form
 
-# In[1]:
-
+# %% slideshow={"slide_type": "fragment"}
 
 # load the eegvis libaries and some others we might use
 
@@ -24,27 +35,21 @@ from bokeh.io import output_notebook, push_notebook
 #import bokeh.plotting as bplt
 #from bokeh.plotting import show
 output_notebook()
-ARCHIVEDIR = r'../../eeghdf/notebooks/archive'
 
+ARCHIVEDIR = r'../../eeg-hdfstorage/notebooks/archive'
 
+# %% [markdown] slideshow={"slide_type": "slide"}
 # ### load the hdf eeg file we are interested in
 
-# In[8]:
-
-
+# %% slideshow={"slide_type": "fragment"}
 #hdf = h5py.File('./archive/YA2741BS_1-1+.eeghdf') # 5mo boy 
 hdf = h5py.File(os.path.join(ARCHIVEDIR,'YA2741G2_1-1+.eeghdf')) # absence 10yo
 
-
-# In[9]:
-
-
+# %% slideshow={"slide_type": "slide"}
 rec = hdf['record-0']
 years_old = rec.attrs['patient_age_days']/365
 
-
-# In[10]:
-
+# %% slideshow={"slide_type": "slide"}
 
 signals = rec['signals']
 labels = rec['signal_labels']
@@ -53,42 +58,28 @@ ref_labels = montageview.standard2shortname(electrode_labels)
 numbered_electrode_labels = ["%d:%s" % (ii, str(labels[ii], 'ascii')) for ii in range(len(labels))]
 
 
-# In[11]:
-
-
+# %% slideshow={"slide_type": "slide"}
 inr = sbokplot.IpyEEGPlot(signals, 15, electrode_labels=electrode_labels, fs=rec.attrs['sample_frequency'])
 inr.show()
 
-
+# %% [markdown] slideshow={"slide_type": "slide"}
 # ### Try showing fewer channels for better visualization
 
-# In[12]:
-
-
+# %% slideshow={"slide_type": "fragment"}
 smallerplot = sbokplot.IpyEEGPlot(signals, 15, electrode_labels=electrode_labels, fs=rec.attrs['sample_frequency'], showchannels=(0,21))
 smallerplot.show()
 
-
-# In[13]:
-
-
+# %% slideshow={"slide_type": "skip"}
 smallerplot.ch_start
 
-
-# In[14]:
-
-
+# %% slideshow={"slide_type": "skip"}
 smallerplot.ch_stop
 
-
-# In[15]:
-
-
+# %% slideshow={"slide_type": "skip"}
 import bokeh
 
-
-# In[16]:
-
-
+# %%
 bokeh.__version__
+
+# %%
 

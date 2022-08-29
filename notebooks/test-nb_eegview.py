@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 # coding: utf-8
 
@@ -10,6 +11,26 @@ get_ipython().run_line_magic('pdb', 'on')
 # In[2]:
 
 
+=======
+# ---
+# jupyter:
+#   jupytext:
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.4.2
+#   kernelspec:
+#     display_name: pyt15-pytorch 1.5+
+#     language: python
+#     name: pyt15
+# ---
+
+# %%
+# #%pdb on
+
+# %%
+>>>>>>> 4b3ccce0f716ca03269441133f25dae3ce49c462
 from __future__ import print_function, division, unicode_literals
 
 import sys
@@ -35,6 +56,7 @@ output_notebook()
 # note if you get an h5py depecation warning then may update h5py to version 2.8 to prevent
 # for example: conda update -c anaconda h5py OR conda install -c anaconda h5py=2.8
 
+<<<<<<< HEAD
 
 # In[3]:
 
@@ -46,10 +68,18 @@ display(HTML("<style>.container { width:100% !important; }</style>"))
 # In[4]:
 
 
+=======
+# %%
+from IPython.core.display import display, HTML
+display(HTML("<style>.container { width:100% !important; }</style>"))
+
+# %%
+>>>>>>> 4b3ccce0f716ca03269441133f25dae3ce49c462
 ARCHIVEDIR = r'../../eeghdf/data/'
 #EEGFILE = ARCHIVEDIR + 'spasms.eeghdf'
 EEGFILE = ARCHIVEDIR + 'absence_epilepsy.eeghdf'
 
+<<<<<<< HEAD
 
 # In[5]:
 
@@ -85,6 +115,31 @@ eegbrow.update()
 # In[10]:
 
 
+=======
+# %%
+hf = eeghdf.Eeghdf(EEGFILE)
+
+# %% slideshow={"slide_type": "slide"}
+eegbrow = nb_eegview.EeghdfBrowser(hf, montage='double banana', start_seconds=1385, plot_width=1800, plot_height=800)
+
+# %%
+eegbrow.show()
+
+# %%
+f = eegbrow._highpass_cache['5 Hz'] # grab one of the filters
+
+# %%
+eegbrow.yscale = 3.0 # interact with live plot
+eegbrow.update()
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+>>>>>>> 4b3ccce0f716ca03269441133f25dae3ce49c462
 # experiment with more anotations, need to add a scale bar
 import bokeh
 from bokeh.models.annotations import BoxAnnotation, Arrow
@@ -97,6 +152,7 @@ eegbrow.fig.add_layout(arwV)
 eegbrow.fig.add_layout(arwH)
 eegbrow.push_notebook()
 
+<<<<<<< HEAD
 
 # In[11]:
 
@@ -108,11 +164,19 @@ eegbrow.push_notebook()
 # In[12]:
 
 
+=======
+# %%
+arwV.x_start = 1384.0; arwV.x_end = 1384.0
+eegbrow.push_notebook()
+
+# %%
+>>>>>>> 4b3ccce0f716ca03269441133f25dae3ce49c462
 r = eegbrow.fig.renderers
 arrowrend = [ii for ii in r if ii.__class__ == bokeh.models.annotations.Arrow]
 a0 = arrowrend[0]
 a0.x_end
 
+<<<<<<< HEAD
 
 # In[13]:
 
@@ -125,3 +189,14 @@ montageview.MONTAGE_BUILTINS
 
 eegbrow.montage_options
 
+=======
+# %%
+montageview.MONTAGE_BUILTINS
+
+# %%
+eegbrow.montage_options
+
+# %%
+
+# %%
+>>>>>>> 4b3ccce0f716ca03269441133f25dae3ce49c462

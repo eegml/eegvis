@@ -14,7 +14,7 @@ while another focuses on occipital events.  """
 
 # start with a few hard-coded montages:
 # [x] double banana, [x] TCP, [x] laplacian
-# [ ] DB-avg, [ ] sphenoidal [ ] circle
+# [x] DB-avg, [x] DB-ref, [ ] sphenoidal [ ] circle
 
 # thoughts: want to have core names for signals which are standard then some
 # optional ones which we try to add if possible: EKG, EMG, Resp PG1 or RUC LLC,
@@ -213,6 +213,14 @@ class TraceMontageView(MontageView):
         for label in self.montage_labels:
             V.loc[label, label] = 1.0
         return V
+
+
+# TODO: need to find a way to handle multiple common reference types
+# something which is recorded with a generic reference
+# eg. Fp1-REF like channesl
+# should also be able to work with a linked-ear reference
+# e.g. Fp1-LE  or Fp1-AVG   etc.
+# distinguish channel_label vs display_label ???
 
 
 def double_banana_set_matrix(V):
@@ -767,22 +775,25 @@ class CommonAvgRefMontageView(MontageView):
         "Fp1-AVG",
         "F7-AVG",
         "T3-AVG",
-        "T5-O1",
+        "T5-AVG",
         # spacer
         "Fp2-AVG",
         "F8-AVG",
         "T4-AVG",
         "T6-AVG",
+        #
         "Fp1-AVG",
         "F3-AVG",
         "C3-AVG",
         "P3-AVG",
         "O1-AVG",
+        #
         "Fp2-AVG",
         "F4-AVG",
         "C4-AVG",
         "P4-AVG",
         "O2-AVG",
+        #
         "Fz-AVG",
         "Cz-AVG",
         "Pz-AVG",
@@ -799,16 +810,19 @@ class CommonAvgRefMontageView(MontageView):
                 "F8",
                 "T4",
                 "T6",
+                #
                 "Fp1",
                 "F3",
                 "C3",
                 "P3",
                 "O1",
+                #
                 "Fp2",
                 "F4",
                 "C4",
                 "P4",
                 "O2",
+                #
                 "Fz",
                 "Cz",
                 "Pz",
@@ -821,7 +835,8 @@ class CommonAvgRefMontageView(MontageView):
         super().__init__(
             self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity
         )
-        self.tcp_set_matrix(self.V)  # define connection matrix
+
+        self.set_matrix(self.V)  
 
         if reversed_polarity:
             self.V = (-1) * self.V
@@ -830,10 +845,13 @@ class CommonAvgRefMontageView(MontageView):
         self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def setall_to_avg(self, V):
-        N = len(self.AVG_REFERENCE_LABELS) - 1
+        """note this overwrites all values of matrix, so do this first"""
+        N = (
+            len(self.AVG_REFERENCE_LABELS) - 1
+        )  # is this right ? or should it be the full N, as it is it is the avg of all the other electrodes
         avg = 1.0 / N
-        for label in self.AVG_REFERENCE_LABELS:
-            V[label, :] = -avg
+        for label in self.CAR_LABELS:
+            V.loc[label, :] = -avg
 
     def set_matrix(self, V):
         self.setall_to_avg(V)

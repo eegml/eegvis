@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
-#   kernelspec:
-#     display_name: Python 3.6 [conda metal1]
-#     language: python
-#     name: metal1
-# ---
-
 # %% [markdown]
 # # Heatmap experiments
 # In our work, we often would like to show a "heatmap" superimposed with an EEG. This may represent saliency, or a feature or where attention is directed.
@@ -265,39 +250,14 @@ axarr.get_ylim()
 # Could probably change the bottom extent a little to fix this.
 
 # %%
+
+import colorcet
+
 fig, axarr = plt.subplots(1, 1)
 fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
 # print()
 # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
-eegax = stacklineplot.stackplot_t(
-    testeeg.T,
-    seconds=clip_length * NUM_CHUNKS,
-    ylabels=INCLUDED_CHANNELS,
-    topdown=True,
-    ax=axarr,
-)
-# to get the image to scale to the plot, reset the extent to match the current limits
-left, right = axarr.get_xlim()
-bottom, top = axarr.get_ylim()
-# choose to overwrite plot with image but use alpha to modify blending
-# if want EEG plot on top then set zorder to lower like 0
-axarr.imshow(
-    heatmap_ex,
-    origin="upper",
-    # interpolation="bilinear",
-    aspect="auto",
-    extent=[left, right, bottom, top],
-    alpha=0.5,
-    zorder=3,
-    cmap="inferno",
-)  # inferno, magma, viridis, cividis, etc
 
-
-# %%
-fig, axarr = plt.subplots(1, 1)
-fig.set_size_inches(2*FIGSIZE[0], 2 * FIGSIZE[1])
-# print()
-# print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
 eegax = stacklineplot.stackplot_t(
     testeeg.T,
     seconds=clip_length * NUM_CHUNKS,
@@ -316,90 +276,27 @@ axarr.imshow(
     interpolation="bilinear",
     aspect="auto",
     extent=[left, right, bottom, top],
-    alpha=0.7,
-    zorder=0,
-    cmap="inferno",
-)  # inferno, magma, viridis, cividis, etc
-
-# %% [markdown]
-# ### alternative methods
-# - try using alpha to mask image
-
-# %%
-alphamask = np.zeros((NUM_CH,NUM_CHUNKS,4),dtype=np.float64)
-
-# %%
-Z = float(NUM_CH*NUM_CHUNKS)
-for ii in range(NUM_CH):
-    for jj in range(NUM_CHUNKS):
-        alphamask[ii,jj,3] = ii*jj/Z
-
-# %%
-plt.imshow(alphamask)
-
-# %%
-fig, axarr = plt.subplots(1, 1)
-fig.set_size_inches(2*FIGSIZE[0],2* 2 * FIGSIZE[1])
-# print()
-# print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
-eegax = stacklineplot.stackplot_t(
-    testeeg.T,
-    seconds=clip_length * NUM_CHUNKS,
-    ylabels=INCLUDED_CHANNELS,
-    topdown=True,
-    ax=axarr,
-)
-# to get the image to scale to the plot, reset the extent to match the current limits
-left, right = axarr.get_xlim()
-bottom, top = axarr.get_ylim()
-# choose to overwrite plot with image but use alpha to modify blending
-# if want EEG plot on top then set zorder to lower like 0
-axarr.imshow(
-    alphamask,
-    origin="upper",
-    # interpolation="bilinear",
-    aspect="auto",
-    extent=[left, right, bottom, top],
-    #alpha=0.5,
+    alpha=0.5,
     zorder=3,
-    # cmap="inferno",
-)  # inferno, magma, viridis, cividis, etc
+    cmap=colorcet.cm.bmw,
+)  # inferno, magma, viridis, cividis, etc 
+# colorcet.cm.fire, colorcet.cm.blues, gray, bgwy, bmw, etc. 
 
 # %%
-testeegalpha = alphamask.copy()
-testeegalpha[:,:,3] = 1-heatmap_ex
+from colorcet.plotting import swatch, swatches
+import holoviews as hv
+hv.extension('matplotlib')
 
 # %%
-fig, axarr = plt.subplots(1, 1)
-fig.set_size_inches(2*FIGSIZE[0],2* 2 * FIGSIZE[1])
-# print()
-# print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
-eegax = stacklineplot.stackplot_t(
-    testeeg.T,
-    seconds=clip_length * NUM_CHUNKS,
-    ylabels=INCLUDED_CHANNELS,
-    topdown=True,
-    ax=axarr,
-)
-# to get the image to scale to the plot, reset the extent to match the current limits
-left, right = axarr.get_xlim()
-bottom, top = axarr.get_ylim()
-# choose to overwrite plot with image but use alpha to modify blending
-# if want EEG plot on top then set zorder to lower like 0
-axarr.imshow(
-    testeegalpha,
-    origin="upper",
-    #interpolation="bilinear",
-    aspect="auto",
-    extent=[left, right, bottom, top],
-    
-    zorder=3,
-    cmap="inferno",
-)  # inferno, magma, viridis, cividis, etc
+swatches()
+
+# %%
+
 
 # %%
 
 # %%
+
 fig, axarr = plt.subplots(1, 1)
 fig.set_size_inches(2*FIGSIZE[0], 2*2 * FIGSIZE[1])
 # print()
@@ -426,5 +323,6 @@ axarr.imshow(
     zorder=3,
     cmap="inferno",
 )  # inferno, magma, viridis, cividis, etc
+
 
 # %%

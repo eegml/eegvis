@@ -21,7 +21,7 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 
 ### To do
 - [x] matplotlib EEG plotting (firstdraft)
-- [x] basic bokeh EEG plotting (firstdraft)
+- [x] basic [bokeh](bokeh.org) EEG plotting (firstdraft)
 - [x] basic montage EEG plotting, (firstdraft)
 - [x] simple browsing EEG with bokeh in jupyter (firstdraft)
 - [x] first filtering dropdowns added to nb browser tool
@@ -33,7 +33,7 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 
 - [ ] remove cruft from plotting in various widgets
 - [ ] bokeh application to browse + annotate EEG, - still experimenting
-- [ ] montage parser/loader
+- [ ] montage parser/loader (priority long-term)
 - [ ] keyboard responses, howto?
 - [ ] add ability to control scale of each electrode waveform individually
 - [ ] rewrite and package
@@ -41,6 +41,16 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 - [ ] possible re-write/extend Bokeh for canvas widget
 - [x] update to bokeh 1.0.x
 - [ ] tests for mpl_helpers
+- [ ] clearcut examples of using plotting tools with:
+  - [ ] numpy arrays
+  - [ ] edf EEGs
+  - [ ] eeghdf EEGs
+  
+- [ ] trial implement [panel](https://panel.holoviz.org) based version of browser widget
+- [ ] explore low-level implementation of browser widget using bokeh for more control
+- [ ] explroe new annotation bokeh controls
+
+
 
 ### Other notes
 - Note, to respond to keyboard commands in bokeh, probably need an extension:
