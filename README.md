@@ -32,14 +32,14 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 - [ ] add common avg reference montage (CAR)
 
 - [ ] remove cruft from plotting in various widgets
-- [ ] bokeh application to browse + annotate EEG, - still experimenting
+- [/] bokeh application to browse + annotate EEG, - still experimenting
 - [ ] montage parser/loader (priority long-term)
 - [ ] keyboard responses, howto?
 - [ ] add ability to control scale of each electrode waveform individually
 - [ ] rewrite and package
 - [ ] publish
 - [ ] possible re-write/extend Bokeh for canvas widget
-- [x] update to bokeh 1.0.x
+- [x] update to bokeh 1.0.x (now at 2.3)
 - [ ] tests for mpl_helpers
 - [ ] clearcut examples of using plotting tools with:
   - [ ] numpy arrays
@@ -49,6 +49,8 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 - [ ] trial implement [panel](https://panel.holoviz.org) based version of browser widget
 - [ ] explore low-level implementation of browser widget using bokeh for more control
 - [ ] explroe new annotation bokeh controls
+- [ ] switch to new packaging for ppa using pyproject.toml and move setup.py to setup-dev.py
+- [ ] add tools to mark events in plots and in bokeh
 
 
 
