@@ -39,7 +39,7 @@ from bokeh.models import (
 #
 from bokeh.models.tickers import FixedTicker, SingleIntervalTicker
 
-from . import montageview
+from . import montageview #_stanford
 from . import montage_derivations_edf_simplified
 from . import stackplot_bokeh
 from .stackplot_bokeh import limit_sample_check
@@ -133,11 +133,13 @@ class EeghdfBrowser:
 
     def __init__(
         self,
-        eeghdf_file_names,
-        eeghdf_files,
+        stanford_file_names, #eeghdf_file_names
+        tuh_file_names,
+        stanford_files, #eeghdf_files,
+        tuh_files,
         page_width_seconds=10.0,
         start_seconds=-1,
-        montage="neonatal",
+        montage="double banana",
         montage_options={},
         tuh = True,
         yscale=1.0,
@@ -156,10 +158,16 @@ class EeghdfBrowser:
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
         """
         self.tuh = tuh
-        self.eeghdf_file_names = eeghdf_file_names
-        self.eeghdf_files = eeghdf_files
-        self.eeghdf_file = eeghdf_files[0]
+        self.eeghdf_file_names = tuh_file_names #eeghdf_file_names
+        self.eeghdf_files = tuh_files #eeghdf_files
+        self.eeghdf_file = self.eeghdf_files[0]
         self.update_eeghdf_file(self.eeghdf_file, montage, montage_options)
+
+        self.stanford_file_names = stanford_file_names
+        self.tuh_file_names = tuh_file_names
+        self.stanford_files = stanford_files
+        self.tuh_files = tuh_files
+
 
         # display related
         self.page_width_seconds = page_width_seconds
@@ -252,11 +260,11 @@ class EeghdfBrowser:
     def signals(self):
         return self.eeghdf_file.phys_signals
 
-    def update_eeghdf_file(self, eeghdf_file, montage="trace", montage_options={}):
+    def update_eeghdf_file(self, eeghdf_file, montage="double banana", montage_options={}):
         self.eeghdf_file = eeghdf_file
         hdf = eeghdf_file.hdf
         rec = hdf["record-0"]
-        self.fs = rec.attrs["sample_frequency"]
+        self.fs = int(rec.attrs["sample_frequency"])
 
         # TODO: this HACK is model specific, we cut out last (signal_length % 60) secs
         # we do this b/c model does not output probs for clips < 60sec
@@ -285,15 +293,17 @@ class EeghdfBrowser:
 
         # reference labels are used for montages, since this is an eeghdf file, it can provide these
 
-        #TODO: stnaford uses shortcut labels!
-        self.ref_labels = eeghdf_file.electrode_labels #eeghdf_file.shortcut_elabels
+        if self.tuh:
+            self.ref_labels = eeghdf_file.electrode_labels 
+        else:
+            self.ref_labels = eeghdf_file.shortcut_elabels
 
-        if not montage_options:
+        #if not montage_options:
             # then use builtins and/or ones in the file
-            if self.tuh:
-                montage_options = montage_derivations_edf_simplified.EDF_SIMPLIFIED_MONTAGE_BUILTINS.copy()
-            else:
-                montage_options = montageview.MONTAGE_BUILTINS.copy()
+        if self.tuh:
+            montage_options = montage_derivations_edf_simplified.EDF_SIMPLIFIED_MONTAGE_BUILTINS.copy()
+        else:
+            montage_options = montageview.MONTAGE_BUILTINS.copy()
 
             # print('starting build of montage options', montage_options)
 
@@ -391,7 +401,7 @@ class EeghdfBrowser:
         """
         goto_sample = int(self.fs * self.loc_sec)
         page_width_samples = int(self.page_width_secs * self.fs)
-        hw = half_width_epoch_sample = int(page_width_samples / 2)
+        hw = int(page_width_samples / 2)
         s0 = limit_sample_check(goto_sample - hw, self.signals)
         s1 = limit_sample_check(goto_sample + hw, self.signals)
         window_samples = s1 - s0
@@ -913,11 +923,31 @@ class EeghdfBrowser:
 
     def register_top_bar_ui(self):
 
+        self.ui_hospital_dropdown = Select(
+            options=["Stanford","Temple"],
+            value="Temple",
+            title="Hospital:",
+        )
+
         self.ui_filename_dropdown = Select(
             options=self.eeghdf_file_names,
             value=self.eeghdf_file_names[0],
             title="File Name:",
         )
+
+        def on_hospital_dropdown_change(attr, oldvalue, newvalue, parent=self):
+            if newvalue == "Temple":
+                self.tuh = True
+                self.eeghdf_file_names = self.tuh_file_names
+                self.eeghdf_files = self.tuh_files
+            else:
+                self.tuh = False
+                self.eeghdf_file_names = self.stanford_file_names
+                self.eeghdf_files = self.stanford_files
+            
+            self.ui_filename_dropdown.options = self.eeghdf_file_names
+            self.ui_filename_dropdown.value = self.eeghdf_file_names[0]
+
 
         def on_filename_dropdown_change(attr, oldvalue, newvalue, parent=self):
             new_file_index = self.eeghdf_file_names.index(newvalue)
@@ -932,6 +962,7 @@ class EeghdfBrowser:
             self.update()
             self.filename_signal.emit(filename=newvalue)
 
+        self.ui_hospital_dropdown.on_change("value", on_hospital_dropdown_change)
         self.ui_filename_dropdown.on_change("value", on_filename_dropdown_change)
 
         # mlayout = ipywidgets.Layout()
@@ -998,7 +1029,7 @@ class EeghdfBrowser:
         self.ui_high_freq_filter_dropdown.on_change("value", hf_dropdown_on_change)
 
         self.ui_notch_option = CheckboxGroup(
-            labels=["60Hz Notch"]
+            labels=["60Hz Notch"], active=[0]
             # , "50Hz Notch"], max_width=100,  # disabled=False
         )
 
@@ -1057,6 +1088,7 @@ class EeghdfBrowser:
 
         # self.top_bar_layout = bokeh.layouts.row(
         self.top_bar_layout = pn.Row(
+            self.ui_hospital_dropdown,
             self.ui_filename_dropdown,
             self.ui_montage_dropdown,
             self.ui_low_freq_filter_dropdown,
