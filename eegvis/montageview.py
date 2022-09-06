@@ -227,7 +227,6 @@ def double_banana_set_matrix(V):
     #     dims=('x', 'y'),
     #     coords={'x': up_db_labels,
     #             'y': up_rec_labels})
-
     V.loc["Fp1-F7", "Fp1"] = 1
     V.loc["Fp1-F7", "F7"] = -1
     V.loc["F7-T3", "F7"] = 1
@@ -662,25 +661,25 @@ class NeonatalMontageView(MontageView):
 
     def neonatal_set_matrix(self, V):
         # pdb.set_trace()
-        V.loc["Fp1-T3", "FP1"] = 1
+        V.loc["Fp1-T3", "Fp1"] = 1
         V.loc["Fp1-T3", "T3"] = -1
 
         V.loc["T3-O1", "T3"] = 1
         V.loc["T3-O1", "O1"] = -1
 
-        V.loc["Fp2-T4", "FP2"] = 1
+        V.loc["Fp2-T4", "Fp2"] = 1
         V.loc["Fp2-T4", "T4"] = -1
 
         V.loc["T4-O2", "T4"] = 1
         V.loc["T4-O2", "O2"] = -1
 
-        V.loc["Fp1-C3", "FP1"] = 1
+        V.loc["Fp1-C3", "Fp1"] = 1
         V.loc["Fp1-C3", "C3"] = -1
 
         V.loc["C3-O1", "C3"] = 1
         V.loc["C3-O1", "O1"] = -1
 
-        V.loc["Fp2-C4", "FP2"] = 1
+        V.loc["Fp2-C4", "Fp2"] = 1
         V.loc["Fp2-C4", "C4"] = -1
 
         V.loc["C4-O2", "C4"] = 1
