@@ -131,7 +131,7 @@ class DoubleBananaMontageView(montageview.MontageView):
 
     *** NOTE this uses the clinical convention and reverses the polarity by default
     so that "up is negative" ***
-    
+
     """
 
     DB_LABELS = [
@@ -171,7 +171,7 @@ class DoubleBananaMontageView(montageview.MontageView):
 
 class DBrefMontageView(montageview.MontageView):
     """This montage derivation uses the same electrodes as double banana but uses the as recorded reference
-    so it is very simple 
+    so it is very simple
     """
 
     DBREF_LABELS_DISPLAY = [
@@ -267,7 +267,10 @@ class LaplacianMontageView(montageview.MontageView):
         if reversed_polarity:
             self.V = (-1) * self.V
         self.name = "laplacian"
-        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
+        self.full_name = "%s, up=%s" % (
+            self.name,
+            montageview.POSCHOICE[reversed_polarity],
+        )
 
     def laplacian_set_matrix(self, V):
         """expect an xarray-like matrix V"""
@@ -530,7 +533,7 @@ class TCPMontageView(montageview.MontageView):
 ### A Neonatal montage (modified 10-20)
 class NeonatalMontageView(montageview.MontageView):
     """
-    10-20 montage modified for neonatal head sizes 
+    10-20 montage modified for neonatal head sizes
     This is more or less Montage 1 in Shellhaas (2011) table 3 of
     https://www.acns.org/pdf/guidelines/Guideline-13.pdf plus it adds
     the [ 'T3-O1','O1-O2','O2-T4'] chain to visualize the occipital
