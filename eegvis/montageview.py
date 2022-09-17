@@ -621,6 +621,13 @@ class TCPMontageView(MontageView):
 ### A Neonatal montage (modified 10-20)
 class NeonatalMontageView(MontageView):
     """
+    mtg = NeonatalMontageView(rec_labels)
+    where rec_labels[i] = <channel label>
+    where channel labels is string such as
+    "Fp1", "T3", "O2", etc in the 10-20 nomenclature
+    need to have tose which are included in 
+    NeonatalMontageView.NEONATAL_LABELS
+    
     10-20 montage modified for neonatal head sizes 
     This is more or less Montage 1 in Shellhaas (2011) table 3 of
     https://www.acns.org/pdf/guidelines/Guideline-13.pdf plus it adds
