@@ -8,6 +8,7 @@ uses line collections (might actually be from pbrain example)
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
+import matplotlib.transforms
 
 # the idea behind a stacklineplot (from pyeeg) is that we have a bunch of
 # uniformly sampled data in which we want to display one trace a little above the
@@ -181,8 +182,15 @@ def stackplot_t(
         linekwargs["color"] = linecolor
     if linestyle:
         linekwargs["linestyle"] = linestyle
-
-    lines = LineCollection(segs, offsets=offsets, transOffset=None, **linekwargs)
+    # as of matplotlib 3.5, don't get data offets by default
+    # instead defaults to display/screen coordinates
+    data_scale = np.zeros((3, 3), dtype=np.float64)
+    data_scale[:2, :2] = ax.transData.get_matrix()[:2, :2]
+    offsets_trans = matplotlib.transforms.Affine2D(data_scale)
+    # offsetDeltaAf
+    lines = LineCollection(
+        segs, offsets=offsets, offset_transform=offsets_trans, **linekwargs
+    )
 
     ax.add_collection(lines)
 
