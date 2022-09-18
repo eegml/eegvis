@@ -24,6 +24,7 @@ from bokeh.models import FuncTickFormatter, Range1d
 
 # widgets
 from bokeh.models import (
+    BoxAnnotation,
     Button,
     Div,
     Select,
@@ -39,11 +40,14 @@ from bokeh.models import (
 from bokeh.models.tickers import FixedTicker, SingleIntervalTicker
 
 from . import montageview
+from . import montage_derivations_edf_simplified
 from . import stackplot_bokeh
 from .stackplot_bokeh import limit_sample_check
 from bokeh.io import push_notebook
 
 import eegml_signal.filters as esfilters
+import pdb
+import signalslot
 
 #%%
 
@@ -123,15 +127,19 @@ class EeghdfBrowser:
 
     just use the raw hdf file and conventions for now
 
+    Signals: move_sec, file_name
+    Slots: receive_overviewloc_update
     """
 
     def __init__(
         self,
-        eeghdf_file,
+        eeghdf_file_names,
+        eeghdf_files,
         page_width_seconds=10.0,
         start_seconds=-1,
-        montage="trace",
+        montage="neonatal",
         montage_options={},
+        tuh = True,
         yscale=1.0,
         plot_width=950,
         plot_height=600,
@@ -139,16 +147,19 @@ class EeghdfBrowser:
         """
         @eegfile is an eeghdf.Eeghdf() class instance representing the file
         @montage is either a string in the standard list or a montageview factory
-        @eeghdf_file - an eeghdf.Eeeghdf instance
+        @eeghdf_files - a list of eeghdf.Eeeghdf instances
         @page_width_seconds = how big to make the view in seconds
         @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
         @start_seconds - center view on this point in time
+        @tuh - bool indicating if signal is coming from tuh
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
         """
-
-        self.eeghdf_file = eeghdf_file
-        self.update_eeghdf_file(eeghdf_file, montage, montage_options)
+        self.tuh = tuh
+        self.eeghdf_file_names = eeghdf_file_names
+        self.eeghdf_files = eeghdf_files
+        self.eeghdf_file = eeghdf_files[0]
+        self.update_eeghdf_file(self.eeghdf_file, montage, montage_options)
 
         # display related
         self.page_width_seconds = page_width_seconds
@@ -164,6 +175,8 @@ class EeghdfBrowser:
             self.loc_sec = start_seconds
 
         # self.init_kwargs = kwargs
+        self.move_signal = signalslot.Signal(args=["move_sec"])
+        self.filename_signal = signalslot.Signal(args=["filename"])
 
         # other ones
         self.yscale = yscale
@@ -231,6 +244,10 @@ class EeghdfBrowser:
         )
         self.current_notch_filter = None
 
+    def receive_overviewloc_update(self, overview_loc, **kwargs):
+        self.loc_sec = overview_loc
+        self.update()
+
     @property
     def signals(self):
         return self.eeghdf_file.phys_signals
@@ -240,6 +257,20 @@ class EeghdfBrowser:
         hdf = eeghdf_file.hdf
         rec = hdf["record-0"]
         self.fs = rec.attrs["sample_frequency"]
+
+        # TODO: this HACK is model specific, we cut out last (signal_length % 60) secs
+        # we do this b/c model does not output probs for clips < 60sec
+        #pdb.set_trace()
+        signal_len = self.eeghdf_file.phys_signals.shape[1] / self.fs
+        remaining_samples = int(self.fs * (signal_len % 60))
+        if remaining_samples > 0:
+            self.eeghdf_file._phys_signals = self.eeghdf_file.phys_signals[
+                :, :-remaining_samples
+            ]
+        self.eeghdf_file.duration_seconds = (
+            self.eeghdf_file.phys_signals.shape[1] / self.fs
+        )
+
         # self.signals = rec['signals']
         blabels = rec["signal_labels"]  # byte labels
         # self.electrode_labels = [str(ss,'ascii') for ss in blabels]
@@ -254,11 +285,16 @@ class EeghdfBrowser:
 
         # reference labels are used for montages, since this is an eeghdf file, it can provide these
 
-        self.ref_labels = eeghdf_file.shortcut_elabels
+        #TODO: stnaford uses shortcut labels!
+        self.ref_labels = eeghdf_file.electrode_labels #eeghdf_file.shortcut_elabels
 
         if not montage_options:
             # then use builtins and/or ones in the file
-            montage_options = montageview.MONTAGE_BUILTINS.copy()
+            if self.tuh:
+                montage_options = montage_derivations_edf_simplified.EDF_SIMPLIFIED_MONTAGE_BUILTINS.copy()
+            else:
+                montage_options = montageview.MONTAGE_BUILTINS.copy()
+
             # print('starting build of montage options', montage_options)
 
             # montage_options = eeghdf_file.get_montages()
@@ -267,10 +303,13 @@ class EeghdfBrowser:
         self.current_montage_instance = None
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-
+                #try:
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
+                #except:
+                #    self.data_source.data.update(dict(xs=[0], ys=[0]))
+                #    self.current_montage_instance = montage_options[0](self.ref_labels)
             else:
                 raise Exception("unrecognized montage: %s" % montage)
         else:
@@ -356,10 +395,15 @@ class EeghdfBrowser:
         s0 = limit_sample_check(goto_sample - hw, self.signals)
         s1 = limit_sample_check(goto_sample + hw, self.signals)
         window_samples = s1 - s0
+        if window_samples != self.page_width_seconds * self.fs:
+            # dont update
+            return None
+
         signal_view = self.signals[:, s0:s1]
         inmontage_view = np.dot(self.current_montage_instance.V.data, signal_view)
 
         data = inmontage_view[self.ch_start : self.ch_stop, :]  # note transposed
+
         numRows = inmontage_view.shape[0]
         ########## do filtering here ############
         # start primative filtering
@@ -376,27 +420,22 @@ class EeghdfBrowser:
 
         ## end filtering
         t = (
-            self.page_width_secs
+            self.page_width_seconds
             * np.arange(window_samples, dtype=float)
             / window_samples
         )
-        t = t + s0 / self.fs  # t = t + start_time
+        start_time = s0 / self.fs
+        t = t + start_time
         # t = t[:s1-s0]
         ## this is not quite right if ch_start is not 0
         xs = [t for ii in range(numRows)]
         ys = [self.yscale * data[ii, :] + self.ticklocs[ii] for ii in range(numRows)]
-        # print('len(xs):', len(xs), 'len(ys):', len(ys))
 
-        # is this the best way to update the data? should it be done both at once
-        # {'xs':xs, 'ys':ys}
         self.data_source.data.update(dict(xs=xs, ys=ys))  # could just use equals?
-        # old way
-        # self.data_source.data['xs'] = xs
-        # self.data_source.data['ys'] = ys
 
-        # self.push_notebook()
-        # do pane.Bokeh::param.trigger('object') on pane holding EEG waveform plot
-        # in notebook updates without a trigger
+        # # update seizure box indicator
+        # green_box = BoxAnnotation(left=4, right=10, fill_color="green", fill_alpha=0.1)
+        # self.fig.add_layout(green_box)
 
     def stackplot_t(
         self,
@@ -569,6 +608,7 @@ class EeghdfBrowser:
 
         ## xlim(*xlm)
         # xticks(np.linspace(xlm, 10))
+        
         dmin = data.min()
         dmax = data.max()
         dr = (dmax - dmin) * 0.7  # Crowd them a bit.
@@ -873,128 +913,27 @@ class EeghdfBrowser:
 
     def register_top_bar_ui(self):
 
-        # mlayout = ipywidgets.Layout()
-        # mlayout.width = "15em"
-        self.ui_montage_dropdown = Select(
-            # options={'One': 1, 'Two': 2, 'Three': 3},
-            options=self.montage_options.keys(),  # or .montage_optins.keys()
-            value=self.current_montage_instance.name,
-            title="Montage:",
-            # layout=mlayout, # set width to "15em"
+        self.ui_filename_dropdown = Select(
+            options=self.eeghdf_file_names,
+            value=self.eeghdf_file_names[0],
+            title="File Name:",
         )
 
-        def on_dropdown_change(attr, oldvalue, newvalue, parent=self):
-            print(f"on_dropdown_change: {attr}, {oldvalue}, {newvalue}, {parent}")
-            if change["name"] == "value":  # the value changed
-                if change["new"] != change["old"]:
-                    # print('*** should change the montage to %s from %s***' % (change['new'], change['old']))
-                    parent.update_montage(
-                        change["new"]
-                    )  # change to the montage keyed by change['new']
-                    parent.update_plot_after_montage_change()
-                    parent.update()  #
+        def on_filename_dropdown_change(attr, oldvalue, newvalue, parent=self):
+            new_file_index = self.eeghdf_file_names.index(newvalue)
+            self.eeghdf_file = self.eeghdf_files[new_file_index]
+            self.update_eeghdf_file(
+                self.eeghdf_file,
+                self.current_montage_instance.name,
+                self.montage_options,
+            )
+            self.loc_sec = int(self.page_width_secs/2)
+            self.update_plot_after_montage_change()
+            self.update()
+            self.filename_signal.emit(filename=newvalue)
 
-        self.ui_montage_dropdown.on_change("value", on_dropdown_change)
+        self.ui_filename_dropdown.on_change("value", on_filename_dropdown_change)
 
-        # flayout = ipywidgets.Layout()
-        # flayout.width = "12em"
-        self.ui_low_freq_filter_dropdown = ipywidgets.Dropdown(
-            # options = ['None', '0.1 Hz', '0.3 Hz', '1 Hz', '5 Hz', '15 Hz',
-            #           '30 Hz', '50 Hz', '100 Hz', '150Hz'],
-            options=self._highpass_cache.keys(),
-            value="0.3 Hz",
-            description="LF",
-            layout=flayout,
-        )
-
-        def lf_dropdown_on_change(change, parent=self):
-            # print('change observed: %s' % pprint.pformat(change))
-            if change["name"] == "value":  # the value changed
-                if change["new"] != change["old"]:
-                    # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
-                    parent.current_hp_filter = parent._highpass_cache[change["new"]]
-                    parent.update()  #
-
-        self.ui_low_freq_filter_dropdown.observe(lf_dropdown_on_change)
-
-        ###
-
-        self.ui_high_freq_filter_dropdown = ipywidgets.Dropdown(
-            # options = ['None', '15 Hz', '30 Hz', '50 Hz', '70Hz', '100 Hz', '150Hz', '300 Hz'],
-            options=self._lowpass_cache.keys(),
-            # value = '70Hz',
-            description="HF",
-            layout=flayout,
-        )
-
-        def hf_dropdown_on_change(change, parent=self):
-            if change["name"] == "value":  # the value changed
-                if change["new"] != change["old"]:
-                    # print('*** should change the filter to %s from %s***' % (change['new'], change['old']))
-                    self.current_lp_filter = self._lowpass_cache[change["new"]]
-                    self.update()  #
-
-        self.ui_high_freq_filter_dropdown.observe(hf_dropdown_on_change)
-
-        def go_to_handler(change, parent=self):
-            # print("change:", change)
-            if change["name"] == "value":
-                self.loc_sec = change["new"]
-                self.update()
-
-        self.ui_notch_option = ipywidgets.Checkbox(
-            value=False, description="60Hz Notch", disabled=False
-        )
-
-        def notch_change(change):
-            if change["name"] == "value":
-                if change["new"]:
-                    self.current_notch_filter = self._notch_filter
-                else:
-                    self.current_notch_filter = None
-                self.update()
-
-        self.ui_notch_option.observe(notch_change)
-
-        self.ui_gain_bounded_float = ipywidgets.BoundedFloatText(
-            value=1.0,
-            min=0.001,
-            max=1000.0,
-            step=0.1,
-            description="gain",
-            disabled=False,
-            continuous_update=False,  # only trigger when done
-            layout=flayout,
-        )
-
-        def ui_gain_on_change(change, parent=self):
-            if change["name"] == "value":
-                if change["new"] != change["old"]:
-                    self.yscale = float(change["new"])
-                    self.update()
-
-        self.ui_gain_bounded_float.observe(ui_gain_on_change)
-        top_bar_layout = bokeh.layouts.row(
-            self.ui_montage_dropdown,
-            self.ui_low_freq_filter_dropdown,
-            self.ui_high_freq_filter_dropdown,
-            self.ui_notch_option,
-            self.ui_gain_bounded_float,
-        )
-        return top_bar_layout
-        # display(
-        #     ipywidgets.HBox(
-        #         [
-        #             self.ui_montage_dropdown,
-        #             self.ui_low_freq_filter_dropdown,
-        #             self.ui_high_freq_filter_dropdown,
-        #             self.ui_notch_option,
-        #             self.ui_gain_bounded_float,
-        #         ]
-        #     )
-        # )
-
-    def register_top_bar_ui(self):
         # mlayout = ipywidgets.Layout()
         # mlayout.width = "15em"
         self.ui_montage_dropdown = Select(
@@ -1118,6 +1057,7 @@ class EeghdfBrowser:
 
         # self.top_bar_layout = bokeh.layouts.row(
         self.top_bar_layout = pn.Row(
+            self.ui_filename_dropdown,
             self.ui_montage_dropdown,
             self.ui_low_freq_filter_dropdown,
             self.ui_high_freq_filter_dropdown,
@@ -1127,10 +1067,11 @@ class EeghdfBrowser:
         return self.top_bar_layout
 
     def _limit_time_check(self, candidate):
-        if candidate > self.eeghdf_file.duration_seconds:
-            return float(self.eeghdf_file.duration_seconds)
-        if candidate < 0:
-            return 0.0
+        hw = int(self.page_width_secs / 2)
+        if candidate > self.eeghdf_file.duration_seconds - hw:
+            return float(self.eeghdf_file.duration_seconds - hw)
+        if candidate < hw:
+            return float(hw)
         return candidate
 
     def register_bottom_bar_ui(self):
@@ -1146,26 +1087,33 @@ class EeghdfBrowser:
         # could put goto input here
 
         def go_forward(b, parent=self):
-            # print(b, parent)
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec + 10)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonf.on_click(go_forward)
 
         def go_backward(b):
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec - 10)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonback.on_click(go_backward)
 
         def go_forward1(b, parent=self):
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec + 1)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonf1.on_click(go_forward1)
 
         def go_backward1(b, parent=self):
+            old_loc = self.loc_sec
             self.loc_sec = self._limit_time_check(self.loc_sec - 1)
+            self.move_signal.emit(move_sec=self.loc_sec - old_loc)
             self.update()
 
         self.ui_buttonback1.on_click(go_backward1)
@@ -1236,7 +1184,7 @@ class EegBrowser(EeghdfBrowser):
         page_width_seconds,
         montage=None,
         montage_options=OrderedDict(),
-        start_seconds=-1,
+        start_seconds=0,
         **kwargs,
     ):
         # def __init__(self, eeghdf_file, page_width_seconds=10.0, start_seconds=-1,
@@ -1275,7 +1223,10 @@ class EegBrowser(EeghdfBrowser):
             montage_options.update(min_eeg.montage_options)
         if not montage_options:
             # then use builtins and/or ones in the file
-            montage_options = montageview.MONTAGE_BUILTINS.copy()
+            if self.tuh:
+                montage_options = montage_derivations_edf_simplified.EDF_SIMPLIFIED_MONTAGE_BUILTINS.copy()
+            else:
+                montage_options = montageview.MONTAGE_BUILTINS.copy()
             # print('starting build of montage options', montage_options)
 
             # montage_options = eeghdf_file.get_montages()

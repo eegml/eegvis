@@ -20,7 +20,7 @@ while another focuses on occipital events.  """
 # optional ones which we try to add if possible: EKG, EMG, Resp PG1 or RUC LLC,
 # extra leads
 
-
+import pdb
 from collections import OrderedDict
 import numpy as np
 import xarray
@@ -676,25 +676,26 @@ class NeonatalMontageView(MontageView):
         self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def neonatal_set_matrix(self, V):
-        V.loc["Fp1-T3", "Fp1"] = 1
+        # pdb.set_trace()
+        V.loc["Fp1-T3", "FP1"] = 1
         V.loc["Fp1-T3", "T3"] = -1
 
         V.loc["T3-O1", "T3"] = 1
         V.loc["T3-O1", "O1"] = -1
 
-        V.loc["Fp2-T4", "Fp2"] = 1
+        V.loc["Fp2-T4", "FP2"] = 1
         V.loc["Fp2-T4", "T4"] = -1
 
         V.loc["T4-O2", "T4"] = 1
         V.loc["T4-O2", "O2"] = -1
 
-        V.loc["Fp1-C3", "Fp1"] = 1
+        V.loc["Fp1-C3", "FP1"] = 1
         V.loc["Fp1-C3", "C3"] = -1
 
         V.loc["C3-O1", "C3"] = 1
         V.loc["C3-O1", "O1"] = -1
 
-        V.loc["Fp2-C4", "Fp2"] = 1
+        V.loc["Fp2-C4", "FP2"] = 1
         V.loc["Fp2-C4", "C4"] = -1
 
         V.loc["C4-O2", "C4"] = 1
@@ -704,19 +705,19 @@ class NeonatalMontageView(MontageView):
         V.loc["T3-C3", "C3"] = -1
 
         V.loc["C3-Cz", "C3"] = 1
-        V.loc["C3-Cz", "Cz"] = -1
+        V.loc["C3-Cz", "CZ"] = -1
 
-        V.loc["Cz-C4", "Cz"] = 1
+        V.loc["Cz-C4", "CZ"] = 1
         V.loc["Cz-C4", "C4"] = -1
 
-        V.loc["C4-T4", "Cz"] = 1
+        V.loc["C4-T4", "CZ"] = 1
         V.loc["C4-T4", "T4"] = -1
 
         V.loc["C4-T4", "C4"] = 1
         V.loc["C4-T4", "T4"] = -1
 
-        V.loc["Fz-Cz", "Fz"] = 1
-        V.loc["Fz-Cz", "Cz"] = -1
+        V.loc["Fz-Cz", "FZ"] = 1
+        V.loc["Fz-Cz", "CZ"] = -1
 
         V.loc["T3-O1", "T3"] = 1
         V.loc["T3-O1", "O1"] = -1
