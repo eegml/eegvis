@@ -3,7 +3,7 @@ xarray
 ipywidgets >= 7.0
 #bokeh<=0.12.9,>=0.12.6
 bokeh>=0.12.16 # need to update for bokeh 1.0 !!!
-matplotlib < 3.5 # matplotlib breaks us going from 3.4->3.5
+matplotlib # works up to 3.6 at least
 h5py
 git+https://github.com/eegml/eegml-signal.git
 panel  # from pyviz project, allows for notebook/web page 
