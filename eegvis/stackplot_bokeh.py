@@ -1019,6 +1019,13 @@ class IpyHdfEegPlot(IpyEEGPlot):
     """
 
     def __init__(self, hdf, page_width_seconds, montage=None, **kwargs):
+        """_summary_
+
+        Args:
+            hdf (h5py.File): an eeghdf convention hdf5 file handle
+            page_width_seconds (float): number of seconds to show 
+            montage (a montageview.MontageView instance, optional): a montage with the correct mapping of elctrodes to channel numbers
+        """
         rec = hdf["record-0"]
         self.signals = rec["signals"]
         blabels = rec["signal_labels"]  # byte labels
