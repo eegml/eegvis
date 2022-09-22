@@ -188,8 +188,9 @@ def stackplot_t(
     data_scale[:2, :2] = ax.transData.get_matrix()[:2, :2]
     offsets_trans = matplotlib.transforms.Affine2D(data_scale)
     # offsetDeltaAf
+    # matplotlib 3.6 renames transOffset to offset_transform, may need update in future
     lines = LineCollection(
-        segs, offsets=offsets, offset_transform=offsets_trans, **linekwargs
+        segs, offsets=offsets, transOffset=offsets_trans, **linekwargs
     )
 
     ax.add_collection(lines)
