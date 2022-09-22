@@ -9,7 +9,7 @@ from distutils.core import setup
 
 setup(
     name="eegvis",
-    version="0.2.1",
+    version="0.3.0",
     description="""eeg visualization functions""",
     author="""Chris Lee-Messer""",
     url="https://github.com/eegml/eegvis",
