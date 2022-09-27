@@ -34,6 +34,6 @@ def test_add_relative_vertical_scalebar():
 
     fig, ax = plt.subplots()
     ax = stacklineplot.stackplot(data, ax=ax)
-    stacklineplot.add_data_vertical_scalebar(ax=ax,units=r'$\mu$V')
+    stacklineplot.add_relative_vertical_scalebar(ax=ax,units=r'$\mu$V')
     #plt.show()
     fig.savefig('test_add_relative_vertical_scalebar.svg')
