@@ -11,4 +11,4 @@ Highlights
 - routines that support montage derivations in ways that clinical EEG understand
 - a full "browser" in the notebook/webpage which supports montages derivations, filtering
 """
-__version__ = "0.3.0"
+__version__ = "0.3.1"
