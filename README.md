@@ -27,7 +27,8 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 - [x] first filtering dropdowns added to nb browser tool
 - [x] allow kwargs to set plot width and height
 - [/] notch and HF filters dropdowns - problem with ringing on current firwin filters
-- [ ] need scale/calibration bars
+- [/] need scale/calibration bars
+      - [x] vertical scale bars can be added for any stackplot
 - [ ] catch when current displayed data is not big enough to filter
 - [ ] add common avg reference montage (CAR)
 
@@ -63,6 +64,14 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 
 ### Developer Install
 currently this is developer only package
+To install from the head of development
+```
+pip install -U git+https://github.com/eegml/eegvis.git
+```
+I have started using f-strings in my code, so I no longer support python 3.6 and below
+
+To work on the code yourself:
+
 ```
     git clone https://github.com/eegml/eegvis.git
     cd eegvis
