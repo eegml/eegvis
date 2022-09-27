@@ -9,6 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import matplotlib.transforms
+from matplotlib.lines import Line2D
+from matplotlib.text import Text
+
 
 # the idea behind a stacklineplot (from pyeeg) is that we have a bunch of
 # uniformly sampled data in which we want to display one trace a little above the
@@ -500,3 +503,118 @@ def stackplot_t_with_rgba_heatmap(
     )
 
     return ax  # or eegax?, should there be a way to get the figure too?
+
+
+# work on vertical scale bar
+
+def add_data_vertical_scalebar(
+    ax,
+    data_height=100,
+    units="",
+    end_line_extent=0.01,
+    color="black",
+    anchor_position="lower right",
+):
+    """add_data_vertical_scalebar: add a vertical scalebar to a stackplot specific height in and units
+
+    Args:
+        ax (matplot figure axis object): axes object where to add the scalebar
+        data_height (number): how high you want the scalebar in data units. Defaults to 100.
+        units (str, optional): data units to use for height, e.g. "$\mu$V". Defaults to "".
+        end_line_extent (float, optional): length in axes coordinate system of endlines. Defaults to 0.01.
+        color (str, optional): color to use for scalebar. Defaults to "black".
+        anchor_position (str, optional): where to anchor in ('upper left', 'center',...). Defaults to "lower right".
+            see matplotlib AnchorOffset documentation
+    """
+
+    linekw = {}
+    trans = ax.transAxes
+    transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
+
+    _x, size_axes = transiv.inverted().transform((0.0, data_height))
+    size_bar = matplotlib.offsetbox.AuxTransformBox(trans)
+
+    ## draw the vertical scale bar in axes coordiates
+    #      Line2D(xdata, ydata, *, ...)
+    line = Line2D([0, 0], [0, size_axes], color=color)  # , **linekw)
+    vline1 = Line2D(
+        [-end_line_extent / 2.0, end_line_extent / 2.0], [0, 0], color=color
+    )
+    vline2 = Line2D(
+        [-end_line_extent / 2.0, end_line_extent / 2.0],
+        [size_axes, size_axes],
+        color=color,
+    )
+    size_bar.add_artist(line)
+    size_bar.add_artist(vline1)
+    size_bar.add_artist(vline2)
+    txtbox = matplotlib.offsetbox.TextArea(
+        f"{data_height}{units}", textprops=dict(color=color)
+    )
+
+    hpac = matplotlib.offsetbox.HPacker(
+        children=[size_bar, txtbox], align="center", pad=0, sep=2
+    )
+    # hpac = size_bar # to just test size_bar
+    big_artist = matplotlib.offsetbox.AnchoredOffsetbox(
+        anchor_position, child=hpac, frameon=False
+    )
+    #
+    ax.add_artist(big_artist)
+
+def add_relative_vertical_scalebar(
+    ax,
+    data_height=100,
+    units="",
+    end_line_extent=0.01,
+    color="black",
+    anchor_position="lower right",
+):
+    """add_data_scalebar: add a vertical scalebar to a stackplot specific height in and units
+
+    Args:
+        ax (matplot figure axis object): axes object where to add the scalebar
+        data_height (number): how high you want the scalebar in data units. Defaults to 100.
+        units (str, optional): data units to use for height, e.g. "$\mu$V". Defaults to "".
+        end_line_extent (float, optional): length in axes coordinate system of endlines. Defaults to 0.01.
+        color (str, optional): color to use for scalebar. Defaults to "black".
+        anchor_position (str, optional): where to anchor in ('upper left', 'center',...). Defaults to "lower right".
+            see matplotlib AnchorOffset documentation
+    """
+
+    linekw = {}
+    trans = ax.transAxes
+    transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
+
+    _x, size_axes = transiv.inverted().transform((0.0, data_height))
+    size_bar = matplotlib.offsetbox.AuxTransformBox(trans)
+
+    ## draw the vertical scale bar in axes coordiates
+    #      Line2D(xdata, ydata, *, ...)
+    line = Line2D([0, 0], [0, size_axes], color=color)  # , **linekw)
+    vline1 = Line2D(
+        [-end_line_extent / 2.0, end_line_extent / 2.0], [0, 0], color=color
+    )
+    vline2 = Line2D(
+        [-end_line_extent / 2.0, end_line_extent / 2.0],
+        [size_axes, size_axes],
+        color=color,
+    )
+    size_bar.add_artist(line)
+    size_bar.add_artist(vline1)
+    size_bar.add_artist(vline2)
+    txtbox = matplotlib.offsetbox.TextArea(
+        f"{data_height}{units}", textprops=dict(color=color)
+    )
+
+    hpac = matplotlib.offsetbox.HPacker(
+        children=[size_bar, txtbox], align="center", pad=0, sep=2
+    )
+    # hpac = size_bar # to just test size_bar
+    big_artist = matplotlib.offsetbox.AnchoredOffsetbox(
+        anchor_position, child=hpac, frameon=False
+    )
+    #
+    ax.add_artist(big_artist)
+
+
