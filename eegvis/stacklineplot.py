@@ -515,7 +515,7 @@ def add_data_vertical_scalebar(
     color="black",
     anchor_position="lower right",
 ):
-    """add_data_vertical_scalebar: add a vertical scalebar to a stackplot specific height in and units
+    r"""add_data_vertical_scalebar: add a vertical scalebar to a stackplot specific height in and units
 
     Args:
         ax (matplot figure axis object): axes object where to add the scalebar
@@ -580,7 +580,7 @@ def add_relative_vertical_scalebar(
     color="black",
     anchor_position="lower right",
 ):
-    """add a vertical scale bar with the same approximate size in the 
+    r"""add a vertical scale bar with the same approximate size in the 
     figure (as defined by the axis). Will be rounded to nearest single
     precision number
 
@@ -605,16 +605,16 @@ def add_relative_vertical_scalebar(
     trans = ax.transAxes # axes -> display
     # + is a kind of weird composition operator, reverse what I thought
     transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
-    # _x, display_height = trans.transform((0.0, relative_height))
-    #_x, data_height = ax.transData.inverted().transform((0, display_height))
+
+
     # hack to use only one significant digit by default
     _x, data_height = transiv.transform((0.0, relative_height))
-    print(f"{data_height=} before")
+    
     data_height = float("%.1g" % data_height)
-    print(f"{data_height=} after")
+    
     
     _x, size_axes = transiv.inverted().transform((0.0, data_height))
-    print(f"{size_axes=}")
+    
     size_bar = matplotlib.offsetbox.AuxTransformBox(trans)
 
     ## draw the vertical scale bar in axes coordiates
