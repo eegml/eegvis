@@ -525,6 +525,14 @@ def add_data_vertical_scalebar(
         color (str, optional): color to use for scalebar. Defaults to "black".
         anchor_position (str, optional): where to anchor in ('upper left', 'center',...). Defaults to "lower right".
             see matplotlib AnchorOffset documentation
+    returns: ax, the original axis object
+    
+    >>> fig, ax = plt.subplots()    
+    >>> ax = stackplot(data, ax=ax)
+    >>> add_data_vertical_scalebar(ax=ax,units=r'$\mu$V')
+    >>> fig.figsave('fig.png')
+    
+    
     """
 
     linekw = {}
@@ -562,31 +570,51 @@ def add_data_vertical_scalebar(
     #
     ax.add_artist(big_artist)
 
+    return ax
+
 def add_relative_vertical_scalebar(
     ax,
-    data_height=100,
+    relative_height=0.1, # approx fraction of axes to use for vertical area
     units="",
     end_line_extent=0.01,
     color="black",
     anchor_position="lower right",
 ):
-    """add_data_scalebar: add a vertical scalebar to a stackplot specific height in and units
+    """add a vertical scale bar with the same approximate size in the 
+    figure (as defined by the axis). Will be rounded to nearest single
+    precision number
 
     Args:
-        ax (matplot figure axis object): axes object where to add the scalebar
-        data_height (number): how high you want the scalebar in data units. Defaults to 100.
+        ax (matplot figure axis object): axis object to draw to
+        relative_height (float, optional): fraction of figure height. Defaults to 0.1.
         units (str, optional): data units to use for height, e.g. "$\mu$V". Defaults to "".
         end_line_extent (float, optional): length in axes coordinate system of endlines. Defaults to 0.01.
         color (str, optional): color to use for scalebar. Defaults to "black".
         anchor_position (str, optional): where to anchor in ('upper left', 'center',...). Defaults to "lower right".
             see matplotlib AnchorOffset documentation
+
+    returns: the original axis, ax
+            
+    >>> fig, ax = plt.subplots()    
+    >>> ax = stackplot(data, ax=ax)
+    >>> add_relative_vertical_scalebar(ax=ax,units=r'$\mu$V')
+    >>> fig.figsave('fig.png')
     """
 
     linekw = {}
-    trans = ax.transAxes
+    trans = ax.transAxes # axes -> display
+    # + is a kind of weird composition operator, reverse what I thought
     transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
-
+    # _x, display_height = trans.transform((0.0, relative_height))
+    #_x, data_height = ax.transData.inverted().transform((0, display_height))
+    # hack to use only one significant digit by default
+    _x, data_height = transiv.transform((0.0, relative_height))
+    print(f"{data_height=} before")
+    data_height = float("%.1g" % data_height)
+    print(f"{data_height=} after")
+    
     _x, size_axes = transiv.inverted().transform((0.0, data_height))
+    print(f"{size_axes=}")
     size_bar = matplotlib.offsetbox.AuxTransformBox(trans)
 
     ## draw the vertical scale bar in axes coordiates
@@ -616,5 +644,5 @@ def add_relative_vertical_scalebar(
     )
     #
     ax.add_artist(big_artist)
-
-
+    
+    return ax
