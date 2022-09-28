@@ -412,7 +412,7 @@ def stackplot_t_with_heatmap(
     if not ax:
         fig, ax = plt.subplots(1, 1)
         # fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
-    # print()
+    
     # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
     eegax = stackplot_t(
         tarray,
@@ -514,6 +514,7 @@ def add_data_vertical_scalebar(
     end_line_extent=0.01,
     color="black",
     anchor_position="lower right",
+    # linekw = {} # todo
 ):
     r"""add_data_vertical_scalebar: add a vertical scalebar to a stackplot specific height in and units
 
@@ -535,12 +536,15 @@ def add_data_vertical_scalebar(
     
     """
 
-    linekw = {}
-    trans = ax.transAxes
-    transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
+    
+    
+    deltaAxes = matplotlib.transforms.AffineDeltaTransform(ax.transAxes)
+    deltaData = matplotlib.transforms.AffineDeltaTransform(ax.transData)
+    # + is a kind of weird composition operator, reverse order of what I thought
+    axes2data = deltaAxes + deltaData.inverted()  # axes->display -> data
 
-    _x, size_axes = transiv.inverted().transform((0.0, data_height))
-    size_bar = matplotlib.offsetbox.AuxTransformBox(trans)
+    _x, size_axes = axes2data.inverted().transform((0.0, data_height))
+    size_bar = matplotlib.offsetbox.AuxTransformBox(ax.transAxes)
 
     ## draw the vertical scale bar in axes coordiates
     #      Line2D(xdata, ydata, *, ...)
@@ -602,20 +606,24 @@ def add_relative_vertical_scalebar(
     """
 
     linekw = {}
-    trans = ax.transAxes # axes -> display
+    # want to ignore translations and just account for scaling factors in axes -> data transform
+    deltaAxes = matplotlib.transforms.AffineDeltaTransform(ax.transAxes)
+    deltaData = matplotlib.transforms.AffineDeltaTransform(ax.transData)
     # + is a kind of weird composition operator, reverse what I thought
-    transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
+    #transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
+    axes2data = deltaAxes + deltaData.inverted()  # axes->display -> data
 
 
     # hack to use only one significant digit by default
-    _x, data_height = transiv.transform((0.0, relative_height))
+    _x, data_height = axes2data.transform((0.0, relative_height))
+    #print(f"{_x=}, {data_height=}")
     
     data_height = float("%.1g" % data_height)
+    #print(f"after rounding: {_x=}, {data_height=}")
     
-    
-    _x, size_axes = transiv.inverted().transform((0.0, data_height))
-    
-    size_bar = matplotlib.offsetbox.AuxTransformBox(trans)
+    _x, size_axes = axes2data.inverted().transform((_x, data_height))
+    #print(f"after converson: {_x=}, {size_axes=}")
+    size_bar = matplotlib.offsetbox.AuxTransformBox(ax.transAxes)
 
     ## draw the vertical scale bar in axes coordiates
     #      Line2D(xdata, ydata, *, ...)
