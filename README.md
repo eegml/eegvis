@@ -46,11 +46,12 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
   - [ ] numpy arrays
   - [ ] edf EEGs
   - [ ] eeghdf EEGs
+  - [ ] mne eeg and/or meg (should this use, be in [eegml-mne-utils](https://github.com/eegml/eegml-mne-utils))
   
-- [ ] trial implement [panel](https://panel.holoviz.org) based version of browser widget
+- [/] trial implement [panel](https://panel.holoviz.org) based version of browser widget
 - [ ] explore low-level implementation of browser widget using bokeh for more control
-- [ ] explroe new annotation bokeh controls
-- [ ] switch to new packaging for ppa using pyproject.toml and move setup.py to setup-dev.py
+- [ ] explore new annotation bokeh controls
+- [/] switch to new packaging for ppa using pyproject.toml and move setup.py to setup-dev.py
 - [ ] add tools to mark events in plots and in bokeh
 
 
