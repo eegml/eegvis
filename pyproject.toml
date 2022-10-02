@@ -22,7 +22,7 @@ dependencies = [
     "scipy", # signal processing sections
     "eegml-signal@git+https://github.com/eegml/eegml-signal.git@master", # need literal toml string
     #'git+https://github.com/eegml/eegml-signal.git', # pip versionneed literal toml string
-    "matplotlib", # requried for this backend, works with matplotlib 2.x, 3.x
+    "matplotlib>=3.2", # requried for this backend, prob works with matplotlib 2.x, 3.x
     "bokeh>=0.12.16", # required for bokeh backend
     "ipywidgets>=7.0",
     "panel",   # needed for more elaborate ui/web dashboard
