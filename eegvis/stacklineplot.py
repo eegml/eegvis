@@ -13,6 +13,86 @@ from matplotlib.lines import Line2D
 from matplotlib.text import Text
 
 
+# as colab still uses matplotlib 3.2.2 as of 2022-oct-01
+# not sure if this is worth it as could just set those two elements to be zero
+#
+# backport AffineDeltaTransform which starts in 3.3 taken from 3.6
+try:
+    from matplotlib.transforms import AffineDeltaTransform
+except:
+    import functools
+    import textwrap
+
+    def _make_str_method(*args, **kwargs):
+        """
+        Generate a ``__str__`` method for a `.Transform` subclass.
+
+        After ::
+
+            class T:
+                __str__ = _make_str_method("attr", key="other")
+
+        ``str(T(...))`` will be
+
+        .. code-block:: text
+
+            {type(T).__name__}(
+                {self.attr},
+                key={self.other})
+        """
+        indent = functools.partial(textwrap.indent, prefix=" " * 4)
+
+        def strrepr(x):
+            return repr(x) if isinstance(x, str) else str(x)
+
+        return lambda self: (
+            type(self).__name__
+            + "("
+            + ",".join(
+                [
+                    *(indent("\n" + strrepr(getattr(self, arg))) for arg in args),
+                    *(
+                        indent("\n" + k + "=" + strrepr(getattr(self, arg)))
+                        for k, arg in kwargs.items()
+                    ),
+                ]
+            )
+            + ")"
+        )
+
+    class AffineDeltaTransform(matplotlib.transforms.Affine2DBase):
+        r"""
+        A transform wrapper for transforming displacements between pairs of points.
+
+        This class is intended to be used to transform displacements ("position
+        deltas") between pairs of points (e.g., as the ``offset_transform``
+        of `.Collection`\s): given a transform ``t`` such that ``t =
+        AffineDeltaTransform(t) + offset``, ``AffineDeltaTransform``
+        satisfies ``AffineDeltaTransform(a - b) == AffineDeltaTransform(a) -
+        AffineDeltaTransform(b)``.
+
+        This is implemented by forcing the offset components of the transform
+        matrix to zero.
+
+        This class is experimental as of 3.3, and the API may change.
+        """
+
+        def __init__(self, transform, **kwargs):
+            super().__init__(**kwargs)
+            self._base_transform = transform
+
+        __str__ = _make_str_method("_base_transform")
+
+        def get_matrix(self):
+            if self._invalid:
+                self._mtx = self._base_transform.get_matrix().copy()
+                self._mtx[:2, -1] = 0
+            return self._mtx
+
+
+## end backports
+
+
 # the idea behind a stacklineplot (from pyeeg) is that we have a bunch of
 # uniformly sampled data in which we want to display one trace a little above the
 # next usually time or samples is the x-axis and we want to be able to make it so
@@ -190,6 +270,7 @@ def stackplot_t(
     data_scale = np.zeros((3, 3), dtype=np.float64)
     data_scale[:2, :2] = ax.transData.get_matrix()[:2, :2]
     offsets_trans = matplotlib.transforms.Affine2D(data_scale)
+
     # offsetDeltaAf
     # matplotlib 3.6 renames transOffset to offset_transform, may need update in future
     lines = LineCollection(
@@ -412,7 +493,7 @@ def stackplot_t_with_heatmap(
     if not ax:
         fig, ax = plt.subplots(1, 1)
         # fig.set_size_inches(FIGSIZE[0], 2 * FIGSIZE[1])
-    
+
     # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
     eegax = stackplot_t(
         tarray,
@@ -507,6 +588,7 @@ def stackplot_t_with_rgba_heatmap(
 
 # work on vertical scale bar
 
+
 def add_data_vertical_scalebar(
     ax,
     data_height=100,
@@ -527,19 +609,21 @@ def add_data_vertical_scalebar(
         anchor_position (str, optional): where to anchor in ('upper left', 'center',...). Defaults to "lower right".
             see matplotlib AnchorOffset documentation
     returns: ax, the original axis object
-    
-    >>> fig, ax = plt.subplots()    
+
+    >>> fig, ax = plt.subplots()
     >>> ax = stackplot(data, ax=ax)
     >>> add_data_vertical_scalebar(ax=ax,units=r'$\mu$V')
     >>> fig.figsave('fig.png')
-    
-    
+
+
     """
 
-    
-    
-    deltaAxes = matplotlib.transforms.AffineDeltaTransform(ax.transAxes)
-    deltaData = matplotlib.transforms.AffineDeltaTransform(ax.transData)
+    # when support 3.2 goes away can use this directly
+    # deltaAxes = matplotlib.transforms.AffineDeltaTransform(ax.transAxes)
+    # deltaData = matplotlib.transforms.AffineDeltaTransform(ax.transData)
+    deltaAxes = AffineDeltaTransform(ax.transAxes)
+    deltaData = AffineDeltaTransform(ax.transData)
+
     # + is a kind of weird composition operator, reverse order of what I thought
     axes2data = deltaAxes + deltaData.inverted()  # axes->display -> data
 
@@ -576,15 +660,16 @@ def add_data_vertical_scalebar(
 
     return ax
 
+
 def add_relative_vertical_scalebar(
     ax,
-    relative_height=0.1, # approx fraction of axes to use for vertical area
+    relative_height=0.1,  # approx fraction of axes to use for vertical area
     units="",
     end_line_extent=0.01,
     color="black",
     anchor_position="lower right",
 ):
-    r"""add a vertical scale bar with the same approximate size in the 
+    r"""add a vertical scale bar with the same approximate size in the
     figure (as defined by the axis). Will be rounded to nearest single
     precision number
 
@@ -598,8 +683,8 @@ def add_relative_vertical_scalebar(
             see matplotlib AnchorOffset documentation
 
     returns: the original axis, ax
-            
-    >>> fig, ax = plt.subplots()    
+
+    >>> fig, ax = plt.subplots()
     >>> ax = stackplot(data, ax=ax)
     >>> add_relative_vertical_scalebar(ax=ax,units=r'$\mu$V')
     >>> fig.figsave('fig.png')
@@ -607,22 +692,21 @@ def add_relative_vertical_scalebar(
 
     linekw = {}
     # want to ignore translations and just account for scaling factors in axes -> data transform
-    deltaAxes = matplotlib.transforms.AffineDeltaTransform(ax.transAxes)
-    deltaData = matplotlib.transforms.AffineDeltaTransform(ax.transData)
+    deltaAxes = AffineDeltaTransform(ax.transAxes)
+    deltaData = AffineDeltaTransform(ax.transData)
     # + is a kind of weird composition operator, reverse what I thought
-    #transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
+    # transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
     axes2data = deltaAxes + deltaData.inverted()  # axes->display -> data
-
 
     # hack to use only one significant digit by default
     _x, data_height = axes2data.transform((0.0, relative_height))
-    #print(f"{_x=}, {data_height=}")
-    
+    # print(f"{_x=}, {data_height=}")
+
     data_height = float("%.1g" % data_height)
-    #print(f"after rounding: {_x=}, {data_height=}")
-    
+    # print(f"after rounding: {_x=}, {data_height=}")
+
     _x, size_axes = axes2data.inverted().transform((_x, data_height))
-    #print(f"after converson: {_x=}, {size_axes=}")
+    # print(f"after converson: {_x=}, {size_axes=}")
     size_bar = matplotlib.offsetbox.AuxTransformBox(ax.transAxes)
 
     ## draw the vertical scale bar in axes coordiates
@@ -652,5 +736,5 @@ def add_relative_vertical_scalebar(
     )
     #
     ax.add_artist(big_artist)
-    
+
     return ax
