@@ -35,6 +35,7 @@ dependencies = [
 
 [project.optional-dependencies]
 eeghdf = ["eeghdf"]
+pyedflib = ["pyedflib<=0.1.22"] # sample_frequency is wrong after this will be fixed
 
 [project.urls]
 Home = "https://github.com/eegml/eegvis"
