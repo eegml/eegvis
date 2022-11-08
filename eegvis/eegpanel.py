@@ -141,7 +141,7 @@ class EeghdfBrowser:
         start_seconds=-1,
         montage="double banana",
         montage_options={},
-        tuh = True,
+        tuh = False,
         yscale=1.0,
         plot_width=950,
         plot_height=600,
@@ -158,8 +158,8 @@ class EeghdfBrowser:
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
         """
         self.tuh = tuh
-        self.eeghdf_file_names = tuh_file_names #eeghdf_file_names
-        self.eeghdf_files = tuh_files #eeghdf_files
+        self.eeghdf_file_names = stanford_file_names #eeghdf_file_names
+        self.eeghdf_files = stanford_files #eeghdf_files
         self.eeghdf_file = self.eeghdf_files[0]
         self.update_eeghdf_file(self.eeghdf_file, montage, montage_options)
 
@@ -925,7 +925,7 @@ class EeghdfBrowser:
 
         self.ui_hospital_dropdown = Select(
             options=["Stanford","Temple"],
-            value="Temple",
+            value="Stanford",
             title="Hospital:",
         )
 
