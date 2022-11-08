@@ -1,0 +1,41 @@
+[build-system]
+requires = ["flit_core >=3.2,<4", "future"]
+build-backend = "flit_core.buildapi"
+
+
+[project]
+name = "eegvis"
+authors = [{name = "Chris Lee-Messer", email = "chris@lee-messer.net"}]
+readme = "README.md"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Development Status :: 4 - Beta"
+    ]
+
+dynamic = ["version", "description"] # this means will be extracted from module docstring
+
+dependencies = [
+    "numpy",
+    "xarray",
+    "scipy", # signal processing sections
+    "eegml-signal@git+https://github.com/eegml/eegml-signal.git@master", # need literal toml string
+    #'git+https://github.com/eegml/eegml-signal.git', # pip versionneed literal toml string
+    "matplotlib>=3.2", # requried for this backend, prob works with matplotlib 2.x, 3.x
+    "bokeh>=0.12.16", # required for bokeh backend
+    "ipywidgets>=7.0",
+    "panel",   # needed for more elaborate ui/web dashboard
+]
+
+# may want to break this out into different backends
+# development include black and pytest
+# matplotlib specific
+# bokeh specific
+
+[project.optional-dependencies]
+eeghdf = ["eeghdf"]
+pyedflib = ["pyedflib<=0.1.22"] # sample_frequency is wrong after this will be fixed
+
+[project.urls]
+Home = "https://github.com/eegml/eegvis"

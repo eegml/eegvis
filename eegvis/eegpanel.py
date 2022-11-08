@@ -160,6 +160,7 @@ class EeghdfBrowser:
         self.tuh = tuh
         self.eeghdf_file_names = stanford_file_names #eeghdf_file_names
         self.eeghdf_files = stanford_files #eeghdf_files
+
         self.eeghdf_file = self.eeghdf_files[0]
         self.update_eeghdf_file(self.eeghdf_file, montage, montage_options)
 

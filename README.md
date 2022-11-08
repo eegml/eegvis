@@ -27,28 +27,32 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 - [x] first filtering dropdowns added to nb browser tool
 - [x] allow kwargs to set plot width and height
 - [/] notch and HF filters dropdowns - problem with ringing on current firwin filters
-- [ ] need scale/calibration bars
+- [/] need scale/calibration bars
+      - [x] vertical scale bars can be added for any stackplot
 - [ ] catch when current displayed data is not big enough to filter
 - [ ] add common avg reference montage (CAR)
 
 - [ ] remove cruft from plotting in various widgets
-- [ ] bokeh application to browse + annotate EEG, - still experimenting
+- [/] bokeh application to browse + annotate EEG, - still experimenting
 - [ ] montage parser/loader (priority long-term)
 - [ ] keyboard responses, howto?
 - [ ] add ability to control scale of each electrode waveform individually
 - [ ] rewrite and package
 - [ ] publish
 - [ ] possible re-write/extend Bokeh for canvas widget
-- [x] update to bokeh 1.0.x
+- [x] update to bokeh 1.0.x (now at 2.3)
 - [ ] tests for mpl_helpers
 - [ ] clearcut examples of using plotting tools with:
   - [ ] numpy arrays
   - [ ] edf EEGs
   - [ ] eeghdf EEGs
+  - [ ] mne eeg and/or meg (should this use, be in [eegml-mne-utils](https://github.com/eegml/eegml-mne-utils))
   
-- [ ] trial implement [panel](https://panel.holoviz.org) based version of browser widget
+- [/] trial implement [panel](https://panel.holoviz.org) based version of browser widget
 - [ ] explore low-level implementation of browser widget using bokeh for more control
-- [ ] explroe new annotation bokeh controls
+- [ ] explore new annotation bokeh controls
+- [/] switch to new packaging for ppa using pyproject.toml and move setup.py to setup-dev.py
+- [ ] add tools to mark events in plots and in bokeh
 
 
 
@@ -61,6 +65,14 @@ jupyter nbextension enable --py widgetsnbextension  --sys-prefix
 
 ### Developer Install
 currently this is developer only package
+To install from the head of development
+```
+pip install -U git+https://github.com/eegml/eegvis.git
+```
+I have started using f-strings in my code, so I no longer support python 3.6 and below
+
+To work on the code yourself:
+
 ```
     git clone https://github.com/eegml/eegvis.git
     cd eegvis

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# this is where I can "store" my accumulated knowledge about matplotlib
+# this is where I can take notes my accumulated knowledge about matplotlib
 """
 Coordinate  | Transformation Object | Description
 data        | ax.transData          | The userland data coordinate system, controlled by the xlim and ylim

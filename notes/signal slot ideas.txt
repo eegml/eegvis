@@ -1,0 +1,57 @@
+# signal slot system for events added to bokeh
+- This is where we should document how to use the signal-slot system
+
+## Work in progress
+- clm
+```
+import signalslot
+
+# define this for EEGhdfbrowser.__init__(self,**)
+self.move_forward_signal = signalslot.Signal(args-['foward_sec'])
+# vs a 
+self.new_position = signalslot.Signal(args-['new_pos_sec'])
+#add to foward function:
+    self.move_forward_signal.emit(forward_sec=10.0)
+
+# connect with this in our larger panel code
+class ProbDisplayWidget 
+
+def receive_pos_update(new_pos_sec, **kwargs): 
+    code_to_update_the_display(new_pos_sec)
+
+
+## top level ode to connect all the signals and slots
+myeeghdfbrowser = EEGhdfbrowser()
+prob_display_widget = ProbDisplayWidget()
+
+#connections hook signals to slots 
+myeeghdfbrowser.new_position_signal.connect(prob_display_widget.receive_pos_update)
+
+
+# each widget defines signals it can emit
+# also defines "slots" are functions like receive_pos_update
+```
+
+Observer pattern
+Signal programming
+Delegate (CLI)
+
+-- 
+
+Alternatives:
+https://pypi.org/project/signalslot/
+
+### PySignal - not maintaiend but forkable
+https://github.com/dgovil/PySignal
+- very much like pyqt , allows partials, lambdas
+
+### inspired by django
+https://pypi.org/project/blinker/
+
+### signaling
+https://pypi.org/project/signaling/
+
+
+## other subject
+https://pypi.org/project/signal-pipes/ 
+- signal processing pipelines for EMG/EKG etc
