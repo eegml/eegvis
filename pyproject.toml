@@ -39,3 +39,9 @@ pyedflib = ["pyedflib<=0.1.22"] # sample_frequency is wrong after this will be f
 
 [project.urls]
 Home = "https://github.com/eegml/eegvis"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "pytest>=9.0.2",
+]
