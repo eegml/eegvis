@@ -20,9 +20,100 @@ SVG_NS = "http://www.w3.org/2000/svg"
 DEFAULT_TRACE_COLOR = "black"
 DEFAULT_TRACE_WIDTH = "0.5"
 DEFAULT_FONT_FAMILY = "sans-serif"
-DEFAULT_FONT_SIZE = 10  # in SVG user units (roughly px)
+DEFAULT_FONT_SIZE = 3.5  # in SVG user units (mm in viewBox coordinates)
 DEFAULT_GRID_COLOR = "#cccccc"
 DEFAULT_GRID_WIDTH = "0.3"
+
+
+def downsample(signals, sample_frequency, target_frequency):
+    """Downsample signals to approximately target_frequency using scipy.signal.decimate.
+
+    Applies an anti-aliasing filter before decimation. If sample_frequency
+    is already at or below target_frequency, returns signals unchanged.
+
+    Args:
+        signals: (num_channels, num_samples) numpy array
+        sample_frequency: original sampling rate in Hz
+        target_frequency: desired output sampling rate in Hz
+
+    Returns:
+        (downsampled_signals, new_sample_frequency) tuple
+    """
+    if sample_frequency <= target_frequency:
+        return signals, sample_frequency
+
+    from scipy.signal import decimate
+
+    factor = int(sample_frequency / target_frequency)
+    if factor <= 1:
+        return signals, sample_frequency
+
+    downsampled = decimate(signals, factor, axis=1)
+    new_fs = sample_frequency / factor
+    return downsampled, new_fs
+
+
+def bandpass_filter(signals, sample_frequency, low_freq=1.0, high_freq=70.0):
+    """Apply a zero-phase bandpass filter to signals using eegml_signal.
+
+    Uses FIR highpass and lowpass filters (firwin-based) applied sequentially.
+
+    Args:
+        signals: (num_channels, num_samples) numpy array
+        sample_frequency: sampling rate in Hz
+        low_freq: high-pass cutoff frequency in Hz.
+            Set to None to skip high-pass (lowpass only).
+        high_freq: low-pass cutoff frequency in Hz.
+            Set to None to skip low-pass (highpass only).
+
+    Returns:
+        filtered signals with same shape as input
+    """
+    import eegml_signal.filters as esfilters
+
+    result = signals.copy()
+    num_samples = signals.shape[1]
+    # filtfilt needs 3*numtaps < num_samples for padding
+    max_taps = num_samples // 3 - 1
+
+    if low_freq is not None:
+        numtaps = min(max(int(2 * sample_frequency), 3), max_taps)
+        if numtaps % 2 == 0:
+            numtaps += 1  # highpass firwin needs odd numtaps
+        hp = esfilters.fir_highpass_firwin_ff(sample_frequency, low_freq, numtaps)
+        for ch in range(result.shape[0]):
+            result[ch] = hp(result[ch])
+
+    if high_freq is not None:
+        numtaps = min(max(int(sample_frequency / 4.0), 3), max_taps)
+        lp = esfilters.fir_lowpass_firwin_ff(sample_frequency, high_freq, numtaps)
+        for ch in range(result.shape[0]):
+            result[ch] = lp(result[ch])
+
+    return result
+
+
+def notch_filter(signals, sample_frequency, notch_freq=60.0, Q=30.0):
+    """Apply a zero-phase notch (band-stop) filter to remove line noise.
+
+    Uses eegml_signal's IIR notch filter.
+
+    Args:
+        signals: (num_channels, num_samples) numpy array
+        sample_frequency: sampling rate in Hz
+        notch_freq: frequency to remove in Hz (default: 60.0 for US mains)
+        Q: quality factor controlling notch width (default: 30.0)
+
+    Returns:
+        filtered signals with same shape as input
+    """
+    import eegml_signal.filters as esfilters
+
+    nf = esfilters.notch_filter_iir_ff(notch_freq, sample_frequency, Q)
+    result = signals.copy()
+    for ch in range(result.shape[0]):
+        result[ch] = nf(result[ch])
+    return result
 
 
 def _format_points(t, y):
@@ -77,6 +168,7 @@ def stackplot_svg(
     show_scalebar=True,
     scalebar_height=None,
     scalebar_units="\u00b5V",
+    max_samples_per_channel=None,
 ):
     """Generate an SVG string of stacked EEG traces.
 
@@ -100,6 +192,9 @@ def stackplot_svg(
         scalebar_height: height of scale bar in data units.
             If None, auto-computed as ~10% of channel spacing.
         scalebar_units: units label for scale bar (default: µV)
+        max_samples_per_channel: if set, downsample signals so each channel
+            has at most this many samples. Reduces SVG file size for
+            high sample rate data. Set to None to disable (default).
 
     Returns:
         SVG content as a string
@@ -109,6 +204,12 @@ def stackplot_svg(
     if seconds is None:
         seconds = num_samples / sample_frequency
 
+    # optional downsampling to limit SVG size
+    if max_samples_per_channel is not None and num_samples > max_samples_per_channel:
+        target_fs = max_samples_per_channel / seconds
+        signals, sample_frequency = downsample(signals, sample_frequency, target_fs)
+        num_channels, num_samples = signals.shape
+
     if ylabels is None:
         ylabels = [str(i) for i in range(num_channels)]
 
@@ -117,12 +218,12 @@ def stackplot_svg(
     if linewidth is None:
         linewidth = DEFAULT_TRACE_WIDTH
 
-    # layout constants
-    label_margin = 60  # left margin for channel labels
-    top_margin = 15
-    bottom_margin = 25  # space for time axis labels
-    right_margin = 20
-    scalebar_margin = 50 if show_scalebar else 0
+    # layout constants (in viewBox units = mm)
+    label_margin = 25  # left margin for channel labels
+    top_margin = 5
+    bottom_margin = 8  # space for time axis labels
+    right_margin = 5
+    scalebar_margin = 20 if show_scalebar else 0
 
     plot_width = width_mm - label_margin - right_margin - scalebar_margin
     plot_height = height_mm - top_margin - bottom_margin
@@ -223,7 +324,7 @@ def stackplot_svg(
         "height": f"{plot_height:.2f}",
         "fill": "none",
         "stroke": "#999999",
-        "stroke-width": "0.5",
+        "stroke-width": "0.2",
     })
 
     # channel traces and labels
@@ -241,7 +342,7 @@ def stackplot_svg(
         # channel label
         label_y = data_y_to_svg(offset)
         ET.SubElement(ch_g, "text", {
-            "x": f"{label_margin - 4:.2f}",
+            "x": f"{label_margin - 1.5:.2f}",
             "y": f"{label_y:.2f}",
             "class": "label",
         }).text = label_order[draw_idx]
@@ -257,7 +358,7 @@ def stackplot_svg(
 
     # time axis labels
     time_g = ET.SubElement(svg, "g", {"class": "timeaxis"})
-    time_label_y = top_margin + plot_height + 5
+    time_label_y = top_margin + plot_height + 1.5
 
     if grid_interval is not None:
         label_times = grid_times
@@ -279,7 +380,7 @@ def stackplot_svg(
             scalebar_height = dr * 0.5
             scalebar_height = float(f"{scalebar_height:.1g}")
 
-        sb_x = label_margin + plot_width + 15
+        sb_x = label_margin + plot_width + 3
         # center the scale bar vertically in the plot
         sb_center_data = (y_data_min + y_data_max) / 2.0
         sb_top_data = sb_center_data - scalebar_height / 2.0
@@ -296,17 +397,17 @@ def stackplot_svg(
             "x2": f"{sb_x:.2f}",
             "y2": f"{sb_bot_svg:.2f}",
             "stroke": "black",
-            "stroke-width": "1",
+            "stroke-width": "0.3",
         })
         # top end cap
-        cap_w = 3
+        cap_w = 1
         ET.SubElement(sb_g, "line", {
             "x1": f"{sb_x - cap_w:.2f}",
             "y1": f"{sb_top_svg:.2f}",
             "x2": f"{sb_x + cap_w:.2f}",
             "y2": f"{sb_top_svg:.2f}",
             "stroke": "black",
-            "stroke-width": "1",
+            "stroke-width": "0.3",
         })
         # bottom end cap
         ET.SubElement(sb_g, "line", {
@@ -315,12 +416,12 @@ def stackplot_svg(
             "x2": f"{sb_x + cap_w:.2f}",
             "y2": f"{sb_bot_svg:.2f}",
             "stroke": "black",
-            "stroke-width": "1",
+            "stroke-width": "0.3",
         })
         # label
         sb_label_y = (sb_top_svg + sb_bot_svg) / 2.0
         ET.SubElement(sb_g, "text", {
-            "x": f"{sb_x + cap_w + 3:.2f}",
+            "x": f"{sb_x + cap_w + 1:.2f}",
             "y": f"{sb_label_y:.2f}",
             "class": "scalebar-label",
         }).text = f"{scalebar_height:.4g}{scalebar_units}"
@@ -377,5 +478,86 @@ def save_montage_svg(filepath, signals, montage, sample_frequency, **kwargs):
         **kwargs: passed to stackplot_svg()
     """
     svg_str = show_montage_svg(signals, montage, sample_frequency, **kwargs)
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(svg_str)
+
+
+def eeg_to_svg(
+    signals,
+    sample_frequency,
+    montage=None,
+    low_freq=1.0,
+    high_freq=70.0,
+    notch_freq=None,
+    target_frequency=None,
+    max_samples_per_channel=None,
+    **kwargs,
+):
+    """End-to-end pipeline: raw EEG signals to SVG string.
+
+    Pipeline steps:
+        1. Downsample (optional, if target_frequency is set)
+        2. Apply montage derivation (optional, if montage is provided)
+        3. Bandpass filter (optional, if low_freq or high_freq is set)
+        4. Notch filter (optional, if notch_freq is set)
+        5. Render as SVG via stackplot_svg()
+
+    Args:
+        signals: raw signals (num_channels, num_samples) numpy array
+        sample_frequency: original sampling rate in Hz
+        montage: a MontageView instance (optional). If provided, applies
+            montage.V.data matrix multiply and uses montage.montage_labels.
+        low_freq: high-pass cutoff in Hz (default: 1.0). Set to None to skip.
+        high_freq: low-pass cutoff in Hz (default: 70.0). Set to None to skip.
+        notch_freq: notch filter frequency in Hz (default: None).
+            Common values: 60.0 (US) or 50.0 (EU).
+        target_frequency: if set, downsample to this rate before processing.
+        max_samples_per_channel: if set, limit samples per channel in the
+            final SVG (applied during rendering, after filtering).
+        **kwargs: passed to stackplot_svg() (e.g. width_mm, height_mm,
+            sensitivity, yscale, topdown, grid_interval, etc.)
+
+    Returns:
+        SVG content as a string
+    """
+    # 1. downsample
+    if target_frequency is not None:
+        signals, sample_frequency = downsample(signals, sample_frequency, target_frequency)
+
+    # 2. montage derivation
+    ylabels = kwargs.pop("ylabels", None)
+    if montage is not None:
+        signals = np.dot(montage.V.data, signals)
+        if ylabels is None:
+            ylabels = montage.montage_labels
+
+    # 3. bandpass filter
+    if low_freq is not None or high_freq is not None:
+        signals = bandpass_filter(signals, sample_frequency, low_freq, high_freq)
+
+    # 4. notch filter
+    if notch_freq is not None:
+        signals = notch_filter(signals, sample_frequency, notch_freq)
+
+    # 5. render
+    return stackplot_svg(
+        signals,
+        sample_frequency,
+        ylabels=ylabels,
+        max_samples_per_channel=max_samples_per_channel,
+        **kwargs,
+    )
+
+
+def save_eeg_svg(filepath, signals, sample_frequency, **kwargs):
+    """End-to-end pipeline: raw EEG signals to SVG file.
+
+    Args:
+        filepath: output file path
+        signals: raw signals (num_channels, num_samples) numpy array
+        sample_frequency: sampling rate in Hz
+        **kwargs: passed to eeg_to_svg()
+    """
+    svg_str = eeg_to_svg(signals, sample_frequency, **kwargs)
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(svg_str)
