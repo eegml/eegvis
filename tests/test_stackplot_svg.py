@@ -173,3 +173,189 @@ def test_stackplot_svg_topdown_false():
     # topdown=False keeps natural order so A is drawn first
     assert idx_c_td < idx_a_td
     assert idx_a_bu < idx_c_bu
+
+
+def test_small_2channel_svg():
+    """Generate a minimal 2-channel, 100-sample SVG for manual inspection.
+
+    Output is written to test_small_2ch.svg in the current working directory.
+    """
+    fs = 100.0
+    n = 100
+    t = np.arange(n) / fs
+    signals = np.zeros((2, n))
+    signals[0, :] = 50.0 * np.sin(2 * np.pi * 3 * t)   # 3 Hz sine
+    signals[1, :] = 30.0 * np.sin(2 * np.pi * 10 * t)   # 10 Hz sine
+
+    stackplot_svg.save_svg(
+        "test_small_2ch.svg",
+        signals,
+        sample_frequency=fs,
+        seconds=n / fs,
+        ylabels=["3 Hz (50uV)", "10 Hz (30uV)"],
+        width_mm=200,
+        height_mm=100,
+    )
+
+
+def test_downsample_reduces_samples():
+    """downsample should reduce sample count by the decimation factor."""
+    signals = np.random.randn(3, 2560)  # 10s at 256 Hz
+    ds, new_fs = stackplot_svg.downsample(signals, 256.0, 64.0)
+    assert ds.shape[0] == 3
+    assert ds.shape[1] == 2560 // 4  # factor of 4
+    assert new_fs == 64.0
+
+
+def test_downsample_noop_when_already_low():
+    """downsample should return data unchanged if fs <= target."""
+    signals = np.random.randn(2, 100)
+    ds, new_fs = stackplot_svg.downsample(signals, 50.0, 256.0)
+    assert ds is signals  # same object, not a copy
+    assert new_fs == 50.0
+
+
+def test_max_samples_per_channel_limits_polyline_points():
+    """max_samples_per_channel should produce fewer points in SVG."""
+    signals = np.random.randn(2, 5000)  # high sample count
+    svg_full = stackplot_svg.stackplot_svg(signals, sample_frequency=1000.0, seconds=5.0)
+    svg_ds = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=1000.0, seconds=5.0, max_samples_per_channel=500
+    )
+    # downsampled SVG should be substantially smaller
+    assert len(svg_ds) < len(svg_full) * 0.5
+
+
+def test_bandpass_filter_attenuates_out_of_band():
+    """Bandpass 5-30 Hz should attenuate a 1 Hz and a 100 Hz signal."""
+    fs = 512.0
+    n = int(fs * 4)  # 4 seconds for filter settling
+    t = np.arange(n) / fs
+    signals = np.zeros((2, n))
+    signals[0, :] = np.sin(2 * np.pi * 1.0 * t)    # 1 Hz — below band
+    signals[1, :] = np.sin(2 * np.pi * 100.0 * t)   # 100 Hz — above band
+
+    filtered = stackplot_svg.bandpass_filter(signals, fs, low_freq=5.0, high_freq=30.0)
+
+    # middle portion (avoid edge effects) should be heavily attenuated
+    mid = slice(n // 4, 3 * n // 4)
+    assert np.std(filtered[0, mid]) < 0.1  # 1 Hz mostly removed
+    assert np.std(filtered[1, mid]) < 0.1  # 100 Hz mostly removed
+
+
+def test_bandpass_filter_preserves_in_band():
+    """Bandpass 1-70 Hz should preserve a 10 Hz signal."""
+    fs = 256.0
+    n = int(fs * 4)
+    t = np.arange(n) / fs
+    signals = np.zeros((1, n))
+    signals[0, :] = np.sin(2 * np.pi * 10.0 * t)
+
+    filtered = stackplot_svg.bandpass_filter(signals, fs, low_freq=1.0, high_freq=70.0)
+
+    mid = slice(n // 4, 3 * n // 4)
+    # amplitude should be mostly preserved (within 10%)
+    assert np.std(filtered[0, mid]) > 0.6
+
+
+def test_notch_filter_removes_line_noise():
+    """Notch at 60 Hz should attenuate 60 Hz while preserving 10 Hz."""
+    fs = 512.0
+    n = int(fs * 4)
+    t = np.arange(n) / fs
+    signals = np.zeros((1, n))
+    signals[0, :] = np.sin(2 * np.pi * 10.0 * t) + np.sin(2 * np.pi * 60.0 * t)
+
+    filtered = stackplot_svg.notch_filter(signals, fs, notch_freq=60.0)
+
+    mid = slice(n // 4, 3 * n // 4)
+    # 60 Hz component should be gone; 10 Hz should remain
+    # original std is ~1.0 (two unit sines), filtered should be ~0.7 (one sine)
+    assert 0.5 < np.std(filtered[0, mid]) < 0.9
+
+
+def test_eeg_to_svg_basic():
+    """eeg_to_svg should produce valid SVG with default bandpass."""
+    fs = 256.0
+    n = int(fs * 10)
+    signals = np.random.randn(4, n) * 50.0
+
+    svg_str = stackplot_svg.eeg_to_svg(
+        signals, fs,
+        ylabels=["Ch1", "Ch2", "Ch3", "Ch4"],
+        seconds=10.0,
+    )
+    root = ET.fromstring(svg_str)
+    assert root.tag == f"{{{stackplot_svg.SVG_NS}}}svg"
+    ns = {"svg": stackplot_svg.SVG_NS}
+    assert len(root.findall(".//svg:g[@class='channel']", ns)) == 4
+
+
+def test_eeg_to_svg_with_montage():
+    """eeg_to_svg with a montage should use montage labels."""
+    from eegvis.montageview import DoubleBananaMontageView
+
+    rec_labels = [
+        "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4",
+        "O1", "O2", "F7", "F8", "T3", "T4", "T5", "T6",
+        "Fz", "Cz", "Pz",
+    ]
+    montage = DoubleBananaMontageView(rec_labels)
+    fs = 256.0
+    n = int(fs * 10)
+    signals = np.random.randn(len(rec_labels), n) * 50.0
+
+    svg_str = stackplot_svg.eeg_to_svg(signals, fs, montage=montage, seconds=10.0)
+
+    # should contain montage-derived labels
+    assert "Fp1-F7" in svg_str
+    assert "F7-T3" in svg_str
+
+
+def test_eeg_to_svg_no_filter():
+    """eeg_to_svg with filters disabled should still produce valid SVG."""
+    fs = 256.0
+    n = int(fs * 5)
+    signals = np.random.randn(2, n) * 30.0
+
+    svg_str = stackplot_svg.eeg_to_svg(
+        signals, fs, low_freq=None, high_freq=None, seconds=5.0,
+    )
+    root = ET.fromstring(svg_str)
+    assert root.tag == f"{{{stackplot_svg.SVG_NS}}}svg"
+
+
+def test_eeg_to_svg_with_notch_and_downsample():
+    """eeg_to_svg with all pipeline steps enabled."""
+    fs = 1000.0
+    n = int(fs * 10)
+    signals = np.random.randn(3, n) * 50.0
+
+    svg_str = stackplot_svg.eeg_to_svg(
+        signals, fs,
+        low_freq=1.0, high_freq=70.0,
+        notch_freq=60.0,
+        target_frequency=256.0,
+        max_samples_per_channel=1000,
+        seconds=10.0,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    assert len(root.findall(".//svg:g[@class='channel']", ns)) == 3
+
+
+def test_save_eeg_svg(tmp_path):
+    """save_eeg_svg should write a valid SVG file through the full pipeline."""
+    filepath = tmp_path / "pipeline_output.svg"
+    fs = 256.0
+    n = int(fs * 5)
+    signals = np.random.randn(3, n) * 50.0
+
+    stackplot_svg.save_eeg_svg(
+        str(filepath), signals, fs,
+        low_freq=1.0, high_freq=70.0,
+        seconds=5.0,
+    )
+    assert filepath.exists()
+    root = ET.fromstring(filepath.read_text())
+    assert root.tag == f"{{{stackplot_svg.SVG_NS}}}svg"
