@@ -15,6 +15,7 @@ classifiers = [
     ]
 
 dynamic = ["version", "description"] # this means will be extracted from module docstring
+# set requires python
 
 dependencies = [
     "numpy",
