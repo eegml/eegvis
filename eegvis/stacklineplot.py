@@ -231,15 +231,24 @@ def stackplot_t(
         # uV that covers, then divides up the available unit space among the
         # channels. Would need to do something differen tif wanted to show a subset
         # of channels then scroll them
+
         myfig = ax.get_figure()
-        figsizex_inch, figsizey_inch = myfig.get_size_inches()
         dpi = myfig.dpi
         dpmm = dpi / 25.4
+        # print(f"{myfig.get_size_inches()=}")
+        # figsizex_inch, figsizey_inch = myfig.get_size_inches()
+        # print(f"ax.bbox: {type(ax.bbox)=}")
+        # print(f"{ax.bbox.width=}, {ax.bbox.height=}")
+        figsizex_inch, figsizey_inch = (
+            ax.bbox.width / dpi,
+            ax.bbox.height / dpi,
+        )  # is this wrong need to explore
+        # print(f"{figsizex_inch=}, {figsizey_inch=}")
 
         figsizex_mm = 25.4 * figsizex_inch
         figsizey_mm = 25.4 * figsizey_inch
 
-        # sensetivity such as 7 uV/mm is
+        # sensetivity such as 7 uV/mm is typical
         total_uV = ysensitivity * figsizey_mm
         # assume data is in uV
         # is lower lim of y still dmin? No
@@ -343,6 +352,103 @@ def limit_sample_check(x, signals):
 # optional: channel labels
 
 
+def show_arr_as_montaged_eeg(
+    signals,
+    montage,  # MontageView factory instance
+    fs,
+    ylabels=[],
+    yscale=1.0,
+    topdown=True,
+    ax=None,
+    **kwargs,
+):
+    """
+    @signals array-like object with signals[ch_num, sample_num]
+    @montage MontageView factory instance
+    @fs sample frequency (num samples per second)
+    @labels_by_channel
+    @yscale
+    @topdown=True implies plot channel 0 starting at top of figure/subfigure
+    @ax matplotlib Axes object into which to render
+    @kwargs any other keyword parameters to pass on
+    """
+
+    inmontage_view = np.dot(
+        montage.V.data, signals
+    )  # montage.V.data is matrix (linear transform)
+
+    n_chan, n_samples = signals.shape
+    width_sec = n_samples / fs
+
+    rlabels = montage.montage_labels
+    return stackplot(
+        inmontage_view,
+        start_time=0,
+        seconds=width_sec,
+        ylabels=rlabels,
+        yscale=yscale,
+        topdown=topdown,
+        ax=ax,
+        **kwargs,
+    )
+
+
+def show_grid_arr_as_montaged_eeg(
+    eeg_clip_arrs,
+        fs,
+    elabels,
+    ytrues=[],
+    ypreds=[],
+    n_row=3,
+    n_col=3,
+    row_height=3.0,
+    col_length=4.0,
+    montage_name="double banana",
+        ysensitivity=7.0,
+    units="$\mu$V",
+):
+    """
+    eeg_clip_arrs,
+    elabels,
+    ytrues=[],
+    ypreds=[],
+    n_row=3,
+    n_col=3,
+    montage_name="double banana"
+
+    TODO!!! set the row/col rations correctly
+    """
+    import eegvis.montageview
+
+    fig = plt.figure(figsize=(n_row * 4.0, n_col * 4.0))
+
+    axs = fig.subplots(n_row, n_col, sharex=True, sharey=True)
+    faxs = axs.flatten()
+    montage_name = "double banana"
+    if montage_name in eegvis.montageview.MONTAGE_BUILTINS:
+        montage_derivation = eegvis.montageview.MONTAGE_BUILTINS[montage_name](elabels)
+    for ii, eegarr in enumerate(eeg_clip_arrs):
+        if n_row * n_col > ii:
+            show_arr_as_montaged_eeg(
+                eegarr,
+                montage_derivation,
+                fs=fs,
+                ylabels=elabels,
+                ax=faxs[ii],
+                ysensitivity=ysensitivity,
+            )
+            title_str = f"[{ii}]"
+            if len(ytrues):
+                title_str += f" y_true={ytrues[ii]}"
+            if len(ypreds):
+                title_str += f" y_pred={ypreds[ii]}"
+
+            faxs[ii].set_title(title_str)
+            add_relative_vertical_scalebar(faxs[ii], units=units)
+
+    return fig, axs
+
+
 def show_epoch_centered(
     signals,
     goto_sec,
@@ -411,6 +517,7 @@ def show_montage_centered(
 ):
     """
     @signals array-like object with signals[ch_num, sample_num]
+    @montage
     @goto_sec where to go in the signal to show the feature
     @epoch_width_sec length of the window to show in secs
     @chstart   which channel to start
@@ -697,7 +804,13 @@ def add_relative_vertical_scalebar(
     # + is a kind of weird composition operator, reverse what I thought
     # transiv = ax.transAxes + ax.transData.inverted()  # axes->display -> data
     axes2data = deltaAxes + deltaData.inverted()  # axes->display -> data
-
+    # print(f"{relative_height=}")
+    # print(f"relative height->display pixels:{deltaAxes.transform((0.0,relative_height))=}")
+    _x, relative_height_pixels = deltaAxes.transform((0.0, relative_height))
+    _x, relative_height_data = deltaData.inverted().transform(
+        (_x, relative_height_pixels)
+    )
+    # print(f"{relative_height_data=}")
     # hack to use only one significant digit by default
     _x, data_height = axes2data.transform((0.0, relative_height))
     # print(f"{_x=}, {data_height=}")
@@ -705,19 +818,19 @@ def add_relative_vertical_scalebar(
     data_height = float("%.1g" % data_height)
     # print(f"after rounding: {_x=}, {data_height=}")
 
-    _x, size_axes = axes2data.inverted().transform((_x, data_height))
-    # print(f"after converson: {_x=}, {size_axes=}")
+    _x, bar_height_axescoord = axes2data.inverted().transform((_x, data_height))
+    # print(f"after converson: {_x=}, {bar_height_axescoord=}")
     size_bar = matplotlib.offsetbox.AuxTransformBox(ax.transAxes)
 
     ## draw the vertical scale bar in axes coordiates
     #      Line2D(xdata, ydata, *, ...)
-    line = Line2D([0, 0], [0, size_axes], color=color)  # , **linekw)
+    line = Line2D([0, 0], [0, bar_height_axescoord], color=color)  # , **linekw)
     vline1 = Line2D(
         [-end_line_extent / 2.0, end_line_extent / 2.0], [0, 0], color=color
     )
     vline2 = Line2D(
         [-end_line_extent / 2.0, end_line_extent / 2.0],
-        [size_axes, size_axes],
+        [bar_height_axescoord, bar_height_axescoord],
         color=color,
     )
     size_bar.add_artist(line)
