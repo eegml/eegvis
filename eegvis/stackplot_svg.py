@@ -126,6 +126,16 @@ def _format_points(t, y):
     return " ".join(f"{x},{y}" for x, y in coords)
 
 
+def _format_data_points(t_relative, amplitude):
+    """Convert data-coordinate arrays to SVG polyline points string.
+
+    Uses 4 decimal places for time (seconds) and 2 for amplitude.
+    For interactive mode where polyline coordinates are in data space.
+    """
+    coords = np.column_stack((np.round(t_relative, 4), np.round(amplitude, 2)))
+    return " ".join(f"{x},{y}" for x, y in coords)
+
+
 def _compute_channel_offsets(data, num_channels, sensitivity=None, height=None):
     """Compute vertical offset for each channel.
 
@@ -169,6 +179,8 @@ def stackplot_svg(
     scalebar_height=None,
     scalebar_units="\u00b5V",
     max_samples_per_channel=None,
+    interactive=False,
+    embed_js=False,
 ):
     """Generate an SVG string of stacked EEG traces.
 
@@ -195,6 +207,12 @@ def stackplot_svg(
         max_samples_per_channel: if set, downsample signals so each channel
             has at most this many samples. Reduces SVG file size for
             high sample rate data. Set to None to disable (default).
+        interactive: if True, generate SVG with transform-based per-channel
+            groups suitable for dynamic rescaling by a web component.
+            Labels are separated from traces, polyline coordinates use
+            data space (seconds, amplitude), and data-* attributes are
+            added for JavaScript consumption.
+        embed_js: reserved for future use (embed JS in SVG).
 
     Returns:
         SVG content as a string
@@ -272,13 +290,30 @@ def stackplot_svg(
         channel_order = list(reversed(channel_order))
         label_order = list(reversed(label_order))
 
+    # interactive mode: compute px_per_sec and y_scale for transforms
+    px_per_sec = plot_width / seconds if seconds > 0 else 1.0
+    if y_data_range != 0:
+        y_scale_factor = plot_height / y_data_range
+    else:
+        y_scale_factor = 1.0
+
     # build SVG
-    svg = ET.Element("svg", {
+    svg_attrs = {
         "xmlns": SVG_NS,
         "viewBox": f"0 0 {width_mm} {height_mm}",
         "width": f"{width_mm}mm",
         "height": f"{height_mm}mm",
-    })
+    }
+    if interactive:
+        svg_attrs["data-interactive"] = "true"
+        svg_attrs["data-seconds"] = str(seconds)
+        svg_attrs["data-start-time"] = str(start_time)
+        svg_attrs["data-sample-frequency"] = str(sample_frequency)
+        svg_attrs["data-num-channels"] = str(num_channels)
+        svg_attrs["data-px-per-second"] = f"{px_per_sec:.6f}"
+        svg_attrs["data-plot-width"] = f"{plot_width:.2f}"
+        svg_attrs["data-label-margin"] = f"{label_margin:.2f}"
+    svg = ET.Element("svg", svg_attrs)
 
     # white background
     ET.SubElement(svg, "rect", {
@@ -289,12 +324,26 @@ def stackplot_svg(
 
     # style element for text defaults
     style = ET.SubElement(svg, "style")
-    style.text = (
+    css_text = (
         f"text {{ font-family: {DEFAULT_FONT_FAMILY}; font-size: {DEFAULT_FONT_SIZE}px; }}"
         f" .label {{ text-anchor: end; dominant-baseline: middle; }}"
         f" .time-label {{ text-anchor: middle; dominant-baseline: hanging; }}"
         f" .scalebar-label {{ text-anchor: start; dominant-baseline: middle; }}"
     )
+    if interactive:
+        css_text += " polyline { vector-effect: non-scaling-stroke; }"
+    style.text = css_text
+
+    # clip path for interactive mode
+    if interactive:
+        defs = ET.SubElement(svg, "defs")
+        clip = ET.SubElement(defs, "clipPath", {"id": "plot-area"})
+        ET.SubElement(clip, "rect", {
+            "x": f"{label_margin:.2f}",
+            "y": f"{top_margin:.2f}",
+            "width": f"{plot_width:.2f}",
+            "height": f"{plot_height:.2f}",
+        })
 
     # vertical grid lines at regular time intervals
     if grid_interval is not None:
@@ -327,34 +376,84 @@ def stackplot_svg(
         "stroke-width": "0.2",
     })
 
-    # channel traces and labels
-    traces_g = ET.SubElement(svg, "g", {"class": "traces"})
-    for draw_idx, ch_idx in enumerate(channel_order):
-        offset = ticklocs[draw_idx]
-        y_trace = yscale * data[:, ch_idx] + offset
-        y_svg = data_y_to_svg(y_trace)
+    if interactive:
+        # --- Interactive mode: labels and traces are separate groups ---
 
-        ch_g = ET.SubElement(traces_g, "g", {
-            "class": "channel",
-            "id": f"ch-{draw_idx}",
+        # Channel labels (not inside scaled groups)
+        labels_g = ET.SubElement(svg, "g", {"class": "channel-labels"})
+        for draw_idx, ch_idx in enumerate(channel_order):
+            offset = ticklocs[draw_idx]
+            label_y = data_y_to_svg(offset)
+            ET.SubElement(labels_g, "text", {
+                "x": f"{label_margin - 1.5:.2f}",
+                "y": f"{label_y:.2f}",
+                "class": "label",
+            }).text = label_order[draw_idx]
+
+        # Traces group with clip path
+        traces_g = ET.SubElement(svg, "g", {
+            "class": "traces",
+            "clip-path": "url(#plot-area)",
         })
 
-        # channel label
-        label_y = data_y_to_svg(offset)
-        ET.SubElement(ch_g, "text", {
-            "x": f"{label_margin - 1.5:.2f}",
-            "y": f"{label_y:.2f}",
-            "class": "label",
-        }).text = label_order[draw_idx]
+        # time array in data coordinates (seconds relative to start)
+        t_relative = seconds * np.arange(num_samples, dtype=float) / max(num_samples - 1, 1)
 
-        # polyline for waveform
-        points_str = _format_points(t_svg, y_svg)
-        ET.SubElement(ch_g, "polyline", {
-            "points": points_str,
-            "fill": "none",
-            "stroke": linecolor,
-            "stroke-width": str(linewidth),
-        })
+        for draw_idx, ch_idx in enumerate(channel_order):
+            offset = ticklocs[draw_idx]
+            baseline_svg = data_y_to_svg(offset)
+
+            # amplitude in data units (scaled by yscale, relative to baseline 0)
+            amplitude = yscale * data[:, ch_idx]
+
+            ch_g = ET.SubElement(traces_g, "g", {
+                "class": "channel",
+                "id": f"ch-{draw_idx}",
+                "data-channel-index": str(draw_idx),
+                "data-label": label_order[draw_idx],
+                "data-baseline-y": f"{baseline_svg:.2f}",
+                "data-x-scale": f"{px_per_sec:.6f}",
+                "data-y-scale": f"{y_scale_factor:.6f}",
+                "transform": f"translate({label_margin:.2f},{baseline_svg:.2f}) scale({px_per_sec:.6f},{y_scale_factor:.6f})",
+            })
+
+            points_str = _format_data_points(t_relative, amplitude)
+            ET.SubElement(ch_g, "polyline", {
+                "points": points_str,
+                "fill": "none",
+                "stroke": linecolor,
+                "stroke-width": str(linewidth),
+                "vector-effect": "non-scaling-stroke",
+            })
+    else:
+        # --- Static mode: labels inside channel groups (original behavior) ---
+        traces_g = ET.SubElement(svg, "g", {"class": "traces"})
+        for draw_idx, ch_idx in enumerate(channel_order):
+            offset = ticklocs[draw_idx]
+            y_trace = yscale * data[:, ch_idx] + offset
+            y_svg = data_y_to_svg(y_trace)
+
+            ch_g = ET.SubElement(traces_g, "g", {
+                "class": "channel",
+                "id": f"ch-{draw_idx}",
+            })
+
+            # channel label
+            label_y = data_y_to_svg(offset)
+            ET.SubElement(ch_g, "text", {
+                "x": f"{label_margin - 1.5:.2f}",
+                "y": f"{label_y:.2f}",
+                "class": "label",
+            }).text = label_order[draw_idx]
+
+            # polyline for waveform
+            points_str = _format_points(t_svg, y_svg)
+            ET.SubElement(ch_g, "polyline", {
+                "points": points_str,
+                "fill": "none",
+                "stroke": linecolor,
+                "stroke-width": str(linewidth),
+            })
 
     # time axis labels
     time_g = ET.SubElement(svg, "g", {"class": "timeaxis"})

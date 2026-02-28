@@ -1,0 +1,8 @@
+{
+  "name": "eegvis-components",
+  "private": true,
+  "dependencies": {
+    "lit": "^3.0.0",
+    "@lit-labs/signals": "^0.2.0"
+  }
+}

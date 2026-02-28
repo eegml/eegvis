@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import xml.etree.ElementTree as ET
 import eegvis.stackplot_svg as stackplot_svg
@@ -359,3 +361,114 @@ def test_save_eeg_svg(tmp_path):
     assert filepath.exists()
     root = ET.fromstring(filepath.read_text())
     assert root.tag == f"{{{stackplot_svg.SVG_NS}}}svg"
+
+
+# --- Interactive mode tests ---
+
+def _make_interactive_svg(num_channels=5, num_samples=800, fs=256.0, **kwargs):
+    """Helper to generate an interactive SVG and parse it."""
+    signals = make_sine_signals(num_channels, num_samples, fs)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=fs, seconds=num_samples / fs,
+        interactive=True, **kwargs,
+    )
+    root = ET.fromstring(svg_str)
+    return svg_str, root
+
+
+def test_interactive_has_clip_path():
+    """Interactive mode should include a <clipPath id='plot-area'>."""
+    _, root = _make_interactive_svg()
+    ns = {"svg": stackplot_svg.SVG_NS}
+    clips = root.findall(".//svg:clipPath[@id='plot-area']", ns)
+    assert len(clips) == 1
+    # clip should contain a rect
+    rects = clips[0].findall("svg:rect", ns)
+    assert len(rects) == 1
+
+
+def test_interactive_traces_clipped():
+    """The .traces group should have clip-path='url(#plot-area)'."""
+    _, root = _make_interactive_svg()
+    ns = {"svg": stackplot_svg.SVG_NS}
+    traces = root.findall(".//svg:g[@class='traces']", ns)
+    assert len(traces) == 1
+    assert traces[0].get("clip-path") == "url(#plot-area)"
+
+
+def test_interactive_channels_have_transform():
+    """Each .channel group should have a translate(...) scale(...) transform."""
+    _, root = _make_interactive_svg()
+    ns = {"svg": stackplot_svg.SVG_NS}
+    channels = root.findall(".//svg:g[@class='channel']", ns)
+    assert len(channels) == 5
+    for ch in channels:
+        transform = ch.get("transform")
+        assert transform is not None
+        assert "translate(" in transform
+        assert "scale(" in transform
+
+
+def test_interactive_labels_separate():
+    """Interactive mode should have a separate <g class='channel-labels'> group."""
+    _, root = _make_interactive_svg()
+    ns = {"svg": stackplot_svg.SVG_NS}
+    label_groups = root.findall(".//svg:g[@class='channel-labels']", ns)
+    assert len(label_groups) == 1
+    # should have 5 text labels
+    labels = label_groups[0].findall("svg:text", ns)
+    assert len(labels) == 5
+
+
+def test_interactive_data_attributes():
+    """SVG root should have data-interactive, data-seconds, etc."""
+    _, root = _make_interactive_svg()
+    assert root.get("data-interactive") == "true"
+    assert root.get("data-seconds") is not None
+    assert root.get("data-sample-frequency") is not None
+    assert root.get("data-num-channels") == "5"
+    assert root.get("data-px-per-second") is not None
+    assert root.get("data-plot-width") is not None
+    assert root.get("data-label-margin") is not None
+
+
+def test_interactive_polyline_data_coords():
+    """Polyline x-values should be in data coordinates (near 0), not SVG (near 25)."""
+    _, root = _make_interactive_svg()
+    ns = {"svg": stackplot_svg.SVG_NS}
+    polyline = root.find(".//svg:polyline", ns)
+    points = polyline.get("points")
+    # first point x-value should be near 0 (seconds), not 25 (label_margin in mm)
+    first_point = points.split(" ")[0]
+    first_x = float(first_point.split(",")[0])
+    assert first_x < 1.0, f"First x={first_x} looks like SVG coords, expected data coords near 0"
+
+
+def test_interactive_vector_effect():
+    """Interactive mode CSS should contain non-scaling-stroke."""
+    svg_str, _ = _make_interactive_svg()
+    assert "non-scaling-stroke" in svg_str
+
+
+def test_interactive_visual_equivalence():
+    """Interactive and static should have same viewBox and channel/polyline count."""
+    signals = make_sine_signals()
+    fs = 256.0
+    seconds = 800 / fs
+
+    svg_static = stackplot_svg.stackplot_svg(signals, fs, seconds=seconds)
+    svg_interactive = stackplot_svg.stackplot_svg(signals, fs, seconds=seconds, interactive=True)
+
+    root_s = ET.fromstring(svg_static)
+    root_i = ET.fromstring(svg_interactive)
+
+    # same viewBox
+    assert root_s.get("viewBox") == root_i.get("viewBox")
+
+    ns = {"svg": stackplot_svg.SVG_NS}
+    # same number of channels
+    assert len(root_s.findall(".//svg:g[@class='channel']", ns)) == \
+           len(root_i.findall(".//svg:g[@class='channel']", ns))
+    # same number of polylines
+    assert len(root_s.findall(".//svg:polyline", ns)) == \
+           len(root_i.findall(".//svg:polyline", ns))
