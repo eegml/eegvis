@@ -1,3 +1,4 @@
+import json
 import re
 
 import numpy as np
@@ -166,15 +167,14 @@ def test_stackplot_svg_topdown_false():
     ET.fromstring(svg_bu)
 
     # the label ordering in the SVG text should differ
-    # In topdown, "A" label appears first (at top); in bottom-up, "C" appears first
+    # topdown=True: A at top (drawn first), C at bottom
+    # topdown=False: C at top (drawn first), A at bottom
     idx_a_td = svg_td.index(">A<")
     idx_c_td = svg_td.index(">C<")
     idx_a_bu = svg_bu.index(">A<")
     idx_c_bu = svg_bu.index(">C<")
-    # topdown=True reverses order so C is drawn first (at top), A last (at bottom)
-    # topdown=False keeps natural order so A is drawn first
-    assert idx_c_td < idx_a_td
-    assert idx_a_bu < idx_c_bu
+    assert idx_a_td < idx_c_td
+    assert idx_c_bu < idx_a_bu
 
 
 def test_small_2channel_svg():
@@ -472,3 +472,119 @@ def test_interactive_visual_equivalence():
     # same number of polylines
     assert len(root_s.findall(".//svg:polyline", ns)) == \
            len(root_i.findall(".//svg:polyline", ns))
+
+
+# --- Channel group tests ---
+
+def test_interactive_channel_groups_attribute():
+    """channel_groups should add data-channel-group to each channel element."""
+    signals = make_sine_signals(num_channels=5)
+    groups = {"EEG": [0, 1, 2, 3], "EKG": [4]}
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=256.0, seconds=800 / 256.0,
+        interactive=True, channel_groups=groups,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    channels = root.findall(".//svg:g[@class='channel']", ns)
+    assert len(channels) == 5
+
+    group_values = [ch.get("data-channel-group") for ch in channels]
+    assert "EEG" in group_values
+    assert "EKG" in group_values
+    # 4 EEG + 1 EKG
+    assert group_values.count("EEG") == 4
+    assert group_values.count("EKG") == 1
+
+
+def test_interactive_channel_groups_on_svg_root():
+    """data-channel-groups should be a JSON list on the SVG root."""
+    signals = make_sine_signals(num_channels=3)
+    groups = {"EEG": [0, 1], "EMG": [2]}
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=256.0, seconds=800 / 256.0,
+        interactive=True, channel_groups=groups,
+    )
+    root = ET.fromstring(svg_str)
+    groups_attr = root.get("data-channel-groups")
+    assert groups_attr is not None
+    parsed = json.loads(groups_attr)
+    assert parsed == ["EEG", "EMG"]
+
+
+def test_interactive_default_channel_group():
+    """Without channel_groups, channels should get data-channel-group='default'."""
+    signals = make_sine_signals(num_channels=3)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=256.0, seconds=800 / 256.0,
+        interactive=True,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    channels = root.findall(".//svg:g[@class='channel']", ns)
+    for ch in channels:
+        assert ch.get("data-channel-group") == "default"
+
+    # No data-channel-groups attribute on root when no groups specified
+    assert root.get("data-channel-groups") is None
+
+
+def test_channel_groups_ignored_in_static_mode():
+    """In static (non-interactive) mode, channel_groups should not cause errors."""
+    signals = make_sine_signals(num_channels=3)
+    groups = {"EEG": [0, 1], "EKG": [2]}
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=256.0, seconds=800 / 256.0,
+        interactive=False, channel_groups=groups,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    # Static mode channels should not have data-channel-group
+    channels = root.findall(".//svg:g[@class='channel']", ns)
+    assert len(channels) == 3
+    for ch in channels:
+        assert ch.get("data-channel-group") is None
+
+
+def test_channel_groups_eeg_to_svg_passthrough():
+    """channel_groups should pass through eeg_to_svg to stackplot_svg."""
+    fs = 256.0
+    n = int(fs * 2)
+    signals = np.random.randn(4, n) * 50.0
+    groups = {"EEG": [0, 1, 2], "EKG": [3]}
+    svg_str = stackplot_svg.eeg_to_svg(
+        signals, fs,
+        low_freq=None, high_freq=None,
+        interactive=True,
+        channel_groups=groups,
+    )
+    root = ET.fromstring(svg_str)
+    # SVG root should have group list
+    assert json.loads(root.get("data-channel-groups")) == ["EEG", "EKG"]
+    # channels should have group attributes
+    ns = {"svg": stackplot_svg.SVG_NS}
+    channels = root.findall(".//svg:g[@class='channel']", ns)
+    group_values = [ch.get("data-channel-group") for ch in channels]
+    assert group_values.count("EEG") == 3
+    assert group_values.count("EKG") == 1
+
+
+def test_channel_groups_render_eeg_html():
+    """channel_groups should pass through render_eeg_html to the embedded SVG."""
+    from eegvis.serve_component import render_eeg_html
+
+    fs = 256.0
+    n = int(fs * 2)
+    signals = np.random.randn(4, n) * 50.0
+    groups = {"EEG": [0, 1, 2], "EKG": [3]}
+    html_str = render_eeg_html(
+        signals, fs,
+        low_freq=None, high_freq=None,
+        channel_groups=groups,
+    )
+    # The HTML embeds the SVG as a JSON-escaped string inside <script>
+    assert "data-channel-groups" in html_str
+    assert "data-channel-group" in html_str
+    # JSON-escaped quotes: \"EEG\" and \"EKG\"
+    assert "EEG" in html_str
+    assert "EKG" in html_str

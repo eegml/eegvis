@@ -10,6 +10,8 @@ straightforward: raw signal values map directly so that negative
 deflections appear as upward movements on screen.
 """
 
+import json
+
 import numpy as np
 import xml.etree.ElementTree as ET
 
@@ -181,6 +183,7 @@ def stackplot_svg(
     max_samples_per_channel=None,
     interactive=False,
     embed_js=False,
+    channel_groups=None,
 ):
     """Generate an SVG string of stacked EEG traces.
 
@@ -213,6 +216,10 @@ def stackplot_svg(
             data space (seconds, amplitude), and data-* attributes are
             added for JavaScript consumption.
         embed_js: reserved for future use (embed JS in SVG).
+        channel_groups: dict mapping group names to lists of channel indices,
+            e.g. {"EEG": [0,1,...,18], "EKG": [19]}. Used in interactive mode
+            to add data-channel-group attributes. Default: None (all channels
+            in a single "default" group).
 
     Returns:
         SVG content as a string
@@ -283,10 +290,12 @@ def stackplot_svg(
             return top_margin + 0.5 * plot_height
         return top_margin + (y_data - y_data_min) / y_data_range * plot_height
 
-    # channel ordering
+    # channel ordering: topdown=True means first channel at top (natural order)
+    # SVG y increases downward, and ticklocs[0] < ticklocs[N-1], so natural
+    # order already places draw_idx=0 at the top. Reverse only when NOT topdown.
     channel_order = list(range(num_channels))
     label_order = list(ylabels)
-    if topdown:
+    if not topdown:
         channel_order = list(reversed(channel_order))
         label_order = list(reversed(label_order))
 
@@ -304,12 +313,25 @@ def stackplot_svg(
         "width": f"{width_mm}mm",
         "height": f"{height_mm}mm",
     }
+    # build channel-index-to-group mapping
+    if channel_groups is not None:
+        _ch_to_group = {}
+        for group_name, indices in channel_groups.items():
+            for idx in indices:
+                _ch_to_group[idx] = group_name
+        group_names = list(channel_groups.keys())
+    else:
+        _ch_to_group = None
+        group_names = None
+
     if interactive:
         svg_attrs["data-interactive"] = "true"
         svg_attrs["data-seconds"] = str(seconds)
         svg_attrs["data-start-time"] = str(start_time)
         svg_attrs["data-sample-frequency"] = str(sample_frequency)
         svg_attrs["data-num-channels"] = str(num_channels)
+        if group_names is not None:
+            svg_attrs["data-channel-groups"] = json.dumps(group_names)
         svg_attrs["data-px-per-second"] = f"{px_per_sec:.6f}"
         svg_attrs["data-plot-width"] = f"{plot_width:.2f}"
         svg_attrs["data-label-margin"] = f"{label_margin:.2f}"
@@ -406,10 +428,15 @@ def stackplot_svg(
             # amplitude in data units (scaled by yscale, relative to baseline 0)
             amplitude = yscale * data[:, ch_idx]
 
+            ch_group_name = "default"
+            if _ch_to_group is not None:
+                ch_group_name = _ch_to_group.get(ch_idx, "default")
+
             ch_g = ET.SubElement(traces_g, "g", {
                 "class": "channel",
                 "id": f"ch-{draw_idx}",
                 "data-channel-index": str(draw_idx),
+                "data-channel-group": ch_group_name,
                 "data-label": label_order[draw_idx],
                 "data-baseline-y": f"{baseline_svg:.2f}",
                 "data-x-scale": f"{px_per_sec:.6f}",
