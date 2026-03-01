@@ -105,7 +105,7 @@
     customElements.define('eeg-viewer', EegViewer);
 
     // Inject the SVG content
-    const svgContent = __SVG_JSON__;
+    const svgContent = {{ svg_json }};
     document.getElementById('viewer').svgContent = svgContent;
   </script>
 </body>

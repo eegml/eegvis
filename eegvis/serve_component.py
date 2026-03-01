@@ -5,19 +5,19 @@ page with the <eeg-viewer> Lit web component. The HTML page loads Lit and the
 component from CDN/esm.sh so no local npm install is required for previewing.
 """
 
-import functools
 import html as html_mod
 from pathlib import Path
 
+import jinja2
+
 from eegvis.stackplot_svg import eeg_to_svg
 
-_TEMPLATE_PATH = Path(__file__).parent / "templates" / "eeg_viewer.html"
-
-
-@functools.lru_cache(maxsize=1)
-def _load_html_template():
-    """Read and cache the HTML template from disk (cached after first call)."""
-    return _TEMPLATE_PATH.read_text(encoding="utf-8")
+_TEMPLATE_DIR = Path(__file__).parent / "templates"
+_jinja_env = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(_TEMPLATE_DIR),
+    autoescape=False,
+    auto_reload=False,
+)
 
 
 def render_eeg_html(signals, sample_frequency, montage=None, **kwargs):
@@ -39,7 +39,8 @@ def render_eeg_html(signals, sample_frequency, montage=None, **kwargs):
         interactive=True, **kwargs,
     )
     svg_json = json.dumps(svg_str)
-    return _load_html_template().replace("__SVG_JSON__", svg_json)
+    template = _jinja_env.get_template("eeg_viewer.html")
+    return template.render(svg_json=svg_json)
 
 
 def save_eeg_html(filepath, signals, sample_frequency, **kwargs):
