@@ -6,124 +6,18 @@ component from CDN/esm.sh so no local npm install is required for previewing.
 """
 
 import html as html_mod
+from pathlib import Path
+
+import jinja2
 
 from eegvis.stackplot_svg import eeg_to_svg
 
-
-_HTML_TEMPLATE = """\
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EEG Viewer</title>
-  <style>
-    body {{ margin: 0; padding: 16px; background: #fafafa; font-family: sans-serif; }}
-    eeg-viewer {{ max-width: 100%; border: 1px solid #ddd; background: white; }}
-  </style>
-</head>
-<body>
-  <eeg-viewer id="viewer"></eeg-viewer>
-
-  <script type="module">
-    import 'https://esm.sh/lit@3?bundle';
-    import 'https://esm.sh/@lit-labs/signals@0.2?bundle';
-
-    // Inline the component definition (self-contained, no local build needed)
-    import {{ LitElement, html, css }} from 'https://esm.sh/lit@3?bundle';
-    import {{ SignalWatcher, signal }} from 'https://esm.sh/@lit-labs/signals@0.2?bundle';
-
-    class EegViewer extends SignalWatcher(LitElement) {{
-      static styles = css`
-        :host {{ display: block; font-family: sans-serif; }}
-        .controls {{
-          display: flex; align-items: center; gap: 8px;
-          padding: 4px 8px; background: #f5f5f5;
-          border-bottom: 1px solid #ddd; font-size: 14px;
-        }}
-        .controls button {{
-          padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px;
-          background: white; cursor: pointer; font-size: 14px;
-        }}
-        .controls button:hover {{ background: #e8e8e8; }}
-        .controls .scale-display {{
-          min-width: 80px; text-align: center; font-variant-numeric: tabular-nums;
-        }}
-        .svg-container {{ overflow: hidden; }}
-        .svg-container svg {{ display: block; width: 100%; height: auto; }}
-      `;
-
-      #secondsPerPage = signal(10);
-
-      static properties = {{
-        svgContent: {{ type: String, attribute: 'svg-content' }},
-      }};
-
-      constructor() {{ super(); this.svgContent = ''; }}
-
-      render() {{
-        const spp = this.#secondsPerPage.get();
-        return html`
-          <div class="controls">
-            <button @click=${{this.#zoomIn}} title="Zoom in">+</button>
-            <button @click=${{this.#zoomOut}} title="Zoom out">&minus;</button>
-            <span class="scale-display">${{spp}}s/page</span>
-          </div>
-          <div class="svg-container"></div>
-        `;
-      }}
-
-      updated(changedProperties) {{
-        if (changedProperties.has('svgContent') && this.svgContent) {{
-          const container = this.shadowRoot.querySelector('.svg-container');
-          container.innerHTML = this.svgContent;
-          const svg = container.querySelector('svg[data-interactive]');
-          if (svg) {{
-            const s = parseFloat(svg.dataset.seconds);
-            if (s && !isNaN(s)) this.#secondsPerPage.set(s);
-          }}
-        }}
-        this.#applyHorizontalScale();
-      }}
-
-      #zoomIn = () => {{
-        const c = this.#secondsPerPage.get();
-        if (c > 1) this.#secondsPerPage.set(Math.max(1, Math.round(c / 2)));
-      }};
-
-      #zoomOut = () => {{
-        const c = this.#secondsPerPage.get();
-        const svg = this.shadowRoot.querySelector('svg[data-interactive]');
-        const max = svg ? parseFloat(svg.dataset.seconds) : 300;
-        this.#secondsPerPage.set(Math.min(max, c * 2));
-      }};
-
-      #applyHorizontalScale() {{
-        const newSeconds = this.#secondsPerPage.get();
-        const svg = this.shadowRoot.querySelector('svg[data-interactive]');
-        if (!svg) return;
-        const plotWidth = parseFloat(svg.dataset.plotWidth);
-        const labelMargin = parseFloat(svg.dataset.labelMargin);
-        const newPxPerSec = plotWidth / newSeconds;
-
-        svg.querySelectorAll('g.channel').forEach(ch => {{
-          const baselineY = parseFloat(ch.dataset.baselineY);
-          const yScale = parseFloat(ch.dataset.yScale);
-          ch.setAttribute('transform',
-            `translate(${{labelMargin}},${{baselineY}}) scale(${{newPxPerSec}},${{yScale}})`);
-        }});
-      }}
-    }}
-
-    customElements.define('eeg-viewer', EegViewer);
-
-    // Inject the SVG content
-    const svgContent = {svg_json};
-    document.getElementById('viewer').svgContent = svgContent;
-  </script>
-</body>
-</html>
-"""
+_TEMPLATE_DIR = Path(__file__).parent / "templates"
+_jinja_env = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(_TEMPLATE_DIR),
+    autoescape=False,
+    auto_reload=False,
+)
 
 
 def render_eeg_html(signals, sample_frequency, montage=None, **kwargs):
@@ -145,7 +39,8 @@ def render_eeg_html(signals, sample_frequency, montage=None, **kwargs):
         interactive=True, **kwargs,
     )
     svg_json = json.dumps(svg_str)
-    return _HTML_TEMPLATE.format(svg_json=svg_json)
+    template = _jinja_env.get_template("eeg_viewer.html")
+    return template.render(svg_json=svg_json)
 
 
 def save_eeg_html(filepath, signals, sample_frequency, **kwargs):
