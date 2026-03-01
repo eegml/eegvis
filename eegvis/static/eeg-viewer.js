@@ -55,8 +55,9 @@ class EegViewer extends SignalWatcher(LitElement) {
     }
   `;
 
-  // TC39 Signal for horizontal scale (seconds per page)
+  // TC39 Signals for horizontal scale and vertical gain
   #secondsPerPage = signal(10);
+  #gain = signal(1.0);
 
   static properties = {
     svgContent: { type: String, attribute: 'svg-content' },
@@ -69,11 +70,17 @@ class EegViewer extends SignalWatcher(LitElement) {
 
   render() {
     const spp = this.#secondsPerPage.get();
+    const gain = this.#gain.get();
     return html`
       <div class="controls">
         <button @click=${this.#zoomIn} title="Show fewer seconds (zoom in)">+</button>
         <button @click=${this.#zoomOut} title="Show more seconds (zoom out)">&minus;</button>
         <span class="scale-display">${spp}s/page</span>
+        <span style="margin-left:12px; border-left:1px solid #ccc; padding-left:12px;">
+          <button @click=${this.#gainUp} title="Increase gain">&uarr;</button>
+          <button @click=${this.#gainDown} title="Decrease gain">&darr;</button>
+          <span class="scale-display">${gain.toFixed(1)}x</span>
+        </span>
       </div>
       <div class="svg-container"></div>
     `;
@@ -93,7 +100,7 @@ class EegViewer extends SignalWatcher(LitElement) {
         }
       }
     }
-    this.#applyHorizontalScale();
+    this.#applyScale();
   }
 
   #zoomIn = () => {
@@ -110,8 +117,17 @@ class EegViewer extends SignalWatcher(LitElement) {
     this.#secondsPerPage.set(Math.min(maxSeconds, current * 2));
   };
 
-  #applyHorizontalScale() {
+  #gainUp = () => {
+    this.#gain.set(this.#gain.get() * 1.5);
+  };
+
+  #gainDown = () => {
+    this.#gain.set(Math.max(0.1, this.#gain.get() / 1.5));
+  };
+
+  #applyScale() {
     const newSeconds = this.#secondsPerPage.get();
+    const gain = this.#gain.get();
     const svg = this.shadowRoot.querySelector('svg[data-interactive]');
     if (!svg) return;
 
@@ -119,12 +135,12 @@ class EegViewer extends SignalWatcher(LitElement) {
     const labelMargin = parseFloat(svg.dataset.labelMargin);
     const newPxPerSec = plotWidth / newSeconds;
 
-    // Update channel transforms
+    // Update channel transforms (apply gain to vertical scale)
     svg.querySelectorAll('g.channel').forEach(ch => {
       const baselineY = parseFloat(ch.dataset.baselineY);
       const yScale = parseFloat(ch.dataset.yScale);
       ch.setAttribute('transform',
-        `translate(${labelMargin},${baselineY}) scale(${newPxPerSec},${yScale})`);
+        `translate(${labelMargin},${baselineY}) scale(${newPxPerSec},${yScale * gain})`);
     });
 
     // Update grid lines

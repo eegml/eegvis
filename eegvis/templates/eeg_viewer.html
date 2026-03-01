@@ -41,6 +41,7 @@
       `;
 
       #secondsPerPage = signal(10);
+      #gain = signal(1.0);
 
       static properties = {
         svgContent: { type: String, attribute: 'svg-content' },
@@ -50,11 +51,17 @@
 
       render() {
         const spp = this.#secondsPerPage.get();
+        const gain = this.#gain.get();
         return html`
           <div class="controls">
-            <button @click=${this.#zoomIn} title="Zoom in">+</button>
-            <button @click=${this.#zoomOut} title="Zoom out">&minus;</button>
+            <button @click=${this.#zoomIn} title="Zoom in (time)">+</button>
+            <button @click=${this.#zoomOut} title="Zoom out (time)">&minus;</button>
             <span class="scale-display">${spp}s/page</span>
+            <span style="margin-left:12px; border-left:1px solid #ccc; padding-left:12px;">
+              <button @click=${this.#gainUp} title="Increase gain">&uarr;</button>
+              <button @click=${this.#gainDown} title="Decrease gain">&darr;</button>
+              <span class="scale-display">${gain.toFixed(1)}x</span>
+            </span>
           </div>
           <div class="svg-container"></div>
         `;
@@ -70,7 +77,7 @@
             if (s && !isNaN(s)) this.#secondsPerPage.set(s);
           }
         }
-        this.#applyHorizontalScale();
+        this.#applyScale();
       }
 
       #zoomIn = () => {
@@ -85,8 +92,17 @@
         this.#secondsPerPage.set(Math.min(max, c * 2));
       };
 
-      #applyHorizontalScale() {
+      #gainUp = () => {
+        this.#gain.set(this.#gain.get() * 1.5);
+      };
+
+      #gainDown = () => {
+        this.#gain.set(Math.max(0.1, this.#gain.get() / 1.5));
+      };
+
+      #applyScale() {
         const newSeconds = this.#secondsPerPage.get();
+        const gain = this.#gain.get();
         const svg = this.shadowRoot.querySelector('svg[data-interactive]');
         if (!svg) return;
         const plotWidth = parseFloat(svg.dataset.plotWidth);
@@ -97,7 +113,7 @@
           const baselineY = parseFloat(ch.dataset.baselineY);
           const yScale = parseFloat(ch.dataset.yScale);
           ch.setAttribute('transform',
-            `translate(${labelMargin},${baselineY}) scale(${newPxPerSec},${yScale})`);
+            `translate(${labelMargin},${baselineY}) scale(${newPxPerSec},${yScale * gain})`);
         });
       }
     }
