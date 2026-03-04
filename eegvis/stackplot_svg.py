@@ -138,6 +138,42 @@ def _format_data_points(t_relative, amplitude):
     return " ".join(f"{x},{y}" for x, y in coords)
 
 
+def generate_polyline_data(signals, seconds, yscale=1.0, topdown=True, channel_order=None):
+    """Compute SVG polyline points strings for each channel in draw order.
+
+    Produces the same data-coordinate polyline points that stackplot_svg()
+    embeds in interactive mode, but as standalone strings suitable for
+    streaming updates (e.g. via SSE).
+
+    Args:
+        signals: (num_channels, num_samples) numpy array of signal data
+        seconds: duration of the signal window in seconds
+        yscale: gain multiplier applied to signal amplitudes
+        topdown: if True, first channel appears at top (natural order)
+        channel_order: explicit draw order as list of channel indices.
+            If None, derived from topdown parameter.
+
+    Returns:
+        list[str]: one SVG polyline points string per channel in draw order
+    """
+    num_channels, num_samples = signals.shape
+    data = signals.T  # (num_samples, num_channels)
+
+    if channel_order is None:
+        channel_order = list(range(num_channels))
+        if not topdown:
+            channel_order = list(reversed(channel_order))
+
+    t_relative = seconds * np.arange(num_samples, dtype=float) / max(num_samples - 1, 1)
+
+    points_list = []
+    for ch_idx in channel_order:
+        amplitude = yscale * data[:, ch_idx]
+        points_list.append(_format_data_points(t_relative, amplitude))
+
+    return points_list
+
+
 def _compute_channel_offsets(data, num_channels, sensitivity=None, height=None):
     """Compute vertical offset for each channel.
 
@@ -418,15 +454,14 @@ def stackplot_svg(
             "clip-path": "url(#plot-area)",
         })
 
-        # time array in data coordinates (seconds relative to start)
-        t_relative = seconds * np.arange(num_samples, dtype=float) / max(num_samples - 1, 1)
+        # Generate polyline points using shared helper
+        points_list = generate_polyline_data(
+            signals, seconds, yscale=yscale, channel_order=channel_order,
+        )
 
         for draw_idx, ch_idx in enumerate(channel_order):
             offset = ticklocs[draw_idx]
             baseline_svg = data_y_to_svg(offset)
-
-            # amplitude in data units (scaled by yscale, relative to baseline 0)
-            amplitude = yscale * data[:, ch_idx]
 
             ch_group_name = "default"
             if _ch_to_group is not None:
@@ -444,9 +479,8 @@ def stackplot_svg(
                 "transform": f"translate({label_margin:.2f},{baseline_svg:.2f}) scale({px_per_sec:.6f},{y_scale_factor:.6f})",
             })
 
-            points_str = _format_data_points(t_relative, amplitude)
             ET.SubElement(ch_g, "polyline", {
-                "points": points_str,
+                "points": points_list[draw_idx],
                 "fill": "none",
                 "stroke": linecolor,
                 "stroke-width": str(linewidth),
@@ -636,7 +670,7 @@ def eeg_to_svg(
         low_freq: high-pass cutoff in Hz (default: 1.0). Set to None to skip.
         high_freq: low-pass cutoff in Hz (default: 70.0). Set to None to skip.
         notch_freq: notch filter frequency in Hz (default: None).
-            Common values: 60.0 (US) or 50.0 (EU).
+            Common values: 60.0 Hz (US) or 50.0 (EU).
         target_frequency: if set, downsample to this rate before processing.
         max_samples_per_channel: if set, limit samples per channel in the
             final SVG (applied during rendering, after filtering).

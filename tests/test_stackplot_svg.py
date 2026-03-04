@@ -588,3 +588,53 @@ def test_channel_groups_render_eeg_html():
     # JSON-escaped quotes: \"EEG\" and \"EKG\"
     assert "EEG" in html_str
     assert "EKG" in html_str
+
+
+# --- generate_polyline_data tests ---
+
+def test_generate_polyline_data_returns_correct_count():
+    """Should return one points string per channel."""
+    signals = make_sine_signals(num_channels=5)
+    points = stackplot_svg.generate_polyline_data(signals, seconds=800 / 256.0)
+    assert len(points) == 5
+    for p in points:
+        assert isinstance(p, str)
+        assert len(p) > 0
+
+
+def test_generate_polyline_data_matches_interactive_svg():
+    """Points from generate_polyline_data should match those in interactive SVG."""
+    signals = make_sine_signals(num_channels=3, num_samples=200, fs=100.0)
+    seconds = 200 / 100.0
+
+    # Get points from generate_polyline_data
+    points = stackplot_svg.generate_polyline_data(signals, seconds)
+
+    # Get points from interactive SVG
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=100.0, seconds=seconds, interactive=True,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    polylines = root.findall(".//svg:polyline", ns)
+    svg_points = [pl.get("points") for pl in polylines]
+
+    assert len(points) == len(svg_points)
+    for gen_pts, svg_pts in zip(points, svg_points):
+        assert gen_pts == svg_pts
+
+
+def test_generate_polyline_data_channel_order():
+    """Explicit channel_order should reorder output."""
+    signals = make_sine_signals(num_channels=3, num_samples=100, fs=100.0)
+    seconds = 1.0
+
+    natural = stackplot_svg.generate_polyline_data(signals, seconds)
+    reversed_order = stackplot_svg.generate_polyline_data(
+        signals, seconds, channel_order=[2, 1, 0],
+    )
+
+    # reversed output should be the natural output in reverse
+    assert reversed_order[0] == natural[2]
+    assert reversed_order[1] == natural[1]
+    assert reversed_order[2] == natural[0]
