@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datastar + Shadow DOM Web Component</title>
+    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { color: #333; }
+        .card { border: 2px solid #ddd; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        button { padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; border: 1px solid #999; }
+        code { background: #f0f0f0; padding: 0.1em 0.3em; border-radius: 3px; }
+        .status { padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; }
+        .status.ok { background: #e8f5e9; color: #2e7d32; }
+        .status.warn { background: #fff3e0; color: #e65100; }
+    </style>
+</head>
+<body>
+    <h1>Approach 2: Shadow DOM + Manual Datastar Apply</h1>
+    <p>
+        This example uses <strong>Shadow DOM</strong> for style encapsulation.
+        Since Datastar's DOM walker cannot see inside shadow boundaries, we
+        manually call <code>Datastar.apply(shadowRoot)</code> after attaching the
+        shadow content.
+    </p>
+
+    <!-- Outer Datastar context with shared signals -->
+    <div id="app" data-signals="{globalCount: 0, theme: 'light'}">
+
+        <div class="card">
+            <h3>Global Signals (outside any shadow boundary)</h3>
+            <p>Global count: <strong data-text="$globalCount"></strong></p>
+            <p>Theme: <strong data-text="$theme"></strong></p>
+            <button data-on:click="$globalCount++">Global ++</button>
+            <button data-on:click="$theme = $theme === 'light' ? 'dark' : 'light'">Toggle Theme</button>
+        </div>
+
+        <!-- Shadow DOM web component -->
+        <eeg-shadow-widget></eeg-shadow-widget>
+
+    </div>
+
+    <script type="module">
+        // Import Datastar so we can call apply() on shadow roots
+        import Datastar from 'https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js';
+
+        class EegShadowWidget extends HTMLElement {
+            constructor() {
+                super();
+                this.shadow = this.attachShadow({ mode: 'open' });
+            }
+
+            connectedCallback() {
+                // Styles are scoped to the shadow DOM
+                this.shadow.innerHTML = `
+                    <style>
+                        :host {
+                            display: block;
+                            margin: 1rem 0;
+                        }
+                        .shadow-card {
+                            border: 2px solid #7c4dff;
+                            border-radius: 8px;
+                            padding: 1rem;
+                            background: #f3e5f5;
+                        }
+                        .shadow-card h3 {
+                            color: #7c4dff;
+                            margin-top: 0;
+                        }
+                        button {
+                            padding: 0.5rem 1rem;
+                            cursor: pointer;
+                            border-radius: 4px;
+                            border: 1px solid #7c4dff;
+                            background: white;
+                            color: #7c4dff;
+                        }
+                        button:hover {
+                            background: #7c4dff;
+                            color: white;
+                        }
+                        .info { font-size: 0.85em; color: #666; margin-top: 0.5rem; }
+                    </style>
+                    <div class="shadow-card">
+                        <h3>&lt;eeg-shadow-widget&gt; (Shadow DOM)</h3>
+
+                        <div data-signals="{localCount: 0}">
+                            <p>Local count (shadow-scoped signal): <strong data-text="$localCount"></strong></p>
+                            <p>Global count (shared signal): <strong data-text="$globalCount"></strong></p>
+                            <p>
+                                <button data-on:click="$localCount++">Local ++</button>
+                                <button data-on:click="$globalCount++">Global ++ (from shadow)</button>
+                            </p>
+                            <p class="info">
+                                This component has its own scoped styles (purple border) and can
+                                read/write both local and global Datastar signals.
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                // KEY: Tell Datastar to process data-* attributes inside this shadow root.
+                // Without this call, none of the data-text/data-on/data-signals would work.
+                try {
+                    Datastar.apply(this.shadow);
+                    console.log('Datastar.apply() succeeded on shadow root');
+                } catch (e) {
+                    console.warn('Datastar.apply() failed:', e);
+                    console.log('Trying alternative: dispatching datastar-ready event');
+                    // Fallback: some versions use a different API
+                    this.shadow.querySelectorAll('[data-signals]').forEach(el => {
+                        document.body.appendChild(el);
+                        // re-parent trick - last resort
+                    });
+                }
+            }
+        }
+        customElements.define('eeg-shadow-widget', EegShadowWidget);
+    </script>
+
+    <div class="card">
+        <h3>How This Works</h3>
+        <ol>
+            <li>The web component creates a Shadow DOM with <code>attachShadow({mode: 'open'})</code></li>
+            <li>HTML with <code>data-*</code> attributes is placed inside the shadow root</li>
+            <li>We import Datastar and call <code>Datastar.apply(shadowRoot)</code> to process the shadow content</li>
+            <li>Signals declared inside the shadow root (<code>localCount</code>) join Datastar's global signal store</li>
+            <li>The shadow component can read/write signals from outside (<code>globalCount</code>)</li>
+        </ol>
+        <p><strong>Note:</strong> Signal scoping is <em>not</em> automatic with this approach.
+        All signals share one global namespace. For true scoped signals, consider the
+        <a href="https://github.com/aereaco/datastar-components">datastar-components</a> plugin
+        or Datastar Pro's Rocket feature.</p>
+    </div>
+</body>
+</html>

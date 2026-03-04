@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datastar + Light DOM Web Component</title>
+    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { color: #333; }
+        .card { border: 2px solid #ddd; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .card h3 { margin-top: 0; }
+        button { padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; border: 1px solid #999; }
+        .highlight { background: #fffde7; }
+    </style>
+</head>
+<body>
+    <h1>Approach 1: Light DOM Web Component + Datastar</h1>
+    <p>
+        This example uses a custom element that renders into the <strong>Light DOM</strong>
+        (no Shadow DOM). Datastar can see and process all <code>data-*</code> attributes
+        because the content lives in the regular document tree.
+    </p>
+
+    <!-- Datastar signals live at a parent level -->
+    <div data-signals="{count: 0, message: 'Hello from Datastar'}">
+
+        <div class="card">
+            <h3>Datastar Reactivity (outside component)</h3>
+            <p>Count: <strong data-text="$count"></strong></p>
+            <p>Message: <em data-text="$message"></em></p>
+            <button data-on:click="$count++">Increment</button>
+            <button data-on:click="$count = 0">Reset</button>
+        </div>
+
+        <!-- Light DOM custom element: Datastar processes its children normally -->
+        <eeg-counter></eeg-counter>
+
+        <eeg-counter></eeg-counter>
+
+    </div>
+
+    <script>
+        // A Light DOM web component - NO Shadow DOM.
+        // Datastar can process data-* attributes on its children directly.
+        class EegCounter extends HTMLElement {
+            connectedCallback() {
+                // Render into light DOM (this.innerHTML, not this.shadowRoot)
+                this.innerHTML = `
+                    <div class="card highlight">
+                        <h3>&lt;eeg-counter&gt; (Light DOM component)</h3>
+                        <p>This component shares the parent's Datastar signals.</p>
+                        <p>Shared count: <strong data-text="$count"></strong></p>
+                        <p>
+                            <input type="text" data-bind:message placeholder="Type to update message..." />
+                        </p>
+                        <button data-on:click="$count += 10">Add 10</button>
+                    </div>
+                `;
+            }
+        }
+        customElements.define('eeg-counter', EegCounter);
+    </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datastar + Shadow DOM + SSE Backend</title>
+    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+        h1 { color: #333; }
+        .card { border: 2px solid #ddd; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        button { padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; border: 1px solid #999; }
+        #status { padding: 0.5rem; border-radius: 4px; }
+        .connected { background: #e8f5e9; }
+        .disconnected { background: #ffebee; }
+    </style>
+</head>
+<body>
+    <h1>Approach 3: Shadow DOM + SSE Backend Updates</h1>
+    <p>
+        This demonstrates server-sent events (SSE) pushing updates into a
+        Shadow DOM web component. Start the backend with:
+        <code>python server.py</code>, then open <code>http://localhost:8000/03_sse_shadow_dom.html</code>.
+    </p>
+
+    <div data-signals="{eegChannel: 'Fp1', amplitude: 0, timestamp: ''}">
+
+        <div class="card">
+            <h3>Server Controls</h3>
+            <p>
+                <button data-on:click="@get('/api/stream-eeg')">
+                    Start EEG Stream (SSE)
+                </button>
+                <button data-on:click="@get('/api/update-once')">
+                    Single Update
+                </button>
+            </p>
+            <p>Channel: <strong data-text="$eegChannel"></strong></p>
+            <p>Amplitude: <strong data-text="$amplitude"></strong></p>
+            <p>Timestamp: <strong data-text="$timestamp"></strong></p>
+        </div>
+
+        <!-- Shadow DOM component that displays EEG-like data from the server -->
+        <eeg-display></eeg-display>
+
+    </div>
+
+    <script type="module">
+        import Datastar from 'https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0-RC.8/bundles/datastar.js';
+
+        class EegDisplay extends HTMLElement {
+            constructor() {
+                super();
+                this.shadow = this.attachShadow({ mode: 'open' });
+            }
+
+            connectedCallback() {
+                this.shadow.innerHTML = `
+                    <style>
+                        :host { display: block; margin: 1rem 0; }
+                        .display {
+                            border: 2px solid #1565c0;
+                            border-radius: 8px;
+                            padding: 1rem;
+                            background: #e3f2fd;
+                            font-family: monospace;
+                        }
+                        .display h3 { color: #1565c0; margin-top: 0; }
+                        .value { font-size: 1.5em; font-weight: bold; }
+                        .bar {
+                            height: 20px;
+                            background: #1565c0;
+                            border-radius: 3px;
+                            transition: width 0.3s ease;
+                            max-width: 100%;
+                        }
+                        .bar-container {
+                            background: #bbdefb;
+                            border-radius: 3px;
+                            overflow: hidden;
+                            margin: 0.5rem 0;
+                        }
+                    </style>
+                    <div class="display">
+                        <h3>&lt;eeg-display&gt; (Shadow DOM)</h3>
+                        <p>Channel: <span data-text="$eegChannel"></span></p>
+                        <p class="value" data-text="$amplitude + ' \u00b5V'"></p>
+                        <div class="bar-container">
+                            <div class="bar" data-attr:style="'width: ' + Math.min(Math.abs($amplitude), 100) + '%'"></div>
+                        </div>
+                        <p>Last update: <span data-text="$timestamp || 'waiting...'"></span></p>
+                    </div>
+                `;
+
+                // Apply Datastar to the shadow root
+                try {
+                    Datastar.apply(this.shadow);
+                } catch (e) {
+                    console.warn('Datastar.apply() on shadow root:', e);
+                }
+            }
+        }
+        customElements.define('eeg-display', EegDisplay);
+    </script>
+</body>
+</html>
