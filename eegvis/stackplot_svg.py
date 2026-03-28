@@ -249,7 +249,9 @@ def stackplot_svg(
         return label_margin + (t - start_time) / seconds * plot_width
 
     # compute mapping from data coordinates to SVG coordinates
-    t_data = start_time + seconds * np.arange(num_samples, dtype=float) / max(num_samples - 1, 1)
+    t_data = start_time + seconds * np.arange(num_samples, dtype=float) / max(
+        num_samples - 1, 1
+    )
     t_svg = time_to_x(t_data)
 
     # y axis: data values are offset by ticklocs, then mapped to SVG y
@@ -281,23 +283,30 @@ def stackplot_svg(
         label_order = list(reversed(label_order))
 
     # build SVG
-    svg = ET.Element("svg", {
-        "xmlns": SVG_NS,
-        "viewBox": f"0 0 {width_mm} {height_mm}",
-        "width": f"{width_mm}mm",
-        "height": f"{height_mm}mm",
-        "data-sample-frequency": str(sample_frequency),
-        "data-start-time": str(start_time),
-        "data-seconds": str(seconds),
-        "data-num-channels": str(num_channels),
-    })
+    svg = ET.Element(
+        "svg",
+        {
+            "xmlns": SVG_NS,
+            "viewBox": f"0 0 {width_mm} {height_mm}",
+            "width": f"{width_mm}mm",
+            "height": f"{height_mm}mm",
+            "data-sample-frequency": str(sample_frequency),
+            "data-start-time": str(start_time),
+            "data-seconds": str(seconds),
+            "data-num-channels": str(num_channels),
+        },
+    )
 
     # white background
-    ET.SubElement(svg, "rect", {
-        "width": "100%",
-        "height": "100%",
-        "fill": "white",
-    })
+    ET.SubElement(
+        svg,
+        "rect",
+        {
+            "width": "100%",
+            "height": "100%",
+            "fill": "white",
+        },
+    )
 
     # style element for text defaults
     style = ET.SubElement(svg, "style")
@@ -313,31 +322,41 @@ def stackplot_svg(
         grid_g = ET.SubElement(svg, "g", {"class": "grid"})
         grid_times = np.arange(
             np.ceil(start_time / grid_interval) * grid_interval,
-            start_time + seconds + grid_interval * 0.01,  # small epsilon for inclusive end
+            start_time
+            + seconds
+            + grid_interval * 0.01,  # small epsilon for inclusive end
             grid_interval,
         )
         grid_times = grid_times[grid_times <= start_time + seconds]
         for t in grid_times:
             x = time_to_x(t)
-            ET.SubElement(grid_g, "line", {
-                "x1": f"{x:.2f}",
-                "y1": f"{top_margin:.2f}",
-                "x2": f"{x:.2f}",
-                "y2": f"{top_margin + plot_height:.2f}",
-                "stroke": DEFAULT_GRID_COLOR,
-                "stroke-width": DEFAULT_GRID_WIDTH,
-            })
+            ET.SubElement(
+                grid_g,
+                "line",
+                {
+                    "x1": f"{x:.2f}",
+                    "y1": f"{top_margin:.2f}",
+                    "x2": f"{x:.2f}",
+                    "y2": f"{top_margin + plot_height:.2f}",
+                    "stroke": DEFAULT_GRID_COLOR,
+                    "stroke-width": DEFAULT_GRID_WIDTH,
+                },
+            )
 
     # plot border
-    ET.SubElement(svg, "rect", {
-        "x": f"{label_margin:.2f}",
-        "y": f"{top_margin:.2f}",
-        "width": f"{plot_width:.2f}",
-        "height": f"{plot_height:.2f}",
-        "fill": "none",
-        "stroke": "#999999",
-        "stroke-width": "0.2",
-    })
+    ET.SubElement(
+        svg,
+        "rect",
+        {
+            "x": f"{label_margin:.2f}",
+            "y": f"{top_margin:.2f}",
+            "width": f"{plot_width:.2f}",
+            "height": f"{plot_height:.2f}",
+            "fill": "none",
+            "stroke": "#999999",
+            "stroke-width": "0.2",
+        },
+    )
 
     # channel traces and labels
     traces_g = ET.SubElement(svg, "g", {"class": "traces"})
@@ -351,34 +370,46 @@ def stackplot_svg(
         else:
             y_scale_factor = 1.0
 
-        ch_g = ET.SubElement(traces_g, "g", {
-            "class": "channel",
-            "id": f"ch-{draw_idx}",
-            "transform": f"translate(0,{baseline_y:.2f})",
-            "data-baseline": f"{baseline_y:.2f}",
-            "data-channel-name": label_order[draw_idx],
-            "data-channel-index": str(ch_idx),
-        })
+        ch_g = ET.SubElement(
+            traces_g,
+            "g",
+            {
+                "class": "channel",
+                "id": f"ch-{draw_idx}",
+                "transform": f"translate(0,{baseline_y:.2f})",
+                "data-baseline": f"{baseline_y:.2f}",
+                "data-channel-name": label_order[draw_idx],
+                "data-channel-index": str(ch_idx),
+            },
+        )
 
         # channel label (y=0 relative to baseline via translate)
-        ET.SubElement(ch_g, "text", {
-            "x": f"{label_margin - 1.5:.2f}",
-            "y": "0",
-            "class": "label",
-        }).text = label_order[draw_idx]
+        ET.SubElement(
+            ch_g,
+            "text",
+            {
+                "x": f"{label_margin - 1.5:.2f}",
+                "y": "0",
+                "class": "label",
+            },
+        ).text = label_order[draw_idx]
 
         # polyline: y in raw data units, scale transform handles gain + data-to-SVG mapping
         y_raw = data[:, ch_idx]
         points_str = _format_points(t_svg, y_raw)
-        ET.SubElement(ch_g, "polyline", {
-            "points": points_str,
-            "fill": "none",
-            "stroke": linecolor,
-            "stroke-width": str(linewidth),
-            "transform": f"scale(1,{y_scale_factor:.6f})",
-            "data-yscale": f"{y_scale_factor:.6f}",
-            "vector-effect": "non-scaling-stroke",
-        })
+        ET.SubElement(
+            ch_g,
+            "polyline",
+            {
+                "points": points_str,
+                "fill": "none",
+                "stroke": linecolor,
+                "stroke-width": str(linewidth),
+                "transform": f"scale(1,{y_scale_factor:.6f})",
+                "data-yscale": f"{y_scale_factor:.6f}",
+                "vector-effect": "non-scaling-stroke",
+            },
+        )
 
     # annotations layer (initially empty, populated by viewer)
     ET.SubElement(svg, "g", {"class": "annotations"})
@@ -394,11 +425,15 @@ def stackplot_svg(
 
     for t in label_times:
         x = time_to_x(t)
-        ET.SubElement(time_g, "text", {
-            "x": f"{x:.2f}",
-            "y": f"{time_label_y:.2f}",
-            "class": "time-label",
-        }).text = f"{t:.4g}s"
+        ET.SubElement(
+            time_g,
+            "text",
+            {
+                "x": f"{x:.2f}",
+                "y": f"{time_label_y:.2f}",
+                "class": "time-label",
+            },
+        ).text = f"{t:.4g}s"
 
     # vertical scale bar
     if show_scalebar:
@@ -418,40 +453,56 @@ def stackplot_svg(
 
         sb_g = ET.SubElement(svg, "g", {"class": "scalebar"})
         # vertical line
-        ET.SubElement(sb_g, "line", {
-            "x1": f"{sb_x:.2f}",
-            "y1": f"{sb_top_svg:.2f}",
-            "x2": f"{sb_x:.2f}",
-            "y2": f"{sb_bot_svg:.2f}",
-            "stroke": "black",
-            "stroke-width": "0.3",
-        })
+        ET.SubElement(
+            sb_g,
+            "line",
+            {
+                "x1": f"{sb_x:.2f}",
+                "y1": f"{sb_top_svg:.2f}",
+                "x2": f"{sb_x:.2f}",
+                "y2": f"{sb_bot_svg:.2f}",
+                "stroke": "black",
+                "stroke-width": "0.3",
+            },
+        )
         # top end cap
         cap_w = 1
-        ET.SubElement(sb_g, "line", {
-            "x1": f"{sb_x - cap_w:.2f}",
-            "y1": f"{sb_top_svg:.2f}",
-            "x2": f"{sb_x + cap_w:.2f}",
-            "y2": f"{sb_top_svg:.2f}",
-            "stroke": "black",
-            "stroke-width": "0.3",
-        })
+        ET.SubElement(
+            sb_g,
+            "line",
+            {
+                "x1": f"{sb_x - cap_w:.2f}",
+                "y1": f"{sb_top_svg:.2f}",
+                "x2": f"{sb_x + cap_w:.2f}",
+                "y2": f"{sb_top_svg:.2f}",
+                "stroke": "black",
+                "stroke-width": "0.3",
+            },
+        )
         # bottom end cap
-        ET.SubElement(sb_g, "line", {
-            "x1": f"{sb_x - cap_w:.2f}",
-            "y1": f"{sb_bot_svg:.2f}",
-            "x2": f"{sb_x + cap_w:.2f}",
-            "y2": f"{sb_bot_svg:.2f}",
-            "stroke": "black",
-            "stroke-width": "0.3",
-        })
+        ET.SubElement(
+            sb_g,
+            "line",
+            {
+                "x1": f"{sb_x - cap_w:.2f}",
+                "y1": f"{sb_bot_svg:.2f}",
+                "x2": f"{sb_x + cap_w:.2f}",
+                "y2": f"{sb_bot_svg:.2f}",
+                "stroke": "black",
+                "stroke-width": "0.3",
+            },
+        )
         # label
         sb_label_y = (sb_top_svg + sb_bot_svg) / 2.0
-        ET.SubElement(sb_g, "text", {
-            "x": f"{sb_x + cap_w + 1:.2f}",
-            "y": f"{sb_label_y:.2f}",
-            "class": "scalebar-label",
-        }).text = f"{scalebar_height:.4g}{scalebar_units}"
+        ET.SubElement(
+            sb_g,
+            "text",
+            {
+                "x": f"{sb_x + cap_w + 1:.2f}",
+                "y": f"{sb_label_y:.2f}",
+                "class": "scalebar-label",
+            },
+        ).text = f"{scalebar_height:.4g}{scalebar_units}"
 
     # serialize
     ET.indent(svg, space="  ")
@@ -549,7 +600,9 @@ def eeg_to_svg(
     """
     # 1. downsample
     if target_frequency is not None:
-        signals, sample_frequency = downsample(signals, sample_frequency, target_frequency)
+        signals, sample_frequency = downsample(
+            signals, sample_frequency, target_frequency
+        )
 
     # 2. montage derivation
     ylabels = kwargs.pop("ylabels", None)
