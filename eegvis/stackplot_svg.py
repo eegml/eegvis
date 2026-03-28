@@ -218,6 +218,14 @@ def stackplot_svg(
     if linewidth is None:
         linewidth = DEFAULT_TRACE_WIDTH
 
+    # normalize yscale to per-channel array
+    if np.isscalar(yscale):
+        yscale_array = np.full(num_channels, float(yscale))
+        yscale_ref = float(yscale)
+    else:
+        yscale_array = np.asarray(yscale, dtype=float)
+        yscale_ref = float(np.mean(yscale_array))
+
     # layout constants (in viewBox units = mm)
     label_margin = 25  # left margin for channel labels
     top_margin = 5
@@ -233,7 +241,7 @@ def stackplot_svg(
 
     # compute vertical offsets in data space
     ticklocs, dr = _compute_channel_offsets(
-        yscale * data, num_channels, sensitivity=sensitivity, height=plot_height
+        yscale_ref * data, num_channels, sensitivity=sensitivity, height=plot_height
     )
 
     def time_to_x(t):
@@ -250,7 +258,7 @@ def stackplot_svg(
         y_data_min = 0.0
         y_data_max = sensitivity * plot_height
     else:
-        scaled = yscale * data
+        scaled = yscale_ref * data
         y_data_min = scaled.min()
         y_data_max = (num_channels - 1) * dr + scaled.max()
 
@@ -278,6 +286,10 @@ def stackplot_svg(
         "viewBox": f"0 0 {width_mm} {height_mm}",
         "width": f"{width_mm}mm",
         "height": f"{height_mm}mm",
+        "data-sample-frequency": str(sample_frequency),
+        "data-start-time": str(start_time),
+        "data-seconds": str(seconds),
+        "data-num-channels": str(num_channels),
     })
 
     # white background
@@ -331,30 +343,45 @@ def stackplot_svg(
     traces_g = ET.SubElement(svg, "g", {"class": "traces"})
     for draw_idx, ch_idx in enumerate(channel_order):
         offset = ticklocs[draw_idx]
-        y_trace = yscale * data[:, ch_idx] + offset
-        y_svg = data_y_to_svg(y_trace)
+        baseline_y = data_y_to_svg(offset)
+        ch_yscale = yscale_array[ch_idx]
+
+        if y_data_range != 0:
+            y_scale_factor = ch_yscale * plot_height / y_data_range
+        else:
+            y_scale_factor = 1.0
 
         ch_g = ET.SubElement(traces_g, "g", {
             "class": "channel",
             "id": f"ch-{draw_idx}",
+            "transform": f"translate(0,{baseline_y:.2f})",
+            "data-baseline": f"{baseline_y:.2f}",
+            "data-channel-name": label_order[draw_idx],
+            "data-channel-index": str(ch_idx),
         })
 
-        # channel label
-        label_y = data_y_to_svg(offset)
+        # channel label (y=0 relative to baseline via translate)
         ET.SubElement(ch_g, "text", {
             "x": f"{label_margin - 1.5:.2f}",
-            "y": f"{label_y:.2f}",
+            "y": "0",
             "class": "label",
         }).text = label_order[draw_idx]
 
-        # polyline for waveform
-        points_str = _format_points(t_svg, y_svg)
+        # polyline: y in raw data units, scale transform handles gain + data-to-SVG mapping
+        y_raw = data[:, ch_idx]
+        points_str = _format_points(t_svg, y_raw)
         ET.SubElement(ch_g, "polyline", {
             "points": points_str,
             "fill": "none",
             "stroke": linecolor,
             "stroke-width": str(linewidth),
+            "transform": f"scale(1,{y_scale_factor:.6f})",
+            "data-yscale": f"{y_scale_factor:.6f}",
+            "vector-effect": "non-scaling-stroke",
         })
+
+    # annotations layer (initially empty, populated by viewer)
+    ET.SubElement(svg, "g", {"class": "annotations"})
 
     # time axis labels
     time_g = ET.SubElement(svg, "g", {"class": "timeaxis"})
