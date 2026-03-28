@@ -26,8 +26,13 @@ _studies: dict[str, "_StudyData"] = {}
 class _StudyData:
     """Loaded EEG study data held in memory."""
 
-    def __init__(self, signals: np.ndarray, sample_frequency: float,
-                 channel_labels: list[str], montage_names: list[str] | None = None):
+    def __init__(
+        self,
+        signals: np.ndarray,
+        sample_frequency: float,
+        channel_labels: list[str],
+        montage_names: list[str] | None = None,
+    ):
         self.signals = signals
         self.sample_frequency = sample_frequency
         self.channel_labels = channel_labels
@@ -35,10 +40,17 @@ class _StudyData:
         self.total_duration = signals.shape[1] / sample_frequency
 
 
-def load_study(study_id: str, signals: np.ndarray, sample_frequency: float,
-               channel_labels: list[str], montage_names: list[str] | None = None):
+def load_study(
+    study_id: str,
+    signals: np.ndarray,
+    sample_frequency: float,
+    channel_labels: list[str],
+    montage_names: list[str] | None = None,
+):
     """Load a study into the server for viewing."""
-    _studies[study_id] = _StudyData(signals, sample_frequency, channel_labels, montage_names)
+    _studies[study_id] = _StudyData(
+        signals, sample_frequency, channel_labels, montage_names
+    )
 
 
 def _render_page_svg(study: "_StudyData", session: ViewerSession) -> str:
@@ -53,7 +65,8 @@ def _render_page_svg(study: "_StudyData", session: ViewerSession) -> str:
     # apply filters
     if session.highpass_freq is not None or session.lowpass_freq is not None:
         page_signals = bandpass_filter(
-            page_signals, fs,
+            page_signals,
+            fs,
             low_freq=session.highpass_freq,
             high_freq=session.lowpass_freq,
         )
@@ -81,14 +94,24 @@ def _make_update_events(study: "_StudyData", session: ViewerSession) -> list:
     """Generate datastar SSE events to update the viewer."""
     svg_content = _render_page_svg(study, session)
     return [
-        SSE.patch_elements(render(_display_area(svg_content)), selector="#eeg-display", mode="outer"),
-        SSE.patch_elements(render(_jump_bar(session, study.total_duration)), selector="#jump-bar", mode="outer"),
-        SSE.patch_elements(render(_status_bar(session)), selector="#status-bar", mode="outer"),
-        SSE.patch_signals({
-            "currentTime": session.current_time,
-            "sensitivity": session.sensitivity,
-            "pageDuration": session.page_duration,
-        }),
+        SSE.patch_elements(
+            render(_display_area(svg_content)), selector="#eeg-display", mode="outer"
+        ),
+        SSE.patch_elements(
+            render(_jump_bar(session, study.total_duration)),
+            selector="#jump-bar",
+            mode="outer",
+        ),
+        SSE.patch_elements(
+            render(_status_bar(session)), selector="#status-bar", mode="outer"
+        ),
+        SSE.patch_signals(
+            {
+                "currentTime": session.current_time,
+                "sensitivity": session.sensitivity,
+                "pageDuration": session.page_duration,
+            }
+        ),
     ]
 
 
@@ -101,7 +124,9 @@ async def index(study_id: str = "demo"):
 
     session = sessions.create(study_id)
     svg_content = _render_page_svg(study, session)
-    html = render(viewer_page(session, study.montage_names, svg_content, study.total_duration))
+    html = render(
+        viewer_page(session, study.montage_names, svg_content, study.total_duration)
+    )
     return HTMLResponse(html)
 
 
@@ -202,7 +227,9 @@ async def set_montage(session_id: str = Query(...), montage: str = Query(...)):
 
 
 @app.get("/api/set_sensitivity")
-async def set_sensitivity(session_id: str = Query(...), sensitivity: float = Query(...)):
+async def set_sensitivity(
+    session_id: str = Query(...), sensitivity: float = Query(...)
+):
     """Set global sensitivity."""
     session = sessions.get(session_id)
     if session is None:
@@ -261,9 +288,25 @@ def create_demo_study():
     num_samples = int(fs * duration)
 
     channel_labels = [
-        "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4",
-        "O1", "O2", "F7", "F8", "T3", "T4", "T5", "T6",
-        "Fz", "Cz", "Pz",
+        "Fp1",
+        "Fp2",
+        "F3",
+        "F4",
+        "C3",
+        "C4",
+        "P3",
+        "P4",
+        "O1",
+        "O2",
+        "F7",
+        "F8",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "Fz",
+        "Cz",
+        "Pz",
     ]
 
     rng = np.random.default_rng(42)
@@ -272,8 +315,12 @@ def create_demo_study():
     signals = np.zeros((num_channels, num_samples))
     for i in range(num_channels):
         # background: mix of alpha (10Hz) and theta (6Hz) with noise
-        alpha = rng.uniform(10, 40) * np.sin(2 * np.pi * (10 + rng.uniform(-1, 1)) * t + rng.uniform(0, 2 * np.pi))
-        theta = rng.uniform(5, 15) * np.sin(2 * np.pi * (6 + rng.uniform(-0.5, 0.5)) * t + rng.uniform(0, 2 * np.pi))
+        alpha = rng.uniform(10, 40) * np.sin(
+            2 * np.pi * (10 + rng.uniform(-1, 1)) * t + rng.uniform(0, 2 * np.pi)
+        )
+        theta = rng.uniform(5, 15) * np.sin(
+            2 * np.pi * (6 + rng.uniform(-0.5, 0.5)) * t + rng.uniform(0, 2 * np.pi)
+        )
         noise = rng.normal(0, 5, num_samples)
         # 60Hz line noise
         line_noise = 3 * np.sin(2 * np.pi * 60 * t)
@@ -284,6 +331,7 @@ def create_demo_study():
 
 if __name__ == "__main__":
     import uvicorn
+
     create_demo_study()
     print("Starting EEG viewer at http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)

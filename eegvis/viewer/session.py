@@ -81,7 +81,9 @@ class ViewerSession:
         return self.montage_states[self.current_montage]
 
     def page_forward(self, max_time: float):
-        self.current_time = min(self.current_time + self.page_duration, max_time - self.page_duration)
+        self.current_time = min(
+            self.current_time + self.page_duration, max_time - self.page_duration
+        )
         self.current_time = max(0.0, self.current_time)
 
     def page_backward(self):

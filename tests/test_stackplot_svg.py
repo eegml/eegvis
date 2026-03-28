@@ -87,9 +87,7 @@ def test_stackplot_svg_no_scalebar():
 def test_stackplot_svg_scalebar_present():
     """Default should include scalebar with unit text."""
     signals = np.random.randn(5, 800)
-    svg_str = stackplot_svg.stackplot_svg(
-        signals, sample_frequency=256.0, seconds=3.0
-    )
+    svg_str = stackplot_svg.stackplot_svg(signals, sample_frequency=256.0, seconds=3.0)
     assert "\u00b5V" in svg_str  # µV
 
 
@@ -122,7 +120,9 @@ def test_save_svg_with_calibration(tmp_path):
     filepath = tmp_path / "test_calibration.svg"
     num_samples = 800
     signals = np.random.randn(5, num_samples) * 30.0
-    signals[-1, :] = make_calibration_signal(num_samples, levels=[0, 100, -100, 100, -100])
+    signals[-1, :] = make_calibration_signal(
+        num_samples, levels=[0, 100, -100, 100, -100]
+    )
 
     labels = ["Ch1", "Ch2", "Ch3", "Ch4", "Cal 100\u00b5V"]
     stackplot_svg.save_svg(
@@ -184,8 +184,8 @@ def test_small_2channel_svg():
     n = 100
     t = np.arange(n) / fs
     signals = np.zeros((2, n))
-    signals[0, :] = 50.0 * np.sin(2 * np.pi * 3 * t)   # 3 Hz sine
-    signals[1, :] = 30.0 * np.sin(2 * np.pi * 10 * t)   # 10 Hz sine
+    signals[0, :] = 50.0 * np.sin(2 * np.pi * 3 * t)  # 3 Hz sine
+    signals[1, :] = 30.0 * np.sin(2 * np.pi * 10 * t)  # 10 Hz sine
 
     stackplot_svg.save_svg(
         "test_small_2ch.svg",
@@ -218,7 +218,9 @@ def test_downsample_noop_when_already_low():
 def test_max_samples_per_channel_limits_polyline_points():
     """max_samples_per_channel should produce fewer points in SVG."""
     signals = np.random.randn(2, 5000)  # high sample count
-    svg_full = stackplot_svg.stackplot_svg(signals, sample_frequency=1000.0, seconds=5.0)
+    svg_full = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=1000.0, seconds=5.0
+    )
     svg_ds = stackplot_svg.stackplot_svg(
         signals, sample_frequency=1000.0, seconds=5.0, max_samples_per_channel=500
     )
@@ -232,8 +234,8 @@ def test_bandpass_filter_attenuates_out_of_band():
     n = int(fs * 4)  # 4 seconds for filter settling
     t = np.arange(n) / fs
     signals = np.zeros((2, n))
-    signals[0, :] = np.sin(2 * np.pi * 1.0 * t)    # 1 Hz — below band
-    signals[1, :] = np.sin(2 * np.pi * 100.0 * t)   # 100 Hz — above band
+    signals[0, :] = np.sin(2 * np.pi * 1.0 * t)  # 1 Hz — below band
+    signals[1, :] = np.sin(2 * np.pi * 100.0 * t)  # 100 Hz — above band
 
     filtered = stackplot_svg.bandpass_filter(signals, fs, low_freq=5.0, high_freq=30.0)
 
@@ -281,7 +283,8 @@ def test_eeg_to_svg_basic():
     signals = np.random.randn(4, n) * 50.0
 
     svg_str = stackplot_svg.eeg_to_svg(
-        signals, fs,
+        signals,
+        fs,
         ylabels=["Ch1", "Ch2", "Ch3", "Ch4"],
         seconds=10.0,
     )
@@ -296,9 +299,25 @@ def test_eeg_to_svg_with_montage():
     from eegvis.montageview import DoubleBananaMontageView
 
     rec_labels = [
-        "Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4",
-        "O1", "O2", "F7", "F8", "T3", "T4", "T5", "T6",
-        "Fz", "Cz", "Pz",
+        "Fp1",
+        "Fp2",
+        "F3",
+        "F4",
+        "C3",
+        "C4",
+        "P3",
+        "P4",
+        "O1",
+        "O2",
+        "F7",
+        "F8",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "Fz",
+        "Cz",
+        "Pz",
     ]
     montage = DoubleBananaMontageView(rec_labels)
     fs = 256.0
@@ -319,7 +338,11 @@ def test_eeg_to_svg_no_filter():
     signals = np.random.randn(2, n) * 30.0
 
     svg_str = stackplot_svg.eeg_to_svg(
-        signals, fs, low_freq=None, high_freq=None, seconds=5.0,
+        signals,
+        fs,
+        low_freq=None,
+        high_freq=None,
+        seconds=5.0,
     )
     root = ET.fromstring(svg_str)
     assert root.tag == f"{{{stackplot_svg.SVG_NS}}}svg"
@@ -332,8 +355,10 @@ def test_eeg_to_svg_with_notch_and_downsample():
     signals = np.random.randn(3, n) * 50.0
 
     svg_str = stackplot_svg.eeg_to_svg(
-        signals, fs,
-        low_freq=1.0, high_freq=70.0,
+        signals,
+        fs,
+        low_freq=1.0,
+        high_freq=70.0,
         notch_freq=60.0,
         target_frequency=256.0,
         max_samples_per_channel=1000,
@@ -352,8 +377,11 @@ def test_save_eeg_svg(tmp_path):
     signals = np.random.randn(3, n) * 50.0
 
     stackplot_svg.save_eeg_svg(
-        str(filepath), signals, fs,
-        low_freq=1.0, high_freq=70.0,
+        str(filepath),
+        signals,
+        fs,
+        low_freq=1.0,
+        high_freq=70.0,
         seconds=5.0,
     )
     assert filepath.exists()
@@ -362,6 +390,7 @@ def test_save_eeg_svg(tmp_path):
 
 
 # --- Phase 1: SVG structure tests for interactive viewer support ---
+
 
 def test_channel_has_translate_transform():
     """Each channel <g> should have a translate transform for baseline offset."""
@@ -453,9 +482,7 @@ def test_per_channel_yscale():
 def test_scalar_yscale_backward_compatible():
     """Scalar yscale should still produce valid SVG with uniform scale factors."""
     signals = np.random.randn(3, 300)
-    svg_str = stackplot_svg.stackplot_svg(
-        signals, sample_frequency=256.0, yscale=2.0
-    )
+    svg_str = stackplot_svg.stackplot_svg(signals, sample_frequency=256.0, yscale=2.0)
     root = ET.fromstring(svg_str)
     ns = {"svg": stackplot_svg.SVG_NS}
     polylines = root.findall(".//svg:polyline", ns)

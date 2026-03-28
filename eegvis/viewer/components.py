@@ -1,12 +1,30 @@
 """ztml HTML components for the EEG viewer."""
 
 from ztml import (
-    Body, Button, Div, Fragment, H1, Head, Html, Label, Meta,
-    Option, P, Raw, RawCss, Script, Select, Span, Style, Title, Input,
+    Body,
+    Button,
+    Div,
+    Fragment,
+    H1,
+    Head,
+    Html,
+    Label,
+    Meta,
+    Option,
+    P,
+    Raw,
+    RawCss,
+    Script,
+    Select,
+    Span,
+    Style,
+    Title,
+    Input,
 )
 
 from .session import (
-    SENSITIVITY_PRESETS, PAGE_DURATION_PRESETS,
+    SENSITIVITY_PRESETS,
+    PAGE_DURATION_PRESETS,
     ViewerSession,
 )
 
@@ -32,7 +50,8 @@ def page_shell(*children):
 
 def _viewer_styles():
     """Inline CSS for the viewer layout."""
-    return Style(RawCss("""
+    return Style(
+        RawCss("""
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; }
         .viewer-root { max-width: 1400px; margin: 0 auto; padding: 8px; }
@@ -69,10 +88,16 @@ def _viewer_styles():
             position: absolute; top: 0; height: 100%;
             background: rgba(66, 133, 244, 0.3); border-left: 2px solid #4285f4;
         }
-    """))
+    """)
+    )
 
 
-def viewer_page(session: ViewerSession, montage_names: list[str], svg_content: str, total_duration: float):
+def viewer_page(
+    session: ViewerSession,
+    montage_names: list[str],
+    svg_content: str,
+    total_duration: float,
+):
     """Build the full viewer page."""
     signals = {
         "sensitivity": session.sensitivity,
@@ -90,13 +115,11 @@ def viewer_page(session: ViewerSession, montage_names: list[str], svg_content: s
             _display_area(svg_content),
             _jump_bar(session, total_duration),
             _status_bar(session),
-        ).cls("viewer-root").attr(
-            "data-signals", f"{{{signals_str}}}"
-        ).attr(
-            "tabindex", "0"
-        ).attr(
-            "data-on:keydown", _keydown_handler(session.session_id)
-        ),
+        )
+        .cls("viewer-root")
+        .attr("data-signals", f"{{{signals_str}}}")
+        .attr("tabindex", "0")
+        .attr("data-on:keydown", _keydown_handler(session.session_id)),
     )
 
 
@@ -107,60 +130,73 @@ def _toolbar(session: ViewerSession, montage_names: list[str]):
         Label("Montage:"),
         _montage_select(session, montage_names),
         _separator(),
-
         # sensitivity
         Label("Sensitivity:"),
         _sensitivity_select(session),
         _separator(),
-
         # page duration
         Label("Page:"),
         _page_duration_select(session),
         _separator(),
-
         # navigation
-        Button("\u25c0\u25c0").title("Previous page (Left arrow)").attr(
-            "data-on:click", f"@get('/api/navigate?session_id={session.session_id}&action=page_back')"
+        Button("\u25c0\u25c0")
+        .title("Previous page (Left arrow)")
+        .attr(
+            "data-on:click",
+            f"@get('/api/navigate?session_id={session.session_id}&action=page_back')",
         ),
-        Button("\u25c0").title("Step back (h/j)").attr(
-            "data-on:click", f"@get('/api/navigate?session_id={session.session_id}&action=step_back')"
+        Button("\u25c0")
+        .title("Step back (h/j)")
+        .attr(
+            "data-on:click",
+            f"@get('/api/navigate?session_id={session.session_id}&action=step_back')",
         ),
-        Button("\u25b6").title("Step forward (k/l)").attr(
-            "data-on:click", f"@get('/api/navigate?session_id={session.session_id}&action=step_forward')"
+        Button("\u25b6")
+        .title("Step forward (k/l)")
+        .attr(
+            "data-on:click",
+            f"@get('/api/navigate?session_id={session.session_id}&action=step_forward')",
         ),
-        Button("\u25b6\u25b6").title("Next page (Right arrow)").attr(
-            "data-on:click", f"@get('/api/navigate?session_id={session.session_id}&action=page_forward')"
+        Button("\u25b6\u25b6")
+        .title("Next page (Right arrow)")
+        .attr(
+            "data-on:click",
+            f"@get('/api/navigate?session_id={session.session_id}&action=page_forward')",
         ),
         _separator(),
-
         # jump to time
         Label("Go to:"),
-        Input().type("number").attr("data-bind", "currentTime").attr(
-            "min", "0"
-        ).attr(
-            "step", "1"
-        ).attr(
-            "data-on:change", f"@get('/api/navigate?session_id={session.session_id}&action=jump&time=' + $currentTime)"
-        ).style("width: 70px"),
+        Input()
+        .type("number")
+        .attr("data-bind", "currentTime")
+        .attr("min", "0")
+        .attr("step", "1")
+        .attr(
+            "data-on:change",
+            f"@get('/api/navigate?session_id={session.session_id}&action=jump&time=' + $currentTime)",
+        )
+        .style("width: 70px"),
         Label("s"),
         _separator(),
-
         # filters
         Label("HP:"),
         _filter_select(
-            "highpass", session.session_id,
+            "highpass",
+            session.session_id,
             [None, 0.1, 0.3, 0.5, 1.0, 1.5, 2.0, 5.0],
             session.highpass_freq,
         ),
         Label("LP:"),
         _filter_select(
-            "lowpass", session.session_id,
+            "lowpass",
+            session.session_id,
             [None, 15, 20, 30, 35, 40, 50, 70, 100],
             session.lowpass_freq,
         ),
         Label("Notch:"),
         _filter_select(
-            "notch", session.session_id,
+            "notch",
+            session.session_id,
             [None, 50, 60],
             session.notch_freq,
         ),
@@ -175,11 +211,13 @@ def _montage_select(session: ViewerSession, montage_names: list[str]):
         if name == session.current_montage:
             opt = opt.selected(True)
         options.append(opt)
-    return Select(*options).attr(
-        "data-bind", "montage"
-    ).attr(
-        "data-on:change",
-        f"@get('/api/set_montage?session_id={session.session_id}&montage=' + $montage)",
+    return (
+        Select(*options)
+        .attr("data-bind", "montage")
+        .attr(
+            "data-on:change",
+            f"@get('/api/set_montage?session_id={session.session_id}&montage=' + $montage)",
+        )
     )
 
 
@@ -191,11 +229,13 @@ def _sensitivity_select(session: ViewerSession):
         if s == session.sensitivity:
             opt = opt.selected(True)
         options.append(opt)
-    return Select(*options).attr(
-        "data-bind", "sensitivity"
-    ).attr(
-        "data-on:change",
-        f"@get('/api/set_sensitivity?session_id={session.session_id}&sensitivity=' + $sensitivity)",
+    return (
+        Select(*options)
+        .attr("data-bind", "sensitivity")
+        .attr(
+            "data-on:change",
+            f"@get('/api/set_sensitivity?session_id={session.session_id}&sensitivity=' + $sensitivity)",
+        )
     )
 
 
@@ -208,15 +248,19 @@ def _page_duration_select(session: ViewerSession):
         if d == session.page_duration:
             opt = opt.selected(True)
         options.append(opt)
-    return Select(*options).attr(
-        "data-bind", "pageDuration"
-    ).attr(
-        "data-on:change",
-        f"@get('/api/set_page_duration?session_id={session.session_id}&duration=' + $pageDuration)",
+    return (
+        Select(*options)
+        .attr("data-bind", "pageDuration")
+        .attr(
+            "data-on:change",
+            f"@get('/api/set_page_duration?session_id={session.session_id}&duration=' + $pageDuration)",
+        )
     )
 
 
-def _filter_select(filter_type: str, session_id: str, values: list, current: float | None):
+def _filter_select(
+    filter_type: str, session_id: str, values: list, current: float | None
+):
     """Filter preset dropdown."""
     options = []
     for v in values:
@@ -238,9 +282,13 @@ def _separator():
 
 def _display_area(svg_content: str):
     """Main SVG display area."""
-    return Div(
-        Raw(svg_content),
-    ).cls("display-area").id("eeg-display")
+    return (
+        Div(
+            Raw(svg_content),
+        )
+        .cls("display-area")
+        .id("eeg-display")
+    )
 
 
 def _jump_bar(session: ViewerSession, total_duration: float):
@@ -251,26 +299,37 @@ def _jump_bar(session: ViewerSession, total_duration: float):
     else:
         left_pct = 0
         width_pct = 100
-    return Div(
-        Div().cls("position-marker").style(
-            f"left: {left_pct:.1f}%; width: {width_pct:.1f}%"
-        ),
-    ).cls("jump-bar").id("jump-bar").attr(
-        "data-on:click",
-        f"@get('/api/navigate?session_id={session.session_id}&action=jump&time=' + "
-        f"Math.round(evt.offsetX / evt.target.offsetWidth * {total_duration}))",
+    return (
+        Div(
+            Div()
+            .cls("position-marker")
+            .style(f"left: {left_pct:.1f}%; width: {width_pct:.1f}%"),
+        )
+        .cls("jump-bar")
+        .id("jump-bar")
+        .attr(
+            "data-on:click",
+            f"@get('/api/navigate?session_id={session.session_id}&action=jump&time=' + "
+            f"Math.round(evt.offsetX / evt.target.offsetWidth * {total_duration}))",
+        )
     )
 
 
 def _status_bar(session: ViewerSession):
     """Status bar showing current state."""
     time_str = f"{session.current_time:.1f}s - {session.current_time + session.page_duration:.1f}s"
-    return Div(
-        Span(f"Time: {time_str}"),
-        Span(f"Montage: {session.current_montage}"),
-        Span(f"Sensitivity: {session.sensitivity} \u00b5V/mm"),
-        Span(f"Filters: HP {session.highpass_freq or 'Off'} / LP {session.lowpass_freq or 'Off'} / Notch {session.notch_freq or 'Off'}"),
-    ).cls("status-bar").id("status-bar")
+    return (
+        Div(
+            Span(f"Time: {time_str}"),
+            Span(f"Montage: {session.current_montage}"),
+            Span(f"Sensitivity: {session.sensitivity} \u00b5V/mm"),
+            Span(
+                f"Filters: HP {session.highpass_freq or 'Off'} / LP {session.lowpass_freq or 'Off'} / Notch {session.notch_freq or 'Off'}"
+            ),
+        )
+        .cls("status-bar")
+        .id("status-bar")
+    )
 
 
 def _keydown_handler(session_id: str):
