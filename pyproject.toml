@@ -27,6 +27,9 @@ dependencies = [
     "bokeh>=0.12.16", # required for bokeh backend
     "ipywidgets>=7.0",
     "panel",   # needed for more elaborate ui/web dashboard
+    "ztml>=0.2.4",
+    "datastar-py>=0.8.0",
+    "fastapi>=0.135.2",
 ]
 
 # may want to break this out into different backends
