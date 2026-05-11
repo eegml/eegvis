@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*
 # eeg_app_add_jquery.py first try
 # at adding the jquery library to deal with keydown events
-"""
-"""
+""" """
+
 from __future__ import print_function, division, unicode_literals
 import pandas as pd
 import numpy as np
@@ -27,10 +27,10 @@ doc = curdoc()
 
 class EEGBrowser:
     """
-    work in bokeh app 
+    work in bokeh app
     given an hdf @signal array-like object
     allow:
-       - scrolling 
+       - scrolling
        - goto
        ? filtering
        ? montaging (linear combinations)
@@ -151,9 +151,9 @@ class EEGBrowser:
 
         ticklocs = []
         if not "width" in kwargs:
-            kwargs[
-                "width"
-            ] = 950  # a default width that is wider but can just fit in jupyter
+            kwargs["width"] = (
+                950  # a default width that is wider but can just fit in jupyter
+            )
         fig = bplt.figure(
             tools="pan,box_zoom,reset,resize,previewsave,lasso_select", **kwargs
         )  # subclass of Plot that simplifies plot creation
@@ -228,11 +228,10 @@ class EEGBrowser:
             start_time=start_time,
             ylabels=ylabels,
             yscale=yscale,
-            **kwargs
+            **kwargs,
         )
 
     def show_epoch_centered(self):
-
         """
         @signals array-like object with signals[ch_num, sample_num]
         @goto_sec where to go in the signal to show the feature

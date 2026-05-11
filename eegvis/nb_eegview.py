@@ -62,7 +62,7 @@ class MinimalEEGRecord:
     essential parts:
 
     @signals - acts like a numpy ndarray of shape = (number_of_channels, number_of_samples)
-    @sample_frequency - float in Hz sampling rate of the signal 
+    @sample_frequency - float in Hz sampling rate of the signal
 
     optional parts: useful if you have them
 
@@ -120,7 +120,7 @@ class EeghdfBrowser:
         @montage is either a string in the standard list or a montageview factory
         @eeghdf_file - an eeghdf.Eeeghdf instance
         @page_width_seconds = how big to make the view in seconds
-        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function
         @start_seconds - center view on this point in time
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
@@ -246,7 +246,6 @@ class EeghdfBrowser:
         self.current_montage_instance = None
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
@@ -257,7 +256,6 @@ class EeghdfBrowser:
                 self.current_montage_instance = montage(self.ref_labels)
                 montage_options[self.current_montage_instance.name] = montage
             else:  # use default
-
                 self.current_montage_instance = montage_options[0](self.ref_labels)
 
         assert self.current_montage_instance
@@ -382,7 +380,7 @@ class EeghdfBrowser:
         ylabels=None,
         yscale=1.0,
         topdown=True,
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -414,9 +412,7 @@ class EeghdfBrowser:
 
         ticklocs = []
         if not "plot_width" in kwargs:
-            kwargs[
-                "plot_width"
-            ] = (
+            kwargs["plot_width"] = (
                 self.ui_plot_width
             )  # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
         if not "plot_height" in kwargs:
@@ -428,7 +424,7 @@ class EeghdfBrowser:
                 title=self.title,
                 # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
                 tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
-                **kwargs
+                **kwargs,
             )  # subclass of Plot that simplifies plot creation
             self.fig = fig
 
@@ -590,7 +586,7 @@ class EeghdfBrowser:
         ylabels=None,
         yscale=1.0,
         topdown=True,
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -611,7 +607,7 @@ class EeghdfBrowser:
             ylabels=ylabels,
             yscale=yscale,
             topdown=True,
-            **kwargs
+            **kwargs,
         )
 
     def show_epoch_centered(
@@ -669,7 +665,7 @@ class EeghdfBrowser:
         yscale=1.0,
         montage=None,
         topdown=True,
-        **kwargs
+        **kwargs,
     ):
         """
         plot an eeg segment using current montage, center the plot at @goto_sec
@@ -686,7 +682,7 @@ class EeghdfBrowser:
 
         @ylabels a list of labels for each row ("channel") in marray
         @yscale with increase (mutiply) the signals in each row by this amount
-        @montage instance 
+        @montage instance
 
         """
 
@@ -737,9 +733,7 @@ class EeghdfBrowser:
 
         ticklocs = []
         if not "plot_width" in kwargs:
-            kwargs[
-                "plot_width"
-            ] = (
+            kwargs["plot_width"] = (
                 self.ui_plot_width
             )  # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
         if not "plot_height" in kwargs:
@@ -751,7 +745,7 @@ class EeghdfBrowser:
                 title=self.title,
                 # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
                 tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
-                **kwargs
+                **kwargs,
             )  # subclass of Plot that simplifies plot creation
             self.fig = fig
 
@@ -1069,7 +1063,7 @@ class EegBrowser(EeghdfBrowser):
         montage=None,
         montage_options=OrderedDict(),
         start_seconds=-1,
-        **kwargs
+        **kwargs,
     ):
         # def __init__(self, eeghdf_file, page_width_seconds=10.0, start_seconds=-1,
         #             montage='trace', montage_options={}, **kwargs):
@@ -1079,7 +1073,7 @@ class EegBrowser(EeghdfBrowser):
         @montage is either a string in the standard list or a montageview factory
         @eeghdf_file - an eeghdf.Eeeghdf instance
         @page_width_seconds = how big to make the view in seconds
-        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function
         @start_seconds - center view on this point in time
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw'
@@ -1115,7 +1109,6 @@ class EegBrowser(EeghdfBrowser):
         # defines self.current_montage_instance
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
@@ -1126,7 +1119,6 @@ class EegBrowser(EeghdfBrowser):
                 self.current_montage_instance = montage(self.ref_labels)
                 montage_options[self.current_montage_instance.name] = montage
             else:  # use default
-
                 self.current_montage_instance = montage_options[0](self.ref_labels)
 
         assert self.current_montage_instance
