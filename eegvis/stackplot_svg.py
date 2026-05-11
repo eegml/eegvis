@@ -220,26 +220,53 @@ def _format_points(t, y):
     return " ".join(f"{x},{y}" for x, y in coords)
 
 
-def _compute_channel_offsets(data, num_channels, sensitivity=None, height=None):
+def _compute_channel_offsets(
+    data, num_channels, sensitivity=None, height=None, gap_after_mm=None
+):
     """Compute vertical offset for each channel.
 
     Args:
         data: (num_samples, num_channels) array
         num_channels: number of channels
         sensitivity: if set, absolute spacing in data units per channel
-        height: total plot height in SVG units (used with sensitivity)
+        height: total plot height in SVG units (used with sensitivity, and to
+            convert gap_after_mm to data units in auto mode)
+        gap_after_mm: optional per-channel array of extra gap (in mm of plot
+            space) after each channel. Length num_channels; the last entry is
+            ignored. In sensitivity mode the gaps consume the budget exactly;
+            in auto mode the conversion to data units uses the no-gap channel
+            spacing and is approximate.
 
     Returns:
-        ticklocs: list of y-offsets for each channel
-        dr: spacing between channels
+        ticklocs: array of y-offsets for each channel in data units
+        dr: nominal spacing between channels in data units
     """
+    if gap_after_mm is None:
+        cum_gap_mm = np.zeros(num_channels, dtype=float)
+    else:
+        gaps = np.asarray(gap_after_mm, dtype=float)
+        if gaps.shape != (num_channels,):
+            raise ValueError(
+                f"gap_after_mm must have length {num_channels}, got {gaps.shape}"
+            )
+        # cumulative gap before channel i = sum of gaps[0..i-1]
+        cum_gap_mm = np.concatenate(([0.0], np.cumsum(gaps[:-1])))
+
     ch_indices = np.arange(num_channels, dtype=float)
     if sensitivity is not None and height is not None:
-        dr = sensitivity * height / num_channels
-        ticklocs = ch_indices * dr + dr / 2.0
+        total_gap_mm = float(cum_gap_mm[-1]) if num_channels > 0 else 0.0
+        usable_height = max(height - total_gap_mm, 1e-6)
+        dr = sensitivity * usable_height / num_channels
+        ticklocs = ch_indices * dr + cum_gap_mm * sensitivity + dr / 2.0
     else:
         dr = (data.max() - data.min()) * 0.7
-        ticklocs = ch_indices * dr
+        if height is not None and height > 0 and num_channels > 0:
+            # Approximate conversion: in a no-gap layout, num_channels * dr
+            # data units span plot_height mm.
+            data_per_mm = (num_channels * dr) / height
+        else:
+            data_per_mm = 0.0
+        ticklocs = ch_indices * dr + cum_gap_mm * data_per_mm
     return ticklocs, dr
 
 
@@ -284,6 +311,8 @@ def stackplot_svg(
     max_samples_per_channel=None,
     theme=None,
     color_group_size=4,
+    channel_gaps_mm=None,
+    channel_colors=None,
 ):
     """Generate an SVG string of stacked EEG traces.
 
@@ -317,6 +346,17 @@ def stackplot_svg(
             Defaults to DEFAULT_THEME.
         color_group_size: number of channels per color group when theme has
             multiple trace colors. Default 4 (Stratus-style bands).
+        channel_gaps_mm: optional per-channel sequence of extra gap (in mm of
+            plot space) to insert after each channel. Length must equal
+            num_channels; the gap after the last channel is ignored. Used to
+            create visual separation between groups of channels (e.g. between
+            left and right hemisphere chains). In sensitivity mode the gaps
+            consume the available plot_height; in auto mode the conversion is
+            approximate.
+        channel_colors: optional per-channel sequence of trace color overrides
+            (length must equal num_channels). An entry of None falls back to
+            the theme's group-cycled color. Channels are matched by their
+            original index in the signals array, not by display order.
 
     Returns:
         SVG content as a string
@@ -366,9 +406,30 @@ def stackplot_svg(
     # transpose to (num_samples, num_channels) for processing
     data = signals.T
 
+    if channel_gaps_mm is not None:
+        gaps_arr = np.asarray(channel_gaps_mm, dtype=float)
+        if gaps_arr.shape != (num_channels,):
+            raise ValueError(
+                f"channel_gaps_mm must have length {num_channels}, "
+                f"got {gaps_arr.shape}"
+            )
+    else:
+        gaps_arr = None
+
+    if channel_colors is not None:
+        if len(channel_colors) != num_channels:
+            raise ValueError(
+                f"channel_colors must have length {num_channels}, "
+                f"got {len(channel_colors)}"
+            )
+
     # compute vertical offsets in data space
     ticklocs, dr = _compute_channel_offsets(
-        yscale_ref * data, num_channels, sensitivity=sensitivity, height=plot_height
+        yscale_ref * data,
+        num_channels,
+        sensitivity=sensitivity,
+        height=plot_height,
+        gap_after_mm=gaps_arr,
     )
 
     def time_to_x(t):
@@ -388,7 +449,8 @@ def stackplot_svg(
     else:
         scaled = yscale_ref * data
         y_data_min = scaled.min()
-        y_data_max = (num_channels - 1) * dr + scaled.max()
+        last_offset = ticklocs[-1] if num_channels > 0 else 0.0
+        y_data_max = last_offset + scaled.max()
 
     y_data_range = y_data_max - y_data_min
 
@@ -497,9 +559,14 @@ def stackplot_svg(
         else:
             y_scale_factor = 1.0
 
-        # Determine trace color for this channel
-        color_idx = (draw_idx // color_group_size) % num_colors
-        ch_color = trace_color_list[color_idx]
+        # Determine trace color for this channel: explicit per-channel
+        # override (matched by original channel index) wins over theme cycling.
+        ch_color = None
+        if channel_colors is not None:
+            ch_color = channel_colors[ch_idx]
+        if ch_color is None:
+            color_idx = (draw_idx // color_group_size) % num_colors
+            ch_color = trace_color_list[color_idx]
 
         ch_g = ET.SubElement(traces_g, "g", {
             "class": "channel",
@@ -644,6 +711,82 @@ def show_montage_svg(signals, montage, sample_frequency, **kwargs):
         ylabels=labels,
         **kwargs,
     )
+
+
+def show_montage_display_svg(
+    signals, sample_frequency, display, rec_labels=None, **kwargs
+):
+    """Render an SVG using a :class:`MontageDisplay` profile.
+
+    The display profile carries the derivation (either by name or as an
+    embedded matrix), the channel grouping/order, per-group gaps, and
+    per-channel color/gain overrides. Hidden channels are dropped before
+    rendering.
+
+    Args:
+        signals: raw signals (num_channels, num_samples) numpy array
+        sample_frequency: sampling rate in Hz
+        display: a ``MontageDisplay`` instance
+        rec_labels: list of recording channel labels in row order, required
+            when ``display`` uses ``derivation_ref`` (a built-in lookup).
+        **kwargs: passed to ``stackplot_svg`` (e.g. width_mm, sensitivity).
+            ``ylabels``, ``yscale``, ``channel_gaps_mm``, and
+            ``channel_colors`` are derived from ``display`` and should not
+            be passed in.
+
+    Returns:
+        SVG content as a string
+    """
+    mv = display.build_montage_view(rec_labels=rec_labels)
+    derived = np.dot(mv.V.data, signals)
+    montage_labels = list(mv.montage_labels)
+
+    ordered = display.resolve_ordered_labels()
+    gaps_mm = display.resolve_gaps_mm()
+    colors = display.resolve_colors()
+    gains = display.resolve_gains()
+
+    label_to_row = {lbl: i for i, lbl in enumerate(montage_labels)}
+    try:
+        indices = [label_to_row[lbl] for lbl in ordered]
+    except KeyError as e:
+        raise KeyError(
+            f"channel {e.args[0]!r} from MontageDisplay is not present in "
+            f"montage_labels {montage_labels}"
+        ) from None
+    derived_ordered = derived[indices]
+
+    base_yscale = kwargs.pop("yscale", 1.0)
+    if np.isscalar(base_yscale):
+        yscale_arr = np.asarray(gains, dtype=float) * float(base_yscale)
+    else:
+        yscale_arr = np.asarray(base_yscale, dtype=float) * np.asarray(
+            gains, dtype=float
+        )
+
+    for reserved in ("ylabels", "channel_gaps_mm", "channel_colors"):
+        kwargs.pop(reserved, None)
+
+    return stackplot_svg(
+        derived_ordered,
+        sample_frequency,
+        ylabels=ordered,
+        yscale=yscale_arr,
+        channel_gaps_mm=gaps_mm,
+        channel_colors=colors,
+        **kwargs,
+    )
+
+
+def save_montage_display_svg(
+    filepath, signals, sample_frequency, display, rec_labels=None, **kwargs
+):
+    """Render a ``MontageDisplay`` and write the SVG to file."""
+    svg_str = show_montage_display_svg(
+        signals, sample_frequency, display, rec_labels=rec_labels, **kwargs
+    )
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(svg_str)
 
 
 def save_montage_svg(filepath, signals, montage, sample_frequency, **kwargs):
