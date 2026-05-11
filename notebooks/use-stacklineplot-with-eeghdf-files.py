@@ -29,7 +29,8 @@
 
 import matplotlib
 import matplotlib.pyplot as plt
-#import seaborn
+
+# import seaborn
 import pandas as pd
 import numpy as np
 import eeghdf
@@ -49,10 +50,10 @@ hf = eeghdf.Eeghdf(eeg_file_name)
 
 # %%
 signals = hf.phys_signals
-goto_sec = 5.0 # note since this centered here, to show first 10 seconds need to set this to 5 or epoch_width_sec/2
-epoch_width_sec = 10.0 #seconds
+goto_sec = 5.0  # note since this centered here, to show first 10 seconds need to set this to 5 or epoch_width_sec/2
+epoch_width_sec = 10.0  # seconds
 FS = hf.sample_frequency
-chstart =0
+chstart = 0
 chstop = 19
 ylabels = hf.electrode_labels
 yscale = 1.0
@@ -89,22 +90,38 @@ yscale = 1.0
 # %%
 # the simpliest thing you can do is display the eeg as it is recorded
 
-stacklineplot.show_epoch_centered(signals, goto_sec, epoch_width_sec, fs=FS, chstart=chstart, chstop=chstop, ylabels=ylabels)
+stacklineplot.show_epoch_centered(
+    signals,
+    goto_sec,
+    epoch_width_sec,
+    fs=FS,
+    chstart=chstart,
+    chstop=chstop,
+    ylabels=ylabels,
+)
 
 # %%
 signals = hf.phys_signals
-goto_sec = 15.0 # note since this centered here, to show first 10 seconds need to set this to 5 or epoch_width_sec/2
-epoch_width_sec = 30.0 #seconds
+goto_sec = 15.0  # note since this centered here, to show first 10 seconds need to set this to 5 or epoch_width_sec/2
+epoch_width_sec = 30.0  # seconds
 FS = hf.sample_frequency
-chstart =0
+chstart = 0
 chstop = 19
 ylabels = hf.shortcut_elabels
 yscale = 1.0
 
 # %%
-plt.figure(figsize=(16,8))
+plt.figure(figsize=(16, 8))
 
-stacklineplot.show_epoch_centered(signals, goto_sec, epoch_width_sec, fs=FS, chstart=chstart, chstop=chstop, ylabels=ylabels)
+stacklineplot.show_epoch_centered(
+    signals,
+    goto_sec,
+    epoch_width_sec,
+    fs=FS,
+    chstart=chstart,
+    chstop=chstop,
+    ylabels=ylabels,
+)
 
 # %%
 # stacklineplot.stackplot?
@@ -113,17 +130,20 @@ stacklineplot.show_epoch_centered(signals, goto_sec, epoch_width_sec, fs=FS, chs
 # create another montage view for ourselves, we can use predefined ones
 # these are factory functions which need to know the relationship bewteen labels and signal number
 # can see current defined ones in montageview.MONTAGE_BUILTINS.keys()
-db = montageview.MONTAGE_BUILTINS['double banana'](hf.shortcut_elabels)
+db = montageview.MONTAGE_BUILTINS["double banana"](hf.shortcut_elabels)
 
 # %%
-plt.figure(figsize=(16,8))
-stacklineplot.show_montage_centered(signals, db, # put montage here
-                                   goto_sec,
-                                   epoch_width_sec,
-                                   chstart,
-                                   chstop,
-                                   FS,
-                                   yscale=3.0) # the yscale multiples the signals by this number, it is a bit of a hack
+plt.figure(figsize=(16, 8))
+stacklineplot.show_montage_centered(
+    signals,
+    db,  # put montage here
+    goto_sec,
+    epoch_width_sec,
+    chstart,
+    chstop,
+    FS,
+    yscale=3.0,
+)  # the yscale multiples the signals by this number, it is a bit of a hack
 
 # %%
 # now lets try a the simplier stackplot and heatmap
@@ -138,12 +158,14 @@ heatmap_ex = np.random.uniform(size=(NUM_CH, NUM_CHUNKS))
 plt.imshow(heatmap_ex)
 
 # %%
-tarray = signals[0:19,0:int(FS*10)].T
+tarray = signals[0:19, 0 : int(FS * 10)].T
 
 # %%
-stacklineplot.stackplot_t_with_heatmap(tarray,
-                                      seconds=10.0, # without seconds shows samples
-                                      heatmap_image=heatmap_ex)
+stacklineplot.stackplot_t_with_heatmap(
+    tarray,
+    seconds=10.0,  # without seconds shows samples
+    heatmap_image=heatmap_ex,
+)
 
 # %% [markdown]
 # ```
@@ -175,10 +197,10 @@ stacklineplot.stackplot_t_with_heatmap(tarray,
 #
 # @ax is the option to pass in a matplotlib axes obj to draw with
 # @heatmap_image should be an ndarray usually this will be of shape something                    like (NUM_CH, NUM_TIME_STEPS)
-# @alpha is how to blend this 
+# @alpha is how to blend this
 #
 # generally want to choose a perceptually uniform colormap
-# inferno, magma, viridis, cividis, etc see also 
+# inferno, magma, viridis, cividis, etc see also
 # colorcet.cm.fire, .bmw etc for excellent colormaps
 #
 # >>> heatmap_image = np.random.uniform(size=(NUM_CH, NUM_CHUNKS))

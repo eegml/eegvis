@@ -1,4 +1,10 @@
-from bokeh.core.properties import Any, Dict, Instance, String, Int # List, Angle, Auto, Bool, Byte, Color, Complex, Date, Float, Interval, JSON, MinMaxBounds, Percent, Regex, Size, TimeDelta, Dict, RelativeDelta, Seq, Tuple, 
+from bokeh.core.properties import (
+    Any,
+    Dict,
+    Instance,
+    String,
+    Int,
+)  # List, Angle, Auto, Bool, Byte, Color, Complex, Date, Float, Interval, JSON, MinMaxBounds, Percent, Regex, Size, TimeDelta, Dict, RelativeDelta, Seq, Tuple,
 from bokeh.models import ColumnDataSource
 from bokeh.models import LayoutDOM
 
@@ -12,7 +18,6 @@ from bokeh.models import LayoutDOM
 
 
 class NewWidget(LayoutDOM):
-
     # The special class attribute ``__implementation__`` should contain a string
     # of JavaScript (or CoffeeScript) code that implements the JavaScript side
     # of the custom extension model.
@@ -36,7 +41,7 @@ class NewWidget(LayoutDOM):
     # be used for each field.
     # x = String
 
-    #y = String
+    # y = String
 
     # z = String
 
@@ -47,4 +52,3 @@ class NewWidget(LayoutDOM):
     # options = Dict(String, Any, default=DEFAULTS)
 
     keycode = Int
-

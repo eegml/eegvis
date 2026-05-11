@@ -160,7 +160,7 @@ class MontageView(object):
 
     This linear transformation is defined in the xarray matrix V
 
-    For example in the bipolar double banana montage the electrodes 
+    For example in the bipolar double banana montage the electrodes
     Fp1 and F7 are combined into (Fp1 - F7)
 
     """
@@ -292,7 +292,7 @@ class DoubleBananaMontageView(MontageView):
 
     *** NOTE this uses the clinical convention and reverses the polarity by default
     so that "up is negative" ***
-    
+
     """
 
     DB_LABELS = [
@@ -330,7 +330,7 @@ class DoubleBananaMontageView(MontageView):
 
 class DBrefMontageView(MontageView):
     """This montage derivation uses the same electrodes as double banana but uses the as recorded reference
-    so it is very simple 
+    so it is very simple
     """
 
     DBREF_LABELS = [
@@ -625,10 +625,10 @@ class NeonatalMontageView(MontageView):
     where rec_labels[i] = <channel label>
     where channel labels is string such as
     "Fp1", "T3", "O2", etc in the 10-20 nomenclature
-    need to have tose which are included in 
+    need to have tose which are included in
     NeonatalMontageView.NEONATAL_LABELS
-    
-    10-20 montage modified for neonatal head sizes 
+
+    10-20 montage modified for neonatal head sizes
     This is more or less Montage 1 in Shellhaas (2011) table 3 of
     https://www.acns.org/pdf/guidelines/Guideline-13.pdf plus it adds
     the [ 'T3-O1','O1-O2','O2-T4'] chain to visualize the occipital
@@ -844,7 +844,7 @@ class CommonAvgRefMontageView(MontageView):
             self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity
         )
 
-        self.set_matrix(self.V)  
+        self.set_matrix(self.V)
 
         if reversed_polarity:
             self.V = (-1) * self.V

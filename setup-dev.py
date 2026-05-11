@@ -6,7 +6,6 @@ import setuptools  # required to allow for use of python setup.py develop, may a
 from distutils.core import setup
 
 
-
 setup(
     name="eegvis",
     version="0.3.0",
@@ -17,9 +16,13 @@ setup(
     # download_url="http://bitbucket.org/cleemesser/eegvis/downloads",
     classifiers=["Topic :: Science :: EEG"],
     packages=["eegvis"],
-    install_requires = [
-        'xarray','ipywidgets >= 7.0', 'bokeh>=0.12.16', 'matplotlib',
-        'eeghdf'],
+    install_requires=[
+        "xarray",
+        "ipywidgets >= 7.0",
+        "bokeh>=0.12.16",
+        "matplotlib",
+        "eeghdf",
+    ],
     # package_data={}
     # data_files=[],
     # scripts = [],

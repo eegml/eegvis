@@ -18,7 +18,7 @@ from bokeh.models import Button, Div, Selection, Spinner, CustomJS
 # get layouts, start ith row, column
 import bokeh.layouts
 
-#%%
+# %%
 import bokeh.plotting
 from bokeh.models import FuncTickFormatter, Range1d
 
@@ -39,11 +39,11 @@ from bokeh.models.tickers import FixedTicker, SingleIntervalTicker
 from . import montageview
 from . import stackplot_bokeh
 from .stackplot_bokeh import limit_sample_check
-#from bokeh.io import push_notebook
+# from bokeh.io import push_notebook
 
 import eegml_signal.filters as esfilters
 
-#%%
+# %%
 
 # """
 # notes on setting ranges for a plot
@@ -60,7 +60,7 @@ import eegml_signal.filters as esfilters
 
 # this is not used yet
 
-#%% [markdown]
+# %% [markdown]
 # ### [Bokeh Callbacks](https://docs.bokeh.org/en/latest/docs/user_guide/interaction/widgets.html)
 # To use widgets, you must add them to your document and define their callbacks. Widgets can be added directly to the document root or nested inside a layout. There are two ways to use a widget’s functionality:
 
@@ -87,11 +87,11 @@ import eegml_signal.filters as esfilters
 # radio_group = RadioGroup(labels=["Option 1", "Option 2", "Option 3"], active=0)
 # radio_group.on_click(my_radio_handler)
 # ```
-#%% [markdown]
+# %% [markdown]
 # ### [bokeh.events](https://docs.bokeh.org/en/latest/docs/reference/events.html)
 
 
-#%%
+# %%
 
 
 def ignore_warnings():
@@ -139,7 +139,7 @@ class EeghdfBrowser:
         @montage is either a string in the standard list or a montageview factory
         @eeghdf_file - an eeghdf.Eeeghdf instance
         @page_width_seconds = how big to make the view in seconds
-        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function
         @start_seconds - center view on this point in time
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw', 'default' or 'as recorded'
@@ -265,7 +265,6 @@ class EeghdfBrowser:
         self.current_montage_instance = None
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
@@ -276,7 +275,6 @@ class EeghdfBrowser:
                 self.current_montage_instance = montage(self.ref_labels)
                 montage_options[self.current_montage_instance.name] = montage
             else:  # use default
-
                 self.current_montage_instance = montage_options[0](self.ref_labels)
 
         assert self.current_montage_instance
@@ -344,7 +342,7 @@ class EeghdfBrowser:
 
     def update(self):
         """
-        updates the data in the plot 
+        updates the data in the plot
         so that it will show up
         can either use bokeh.io.push_notebook()
         or panel.pane.Bokeh(..)
@@ -394,11 +392,10 @@ class EeghdfBrowser:
         # self.data_source.data['xs'] = xs
         # self.data_source.data['ys'] = ys
 
-        #self.push_notebook()
+        # self.push_notebook()
         # do pane.Bokeh::param.trigger('object') on pane holding EEG waveform plot
         # in notebook updates without a trigger
 
-    
     def stackplot_t(
         self,
         tarray,
@@ -439,9 +436,7 @@ class EeghdfBrowser:
 
         ticklocs = []
         if not "plot_width" in kwargs:
-            kwargs[
-                "plot_width"
-            ] = (
+            kwargs["plot_width"] = (
                 self.ui_plot_width
             )  # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
         if not "plot_height" in kwargs:
@@ -712,7 +707,7 @@ class EeghdfBrowser:
 
         @ylabels a list of labels for each row ("channel") in marray
         @yscale with increase (mutiply) the signals in each row by this amount
-        @montage instance 
+        @montage instance
 
         """
 
@@ -746,9 +741,7 @@ class EeghdfBrowser:
 
         ticklocs = []
         if not "plot_width" in kwargs:
-            kwargs[
-                "plot_width"
-            ] = (
+            kwargs["plot_width"] = (
                 self.ui_plot_width
             )  # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
         if not "plot_height" in kwargs:
@@ -759,7 +752,7 @@ class EeghdfBrowser:
             fig = bokeh.plotting.figure(
                 title=self.title,
                 # tools="pan,box_zoom,reset,previewsave,lasso_select,ywheel_zoom",
-                #tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
+                # tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
                 tools="crosshair",
                 **kwargs,
             )  # subclass of Plot that simplifies plot creation
@@ -845,7 +838,6 @@ class EeghdfBrowser:
             % ylabel_dict
         )
         return self.fig
-
 
     def register_top_bar_ui(self):
 
@@ -986,9 +978,9 @@ class EeghdfBrowser:
             #     f"on_dropdown_change: {repr(attr)}, {repr(oldvalue)}, {repr(newvalue)}, {parent}"
             # )
 
-            parent.update_montage(newvalue)                   
+            parent.update_montage(newvalue)
             parent.update_plot_after_montage_change()
-            parent.update()  
+            parent.update()
 
         self.ui_montage_dropdown.on_change("value", on_dropdown_change)
 
@@ -1036,11 +1028,11 @@ class EeghdfBrowser:
 
         self.ui_notch_option = CheckboxGroup(
             labels=["60Hz Notch"]
-            #, "50Hz Notch"], max_width=100,  # disabled=False
+            # , "50Hz Notch"], max_width=100,  # disabled=False
         )
 
         def notch_change(newvalue, parent=self):
-            #print(f"on_dropdown_change: {repr(newvalue)}, {parent}")
+            # print(f"on_dropdown_change: {repr(newvalue)}, {parent}")
             if newvalue == [0]:
                 self.current_notch_filter = self._notch_filter
             elif newvalue == []:
@@ -1067,7 +1059,7 @@ class EeghdfBrowser:
             # print(
             #     f"ui_gain_on_change: {repr(oldvalue)},\n {repr(newvalue)}, {repr(type(newvalue))},{parent}"
             # )
-            
+
             self.yscale = float(newvalue)
             self.update()
 
@@ -1101,7 +1093,7 @@ class EeghdfBrowser:
         # could put goto input here
 
         def go_forward(b, parent=self):
-            #print(b, parent)
+            # print(b, parent)
             self.loc_sec = self._limit_time_check(self.loc_sec + 10)
             self.update()
 
@@ -1125,14 +1117,17 @@ class EeghdfBrowser:
 
         self.ui_buttonback1.on_click(go_backward1)
 
-        #self.ui_current_location = FloatInput...  # keep in sync with jslink?
+        # self.ui_current_location = FloatInput...  # keep in sync with jslink?
         def go_to_handler(attr, oldvalue, newvalue, parent=self):
             # print("change:", change)
             self.loc_sec = self._limit_time_check(float(newvalue))
             self.update()
 
         self.ui_bottom_bar_layout = bokeh.layouts.row(
-            self.ui_buttonback, self.ui_buttonf, self.ui_buttonback1, self.ui_buttonf1,
+            self.ui_buttonback,
+            self.ui_buttonf,
+            self.ui_buttonback1,
+            self.ui_buttonf1,
         )
         return self.ui_bottom_bar_layout
         # print('displayed buttons')
@@ -1202,7 +1197,7 @@ class EegBrowser(EeghdfBrowser):
         @montage is either a string in the standard list or a montageview factory
         @eeghdf_file - an eeghdf.Eeeghdf instance
         @page_width_seconds = how big to make the view in seconds
-        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function
         @start_seconds - center view on this point in time
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw'
@@ -1238,7 +1233,6 @@ class EegBrowser(EeghdfBrowser):
         # defines self.current_montage_instance
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
@@ -1249,7 +1243,6 @@ class EegBrowser(EeghdfBrowser):
                 self.current_montage_instance = montage(self.ref_labels)
                 montage_options[self.current_montage_instance.name] = montage
             else:  # use default
-
                 self.current_montage_instance = montage_options[0](self.ref_labels)
 
         assert self.current_montage_instance

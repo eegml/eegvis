@@ -1,5 +1,6 @@
 # %%
 """ztml HTML components for the EEG viewer."""
+
 # from datastar_py import attribute_generator as dsattr # import ServerSentEventGenerator as SSE
 # # %%
 # # little experiment
@@ -35,8 +36,9 @@ from ztml import (
     Title,
     Input,
 )
+
 # %%
-#Div('testdiv').data("on:click","expression").__html__()
+# Div('testdiv').data("on:click","expression").__html__()
 # %%
 from .session import (
     SENSITIVITY_PRESETS,
@@ -135,8 +137,8 @@ def viewer_page(
         .cls("viewer-root")
         .attr("data-signals", f"{{{signals_str}}}")
         .attr("tabindex", "0")
-        .data('on:keydown', _keydown_handler(session.session_id)),
-        #.attr("data-on:keydown", _keydown_handler(session.session_id)),
+        .data("on:keydown", _keydown_handler(session.session_id)),
+        # .attr("data-on:keydown", _keydown_handler(session.session_id)),
     )
 
 

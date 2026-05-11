@@ -16,20 +16,21 @@ The important thing to remember is that the transforms all convert from the sour
 
 
 """
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 def transformAxesCoord2FigureCoord(coordarr, ax, fig=None):
-    """ 
+    """
     "axes coord" [0,1]x[0,1] -> "display coord" -> "figure coord"
     useful to find the correct ax extent in figure coordates
 
     if @ax is an Axes object
     If it has a figure attached already, can just use that, otherwise, specify the figure as @fig
 
-    This is not efficient for repetitive use because it calcs the inverse each time, 
+    This is not efficient for repetitive use because it calcs the inverse each time,
     Look at the code to create a more efficent version
     """
     if not fig:
