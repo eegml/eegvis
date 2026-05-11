@@ -410,8 +410,7 @@ def stackplot_svg(
         gaps_arr = np.asarray(channel_gaps_mm, dtype=float)
         if gaps_arr.shape != (num_channels,):
             raise ValueError(
-                f"channel_gaps_mm must have length {num_channels}, "
-                f"got {gaps_arr.shape}"
+                f"channel_gaps_mm must have length {num_channels}, got {gaps_arr.shape}"
             )
     else:
         gaps_arr = None
@@ -483,11 +482,15 @@ def stackplot_svg(
     )
 
     # background
-    ET.SubElement(svg, "rect", {
-        "width": "100%",
-        "height": "100%",
-        "fill": theme.background_color,
-    })
+    ET.SubElement(
+        svg,
+        "rect",
+        {
+            "width": "100%",
+            "height": "100%",
+            "fill": theme.background_color,
+        },
+    )
 
     _build_style_element(svg, theme)
 
@@ -503,7 +506,11 @@ def stackplot_svg(
 
         # Minor grid lines
         if minor_grid:
-            mi = minor_grid_interval if minor_grid_interval is not None else grid_interval / 4.0
+            mi = (
+                minor_grid_interval
+                if minor_grid_interval is not None
+                else grid_interval / 4.0
+            )
             minor_times = np.arange(
                 np.ceil(start_time / mi) * mi,
                 start_time + seconds + mi * 0.01,
@@ -512,39 +519,52 @@ def stackplot_svg(
             minor_times = minor_times[minor_times <= start_time + seconds]
             # Remove times that coincide with major grid
             minor_times = minor_times[
-                np.abs(np.subtract.outer(minor_times, grid_times).min(axis=1)) > mi * 0.01
+                np.abs(np.subtract.outer(minor_times, grid_times).min(axis=1))
+                > mi * 0.01
             ]
             for t in minor_times:
                 x = time_to_x(t)
-                ET.SubElement(grid_g, "line", {
-                    "x1": f"{x:.2f}",
-                    "y1": f"{top_margin:.2f}",
-                    "x2": f"{x:.2f}",
-                    "y2": f"{top_margin + plot_height:.2f}",
-                    "class": "minor-grid",
-                })
+                ET.SubElement(
+                    grid_g,
+                    "line",
+                    {
+                        "x1": f"{x:.2f}",
+                        "y1": f"{top_margin:.2f}",
+                        "x2": f"{x:.2f}",
+                        "y2": f"{top_margin + plot_height:.2f}",
+                        "class": "minor-grid",
+                    },
+                )
 
         # Major grid lines
         for t in grid_times:
             x = time_to_x(t)
-            ET.SubElement(grid_g, "line", {
-                "x1": f"{x:.2f}",
-                "y1": f"{top_margin:.2f}",
-                "x2": f"{x:.2f}",
-                "y2": f"{top_margin + plot_height:.2f}",
-                "class": "major-grid",
-            })
+            ET.SubElement(
+                grid_g,
+                "line",
+                {
+                    "x1": f"{x:.2f}",
+                    "y1": f"{top_margin:.2f}",
+                    "x2": f"{x:.2f}",
+                    "y2": f"{top_margin + plot_height:.2f}",
+                    "class": "major-grid",
+                },
+            )
 
     # plot border
-    ET.SubElement(svg, "rect", {
-        "x": f"{label_margin:.2f}",
-        "y": f"{top_margin:.2f}",
-        "width": f"{plot_width:.2f}",
-        "height": f"{plot_height:.2f}",
-        "fill": "none",
-        "stroke": theme.border_color,
-        "stroke-width": str(theme.border_width),
-    })
+    ET.SubElement(
+        svg,
+        "rect",
+        {
+            "x": f"{label_margin:.2f}",
+            "y": f"{top_margin:.2f}",
+            "width": f"{plot_width:.2f}",
+            "height": f"{plot_height:.2f}",
+            "fill": "none",
+            "stroke": theme.border_color,
+            "stroke-width": str(theme.border_width),
+        },
+    )
 
     # channel traces and labels
     traces_g = ET.SubElement(svg, "g", {"class": "traces"})
@@ -568,33 +588,45 @@ def stackplot_svg(
             color_idx = (draw_idx // color_group_size) % num_colors
             ch_color = trace_color_list[color_idx]
 
-        ch_g = ET.SubElement(traces_g, "g", {
-            "class": "channel",
-            "id": f"ch-{draw_idx}",
-            "transform": f"translate(0,{baseline_y:.2f})",
-            "data-baseline": f"{baseline_y:.2f}",
-            "data-channel-name": label_order[draw_idx],
-            "data-channel-index": str(ch_idx),
-        })
+        ch_g = ET.SubElement(
+            traces_g,
+            "g",
+            {
+                "class": "channel",
+                "id": f"ch-{draw_idx}",
+                "transform": f"translate(0,{baseline_y:.2f})",
+                "data-baseline": f"{baseline_y:.2f}",
+                "data-channel-name": label_order[draw_idx],
+                "data-channel-index": str(ch_idx),
+            },
+        )
 
         # channel label
-        ET.SubElement(ch_g, "text", {
-            "x": f"{label_margin - 1.5:.2f}",
-            "y": "0",
-            "class": "label",
-        }).text = label_order[draw_idx]
+        ET.SubElement(
+            ch_g,
+            "text",
+            {
+                "x": f"{label_margin - 1.5:.2f}",
+                "y": "0",
+                "class": "label",
+            },
+        ).text = label_order[draw_idx]
 
         # polyline
         y_raw = data[:, ch_idx]
         points_str = _format_points(t_svg, y_raw)
-        ET.SubElement(ch_g, "polyline", {
-            "points": points_str,
-            "class": "trace",
-            "stroke": ch_color,
-            "stroke-width": str(trace_width),
-            "transform": f"scale(1,{y_scale_factor:.6f})",
-            "data-yscale": f"{y_scale_factor:.6f}",
-        })
+        ET.SubElement(
+            ch_g,
+            "polyline",
+            {
+                "points": points_str,
+                "class": "trace",
+                "stroke": ch_color,
+                "stroke-width": str(trace_width),
+                "transform": f"scale(1,{y_scale_factor:.6f})",
+                "data-yscale": f"{y_scale_factor:.6f}",
+            },
+        )
 
     # annotations layer
     ET.SubElement(svg, "g", {"class": "annotations"})
@@ -610,11 +642,15 @@ def stackplot_svg(
 
     for t in label_times:
         x = time_to_x(t)
-        ET.SubElement(time_g, "text", {
-            "x": f"{x:.2f}",
-            "y": f"{time_label_y:.2f}",
-            "class": "time-label",
-        }).text = f"{t:.4g}s"
+        ET.SubElement(
+            time_g,
+            "text",
+            {
+                "x": f"{x:.2f}",
+                "y": f"{time_label_y:.2f}",
+                "class": "time-label",
+            },
+        ).text = f"{t:.4g}s"
 
     # vertical scale bar
     if show_scalebar:
@@ -635,42 +671,58 @@ def stackplot_svg(
         # Background rect (Stratus style)
         if theme.scalebar_bg_color != "none":
             cap_w = 1
-            ET.SubElement(sb_g, "rect", {
-                "x": f"{sb_x - cap_w - 1:.2f}",
-                "y": f"{sb_top_svg:.2f}",
-                "width": f"{2 * cap_w + 3:.2f}",
-                "height": f"{sb_bot_svg - sb_top_svg:.2f}",
-                "fill": theme.scalebar_bg_color,
-                "fill-opacity": str(theme.scalebar_bg_opacity),
-            })
+            ET.SubElement(
+                sb_g,
+                "rect",
+                {
+                    "x": f"{sb_x - cap_w - 1:.2f}",
+                    "y": f"{sb_top_svg:.2f}",
+                    "width": f"{2 * cap_w + 3:.2f}",
+                    "height": f"{sb_bot_svg - sb_top_svg:.2f}",
+                    "fill": theme.scalebar_bg_color,
+                    "fill-opacity": str(theme.scalebar_bg_opacity),
+                },
+            )
 
         # vertical line
-        ET.SubElement(sb_g, "line", {
-            "x1": f"{sb_x:.2f}",
-            "y1": f"{sb_top_svg:.2f}",
-            "x2": f"{sb_x:.2f}",
-            "y2": f"{sb_bot_svg:.2f}",
-            "stroke": theme.scalebar_line_color,
-            "stroke-width": str(theme.scalebar_line_width),
-        })
+        ET.SubElement(
+            sb_g,
+            "line",
+            {
+                "x1": f"{sb_x:.2f}",
+                "y1": f"{sb_top_svg:.2f}",
+                "x2": f"{sb_x:.2f}",
+                "y2": f"{sb_bot_svg:.2f}",
+                "stroke": theme.scalebar_line_color,
+                "stroke-width": str(theme.scalebar_line_width),
+            },
+        )
         # end caps
         cap_w = 1
         for y_pos in (sb_top_svg, sb_bot_svg):
-            ET.SubElement(sb_g, "line", {
-                "x1": f"{sb_x - cap_w:.2f}",
-                "y1": f"{y_pos:.2f}",
-                "x2": f"{sb_x + cap_w:.2f}",
-                "y2": f"{y_pos:.2f}",
-                "stroke": theme.scalebar_line_color,
-                "stroke-width": str(theme.scalebar_line_width),
-            })
+            ET.SubElement(
+                sb_g,
+                "line",
+                {
+                    "x1": f"{sb_x - cap_w:.2f}",
+                    "y1": f"{y_pos:.2f}",
+                    "x2": f"{sb_x + cap_w:.2f}",
+                    "y2": f"{y_pos:.2f}",
+                    "stroke": theme.scalebar_line_color,
+                    "stroke-width": str(theme.scalebar_line_width),
+                },
+            )
         # label
         sb_label_y = (sb_top_svg + sb_bot_svg) / 2.0
-        ET.SubElement(sb_g, "text", {
-            "x": f"{sb_x + cap_w + 1:.2f}",
-            "y": f"{sb_label_y:.2f}",
-            "class": "scalebar-label",
-        }).text = f"{scalebar_height:.4g}{scalebar_units}"
+        ET.SubElement(
+            sb_g,
+            "text",
+            {
+                "x": f"{sb_x + cap_w + 1:.2f}",
+                "y": f"{sb_label_y:.2f}",
+                "class": "scalebar-label",
+            },
+        ).text = f"{scalebar_height:.4g}{scalebar_units}"
 
     # serialize
     ET.indent(svg, space="  ")
@@ -723,6 +775,10 @@ def show_montage_display_svg(
     per-channel color/gain overrides. Hidden channels are dropped before
     rendering.
 
+    Channels listed earlier in the display profile are drawn higher on the
+    page (clinical convention). This function flips the order before handing
+    it to :func:`stackplot_svg`, which numbers channels bottom-up.
+
     Args:
         signals: raw signals (num_channels, num_samples) numpy array
         sample_frequency: sampling rate in Hz
@@ -756,12 +812,29 @@ def show_montage_display_svg(
         ) from None
     derived_ordered = derived[indices]
 
+    # MontageDisplay lists channels top-down (file order matches visual
+    # order); stackplot_svg numbers channels bottom-up. Reverse so the
+    # first-listed channel ends up at the top of the page. The gap below
+    # display channel i (between i and i+1) must move to the boundary
+    # between channels n-2-i and n-1-i in render order — i.e. take the
+    # inter-channel gaps (gaps_mm[:-1]), reverse them, and append a unused
+    # trailing zero.
+    n = len(ordered)
+    derived_ordered = derived_ordered[::-1]
+    ordered_render = list(reversed(ordered))
+    colors_render = list(reversed(colors))
+    gains_render = list(reversed(gains))
+    if n > 0:
+        gaps_render = list(reversed(gaps_mm[:-1])) + [0.0]
+    else:
+        gaps_render = []
+
     base_yscale = kwargs.pop("yscale", 1.0)
     if np.isscalar(base_yscale):
-        yscale_arr = np.asarray(gains, dtype=float) * float(base_yscale)
+        yscale_arr = np.asarray(gains_render, dtype=float) * float(base_yscale)
     else:
         yscale_arr = np.asarray(base_yscale, dtype=float) * np.asarray(
-            gains, dtype=float
+            gains_render, dtype=float
         )
 
     for reserved in ("ylabels", "channel_gaps_mm", "channel_colors"):
@@ -770,10 +843,10 @@ def show_montage_display_svg(
     return stackplot_svg(
         derived_ordered,
         sample_frequency,
-        ylabels=ordered,
+        ylabels=ordered_render,
         yscale=yscale_arr,
-        channel_gaps_mm=gaps_mm,
-        channel_colors=colors,
+        channel_gaps_mm=gaps_render,
+        channel_colors=colors_render,
         **kwargs,
     )
 
