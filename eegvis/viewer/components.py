@@ -1,5 +1,19 @@
+# %%
 """ztml HTML components for the EEG viewer."""
-
+# from datastar_py import attribute_generator as dsattr # import ServerSentEventGenerator as SSE
+# # %%
+# # little experiment
+# #_id = "fakeid"
+# str(dsattr.on('click', f"@get('/api/navigate?session_id={_id}&action=page_back')"))
+# # %%
+# r = dsattr.on('click', f"@get('/api/navigate?session_id={_id}')").debounce(300)
+# # %%
+# r.throttle(100)
+# # %%
+# str(r)
+# # %%
+# dict(r)
+# %%
 from ztml import (
     Body,
     Button,
@@ -21,7 +35,9 @@ from ztml import (
     Title,
     Input,
 )
-
+# %%
+#Div('testdiv').data("on:click","expression").__html__()
+# %%
 from .session import (
     SENSITIVITY_PRESETS,
     PAGE_DURATION_PRESETS,
@@ -119,7 +135,8 @@ def viewer_page(
         .cls("viewer-root")
         .attr("data-signals", f"{{{signals_str}}}")
         .attr("tabindex", "0")
-        .attr("data-on:keydown", _keydown_handler(session.session_id)),
+        .data('on:keydown', _keydown_handler(session.session_id)),
+        #.attr("data-on:keydown", _keydown_handler(session.session_id)),
     )
 
 

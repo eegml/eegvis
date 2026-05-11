@@ -10,19 +10,114 @@ straightforward: raw signal values map directly so that negative
 deflections appear as upward movements on screen.
 """
 
+from dataclasses import dataclass, field
 import numpy as np
 import xml.etree.ElementTree as ET
 
 
 SVG_NS = "http://www.w3.org/2000/svg"
 
-# default styling
-DEFAULT_TRACE_COLOR = "black"
-DEFAULT_TRACE_WIDTH = "0.5"
-DEFAULT_FONT_FAMILY = "sans-serif"
-DEFAULT_FONT_SIZE = 3.5  # in SVG user units (mm in viewBox coordinates)
-DEFAULT_GRID_COLOR = "#cccccc"
-DEFAULT_GRID_WIDTH = "0.3"
+
+@dataclass
+class Theme:
+    """Styling configuration for SVG EEG output.
+
+    All size values are in SVG user units (mm when viewBox matches width_mm/height_mm).
+    """
+
+    # Fonts
+    font_family: str = "sans-serif"
+    font_size: float = 3.5
+    label_font_family: str = "sans-serif"
+    label_font_size: float = 3.5
+    label_color: str = "black"
+    time_label_font_size: float = 3.5
+    time_label_color: str = "black"
+    scalebar_font_family: str = "sans-serif"
+    scalebar_font_size: float = 3.5
+    scalebar_color: str = "black"
+    scalebar_bold: bool = False
+
+    # Traces
+    trace_colors: list = field(default_factory=lambda: ["black"])
+    trace_width: float = 0.5
+
+    # Grid
+    major_grid_color: str = "#cccccc"
+    major_grid_width: float = 0.3
+    minor_grid_color: str = "#bfbfbf"
+    minor_grid_width: float = 0.3
+    minor_grid_dash: str = "4"
+
+    # Scale bar
+    scalebar_line_color: str = "black"
+    scalebar_line_width: float = 0.3
+    scalebar_bg_color: str = "none"
+    scalebar_bg_opacity: float = 0.5
+
+    # Misc
+    border_color: str = "#999999"
+    border_width: float = 0.2
+    background_color: str = "white"
+
+
+DEFAULT_THEME = Theme()
+
+STRATUS_THEME = Theme(
+    font_family="Segoe UI, sans-serif",
+    font_size=3.5,
+    label_font_family="Segoe UI, sans-serif",
+    label_font_size=4.0,
+    label_color="#838487",
+    time_label_font_size=3.8,
+    time_label_color="#000000",
+    scalebar_font_family="Segoe UI, sans-serif",
+    scalebar_font_size=3.8,
+    scalebar_color="#000000",
+    scalebar_bold=True,
+    trace_colors=["#00007f", "#000000", "#7f0000"],
+    trace_width=0.5,
+    major_grid_color="#808080",
+    major_grid_width=0.5,
+    minor_grid_color="#bfbfbf",
+    minor_grid_width=0.3,
+    minor_grid_dash="4",
+    scalebar_line_color="#000000",
+    scalebar_line_width=0.5,
+    scalebar_bg_color="#dfdfdf",
+    scalebar_bg_opacity=0.5,
+    border_color="#808080",
+    border_width=0.3,
+    background_color="white",
+)
+
+PUBLICATION_THEME = Theme(
+    font_family="DejaVu Sans, Arial, sans-serif",
+    font_size=3.0,
+    label_font_family="DejaVu Sans, Arial, sans-serif",
+    label_font_size=3.0,
+    label_color="#333333",
+    time_label_font_size=3.0,
+    time_label_color="#222222",
+    scalebar_font_family="DejaVu Sans, Arial, sans-serif",
+    scalebar_font_size=3.0,
+    scalebar_color="#222222",
+    scalebar_bold=False,
+    trace_colors=["#222222"],
+    trace_width=0.4,
+    major_grid_color="#dddddd",
+    major_grid_width=0.2,
+    minor_grid_color="#eeeeee",
+    minor_grid_width=0.15,
+    minor_grid_dash="2",
+    scalebar_line_color="#333333",
+    scalebar_line_width=0.25,
+    scalebar_bg_color="none",
+    scalebar_bg_opacity=0.0,
+    border_color="#bbbbbb",
+    border_width=0.15,
+    background_color="white",
+)
 
 
 def downsample(signals, sample_frequency, target_frequency):
@@ -73,13 +168,12 @@ def bandpass_filter(signals, sample_frequency, low_freq=1.0, high_freq=70.0):
 
     result = signals.copy()
     num_samples = signals.shape[1]
-    # filtfilt needs 3*numtaps < num_samples for padding
     max_taps = num_samples // 3 - 1
 
     if low_freq is not None:
         numtaps = min(max(int(2 * sample_frequency), 3), max_taps)
         if numtaps % 2 == 0:
-            numtaps += 1  # highpass firwin needs odd numtaps
+            numtaps += 1
         hp = esfilters.fir_highpass_firwin_ff(sample_frequency, low_freq, numtaps)
         for ch in range(result.shape[0]):
             result[ch] = hp(result[ch])
@@ -141,14 +235,31 @@ def _compute_channel_offsets(data, num_channels, sensitivity=None, height=None):
     """
     ch_indices = np.arange(num_channels, dtype=float)
     if sensitivity is not None and height is not None:
-        # absolute sensitivity mode: distribute channels evenly across height
         dr = sensitivity * height / num_channels
         ticklocs = ch_indices * dr + dr / 2.0
     else:
-        # auto mode: space based on data range
         dr = (data.max() - data.min()) * 0.7
         ticklocs = ch_indices * dr
     return ticklocs, dr
+
+
+def _build_style_element(svg, theme):
+    """Create the <style> element with theme-driven CSS rules."""
+    style = ET.SubElement(svg, "style")
+    font_weight_sb = "bold" if theme.scalebar_bold else "normal"
+    style.text = (
+        f".trace {{ fill: none; stroke-width: {theme.trace_width}; vector-effect: non-scaling-stroke; }}"
+        f" .label {{ font-family: {theme.label_font_family}; font-size: {theme.label_font_size}px; "
+        f"fill: {theme.label_color}; text-anchor: end; dominant-baseline: middle; }}"
+        f" .time-label {{ font-size: {theme.time_label_font_size}px; "
+        f"fill: {theme.time_label_color}; text-anchor: middle; dominant-baseline: hanging; }}"
+        f" .scalebar-label {{ font-family: {theme.scalebar_font_family}; "
+        f"font-size: {theme.scalebar_font_size}px; font-weight: {font_weight_sb}; "
+        f"fill: {theme.scalebar_color}; text-anchor: start; dominant-baseline: middle; }}"
+        f" .major-grid {{ stroke: {theme.major_grid_color}; stroke-width: {theme.major_grid_width}; }}"
+        f" .minor-grid {{ stroke: {theme.minor_grid_color}; stroke-width: {theme.minor_grid_width}; "
+        f"stroke-dasharray: {theme.minor_grid_dash}; }}"
+    )
 
 
 def stackplot_svg(
@@ -165,10 +276,14 @@ def stackplot_svg(
     linecolor=None,
     linewidth=None,
     grid_interval=1.0,
+    minor_grid=False,
+    minor_grid_interval=None,
     show_scalebar=True,
     scalebar_height=None,
-    scalebar_units="\u00b5V",
+    scalebar_units="µV",
     max_samples_per_channel=None,
+    theme=None,
+    color_group_size=4,
 ):
     """Generate an SVG string of stacked EEG traces.
 
@@ -184,10 +299,13 @@ def stackplot_svg(
         width_mm: SVG width in mm
         height_mm: SVG height in mm
         topdown: if True, first channel appears at top
-        linecolor: trace color (default: black)
-        linewidth: trace stroke width
+        linecolor: trace color (overrides theme)
+        linewidth: trace stroke width (overrides theme)
         grid_interval: time interval for vertical grid lines in seconds.
             Set to None to disable grid.
+        minor_grid: if True, draw minor (dashed) grid lines between major grid.
+        minor_grid_interval: override minor grid interval in seconds.
+            Defaults to grid_interval / 4.
         show_scalebar: whether to draw a vertical scale bar
         scalebar_height: height of scale bar in data units.
             If None, auto-computed as ~10% of channel spacing.
@@ -195,10 +313,17 @@ def stackplot_svg(
         max_samples_per_channel: if set, downsample signals so each channel
             has at most this many samples. Reduces SVG file size for
             high sample rate data. Set to None to disable (default).
+        theme: a Theme instance controlling all styling.
+            Defaults to DEFAULT_THEME.
+        color_group_size: number of channels per color group when theme has
+            multiple trace colors. Default 4 (Stratus-style bands).
 
     Returns:
         SVG content as a string
     """
+    if theme is None:
+        theme = DEFAULT_THEME
+
     num_channels, num_samples = signals.shape
 
     if seconds is None:
@@ -213,10 +338,12 @@ def stackplot_svg(
     if ylabels is None:
         ylabels = [str(i) for i in range(num_channels)]
 
-    if linecolor is None:
-        linecolor = DEFAULT_TRACE_COLOR
-    if linewidth is None:
-        linewidth = DEFAULT_TRACE_WIDTH
+    # Resolve trace color and width: explicit params override theme
+    if linecolor is not None:
+        trace_color_list = [linecolor]
+    else:
+        trace_color_list = theme.trace_colors
+    trace_width = linewidth if linewidth is not None else theme.trace_width
 
     # normalize yscale to per-channel array
     if np.isscalar(yscale):
@@ -227,9 +354,9 @@ def stackplot_svg(
         yscale_ref = float(np.mean(yscale_array))
 
     # layout constants (in viewBox units = mm)
-    label_margin = 25  # left margin for channel labels
+    label_margin = 25
     top_margin = 5
-    bottom_margin = 8  # space for time axis labels
+    bottom_margin = 8
     right_margin = 5
     scalebar_margin = 20 if show_scalebar else 0
 
@@ -255,7 +382,6 @@ def stackplot_svg(
     t_svg = time_to_x(t_data)
 
     # y axis: data values are offset by ticklocs, then mapped to SVG y
-    # In SVG, y increases downward which gives us "negative is up" for free
     if sensitivity is not None:
         y_data_min = 0.0
         y_data_max = sensitivity * plot_height
@@ -267,10 +393,7 @@ def stackplot_svg(
     y_data_range = y_data_max - y_data_min
 
     def data_y_to_svg(y_data):
-        """Map data y-coordinate(s) to SVG y-coordinate(s).
-
-        Accepts scalars or numpy arrays.
-        """
+        """Map data y-coordinate(s) to SVG y-coordinate(s)."""
         if y_data_range == 0:
             return top_margin + 0.5 * plot_height
         return top_margin + (y_data - y_data_min) / y_data_range * plot_height
@@ -297,69 +420,73 @@ def stackplot_svg(
         },
     )
 
-    # white background
-    ET.SubElement(
-        svg,
-        "rect",
-        {
-            "width": "100%",
-            "height": "100%",
-            "fill": "white",
-        },
-    )
+    # background
+    ET.SubElement(svg, "rect", {
+        "width": "100%",
+        "height": "100%",
+        "fill": theme.background_color,
+    })
 
-    # style element for text defaults
-    style = ET.SubElement(svg, "style")
-    style.text = (
-        f"text {{ font-family: {DEFAULT_FONT_FAMILY}; font-size: {DEFAULT_FONT_SIZE}px; }}"
-        f" .label {{ text-anchor: end; dominant-baseline: middle; }}"
-        f" .time-label {{ text-anchor: middle; dominant-baseline: hanging; }}"
-        f" .scalebar-label {{ text-anchor: start; dominant-baseline: middle; }}"
-    )
+    _build_style_element(svg, theme)
 
-    # vertical grid lines at regular time intervals
+    # Grid lines
     if grid_interval is not None:
         grid_g = ET.SubElement(svg, "g", {"class": "grid"})
         grid_times = np.arange(
             np.ceil(start_time / grid_interval) * grid_interval,
-            start_time
-            + seconds
-            + grid_interval * 0.01,  # small epsilon for inclusive end
+            start_time + seconds + grid_interval * 0.01,
             grid_interval,
         )
         grid_times = grid_times[grid_times <= start_time + seconds]
-        for t in grid_times:
-            x = time_to_x(t)
-            ET.SubElement(
-                grid_g,
-                "line",
-                {
+
+        # Minor grid lines
+        if minor_grid:
+            mi = minor_grid_interval if minor_grid_interval is not None else grid_interval / 4.0
+            minor_times = np.arange(
+                np.ceil(start_time / mi) * mi,
+                start_time + seconds + mi * 0.01,
+                mi,
+            )
+            minor_times = minor_times[minor_times <= start_time + seconds]
+            # Remove times that coincide with major grid
+            minor_times = minor_times[
+                np.abs(np.subtract.outer(minor_times, grid_times).min(axis=1)) > mi * 0.01
+            ]
+            for t in minor_times:
+                x = time_to_x(t)
+                ET.SubElement(grid_g, "line", {
                     "x1": f"{x:.2f}",
                     "y1": f"{top_margin:.2f}",
                     "x2": f"{x:.2f}",
                     "y2": f"{top_margin + plot_height:.2f}",
-                    "stroke": DEFAULT_GRID_COLOR,
-                    "stroke-width": DEFAULT_GRID_WIDTH,
-                },
-            )
+                    "class": "minor-grid",
+                })
+
+        # Major grid lines
+        for t in grid_times:
+            x = time_to_x(t)
+            ET.SubElement(grid_g, "line", {
+                "x1": f"{x:.2f}",
+                "y1": f"{top_margin:.2f}",
+                "x2": f"{x:.2f}",
+                "y2": f"{top_margin + plot_height:.2f}",
+                "class": "major-grid",
+            })
 
     # plot border
-    ET.SubElement(
-        svg,
-        "rect",
-        {
-            "x": f"{label_margin:.2f}",
-            "y": f"{top_margin:.2f}",
-            "width": f"{plot_width:.2f}",
-            "height": f"{plot_height:.2f}",
-            "fill": "none",
-            "stroke": "#999999",
-            "stroke-width": "0.2",
-        },
-    )
+    ET.SubElement(svg, "rect", {
+        "x": f"{label_margin:.2f}",
+        "y": f"{top_margin:.2f}",
+        "width": f"{plot_width:.2f}",
+        "height": f"{plot_height:.2f}",
+        "fill": "none",
+        "stroke": theme.border_color,
+        "stroke-width": str(theme.border_width),
+    })
 
     # channel traces and labels
     traces_g = ET.SubElement(svg, "g", {"class": "traces"})
+    num_colors = len(trace_color_list)
     for draw_idx, ch_idx in enumerate(channel_order):
         offset = ticklocs[draw_idx]
         baseline_y = data_y_to_svg(offset)
@@ -370,48 +497,39 @@ def stackplot_svg(
         else:
             y_scale_factor = 1.0
 
-        ch_g = ET.SubElement(
-            traces_g,
-            "g",
-            {
-                "class": "channel",
-                "id": f"ch-{draw_idx}",
-                "transform": f"translate(0,{baseline_y:.2f})",
-                "data-baseline": f"{baseline_y:.2f}",
-                "data-channel-name": label_order[draw_idx],
-                "data-channel-index": str(ch_idx),
-            },
-        )
+        # Determine trace color for this channel
+        color_idx = (draw_idx // color_group_size) % num_colors
+        ch_color = trace_color_list[color_idx]
 
-        # channel label (y=0 relative to baseline via translate)
-        ET.SubElement(
-            ch_g,
-            "text",
-            {
-                "x": f"{label_margin - 1.5:.2f}",
-                "y": "0",
-                "class": "label",
-            },
-        ).text = label_order[draw_idx]
+        ch_g = ET.SubElement(traces_g, "g", {
+            "class": "channel",
+            "id": f"ch-{draw_idx}",
+            "transform": f"translate(0,{baseline_y:.2f})",
+            "data-baseline": f"{baseline_y:.2f}",
+            "data-channel-name": label_order[draw_idx],
+            "data-channel-index": str(ch_idx),
+        })
 
-        # polyline: y in raw data units, scale transform handles gain + data-to-SVG mapping
+        # channel label
+        ET.SubElement(ch_g, "text", {
+            "x": f"{label_margin - 1.5:.2f}",
+            "y": "0",
+            "class": "label",
+        }).text = label_order[draw_idx]
+
+        # polyline
         y_raw = data[:, ch_idx]
         points_str = _format_points(t_svg, y_raw)
-        ET.SubElement(
-            ch_g,
-            "polyline",
-            {
-                "points": points_str,
-                "fill": "none",
-                "stroke": linecolor,
-                "stroke-width": str(linewidth),
-                "transform": f"scale(1,{y_scale_factor:.6f})",
-                "data-yscale": f"{y_scale_factor:.6f}",
-                "vector-effect": "non-scaling-stroke",
-            },
-        )
+        ET.SubElement(ch_g, "polyline", {
+            "points": points_str,
+            "class": "trace",
+            "stroke": ch_color,
+            "stroke-width": str(trace_width),
+            "transform": f"scale(1,{y_scale_factor:.6f})",
+            "data-yscale": f"{y_scale_factor:.6f}",
+        })
 
-    # annotations layer (initially empty, populated by viewer)
+    # annotations layer
     ET.SubElement(svg, "g", {"class": "annotations"})
 
     # time axis labels
@@ -425,25 +543,19 @@ def stackplot_svg(
 
     for t in label_times:
         x = time_to_x(t)
-        ET.SubElement(
-            time_g,
-            "text",
-            {
-                "x": f"{x:.2f}",
-                "y": f"{time_label_y:.2f}",
-                "class": "time-label",
-            },
-        ).text = f"{t:.4g}s"
+        ET.SubElement(time_g, "text", {
+            "x": f"{x:.2f}",
+            "y": f"{time_label_y:.2f}",
+            "class": "time-label",
+        }).text = f"{t:.4g}s"
 
     # vertical scale bar
     if show_scalebar:
         if scalebar_height is None:
-            # auto: use ~10% of channel spacing, rounded to 1 significant digit
             scalebar_height = dr * 0.5
             scalebar_height = float(f"{scalebar_height:.1g}")
 
         sb_x = label_margin + plot_width + 3
-        # center the scale bar vertically in the plot
         sb_center_data = (y_data_min + y_data_max) / 2.0
         sb_top_data = sb_center_data - scalebar_height / 2.0
         sb_bot_data = sb_center_data + scalebar_height / 2.0
@@ -452,57 +564,46 @@ def stackplot_svg(
         sb_bot_svg = data_y_to_svg(sb_bot_data)
 
         sb_g = ET.SubElement(svg, "g", {"class": "scalebar"})
+
+        # Background rect (Stratus style)
+        if theme.scalebar_bg_color != "none":
+            cap_w = 1
+            ET.SubElement(sb_g, "rect", {
+                "x": f"{sb_x - cap_w - 1:.2f}",
+                "y": f"{sb_top_svg:.2f}",
+                "width": f"{2 * cap_w + 3:.2f}",
+                "height": f"{sb_bot_svg - sb_top_svg:.2f}",
+                "fill": theme.scalebar_bg_color,
+                "fill-opacity": str(theme.scalebar_bg_opacity),
+            })
+
         # vertical line
-        ET.SubElement(
-            sb_g,
-            "line",
-            {
-                "x1": f"{sb_x:.2f}",
-                "y1": f"{sb_top_svg:.2f}",
-                "x2": f"{sb_x:.2f}",
-                "y2": f"{sb_bot_svg:.2f}",
-                "stroke": "black",
-                "stroke-width": "0.3",
-            },
-        )
-        # top end cap
+        ET.SubElement(sb_g, "line", {
+            "x1": f"{sb_x:.2f}",
+            "y1": f"{sb_top_svg:.2f}",
+            "x2": f"{sb_x:.2f}",
+            "y2": f"{sb_bot_svg:.2f}",
+            "stroke": theme.scalebar_line_color,
+            "stroke-width": str(theme.scalebar_line_width),
+        })
+        # end caps
         cap_w = 1
-        ET.SubElement(
-            sb_g,
-            "line",
-            {
+        for y_pos in (sb_top_svg, sb_bot_svg):
+            ET.SubElement(sb_g, "line", {
                 "x1": f"{sb_x - cap_w:.2f}",
-                "y1": f"{sb_top_svg:.2f}",
+                "y1": f"{y_pos:.2f}",
                 "x2": f"{sb_x + cap_w:.2f}",
-                "y2": f"{sb_top_svg:.2f}",
-                "stroke": "black",
-                "stroke-width": "0.3",
-            },
-        )
-        # bottom end cap
-        ET.SubElement(
-            sb_g,
-            "line",
-            {
-                "x1": f"{sb_x - cap_w:.2f}",
-                "y1": f"{sb_bot_svg:.2f}",
-                "x2": f"{sb_x + cap_w:.2f}",
-                "y2": f"{sb_bot_svg:.2f}",
-                "stroke": "black",
-                "stroke-width": "0.3",
-            },
-        )
+                "y2": f"{y_pos:.2f}",
+                "stroke": theme.scalebar_line_color,
+                "stroke-width": str(theme.scalebar_line_width),
+            })
         # label
         sb_label_y = (sb_top_svg + sb_bot_svg) / 2.0
-        ET.SubElement(
-            sb_g,
-            "text",
-            {
-                "x": f"{sb_x + cap_w + 1:.2f}",
-                "y": f"{sb_label_y:.2f}",
-                "class": "scalebar-label",
-            },
-        ).text = f"{scalebar_height:.4g}{scalebar_units}"
+        ET.SubElement(sb_g, "text", {
+            "x": f"{sb_x + cap_w + 1:.2f}",
+            "y": f"{sb_label_y:.2f}",
+            "class": "scalebar-label",
+        }).text = f"{scalebar_height:.4g}{scalebar_units}"
 
     # serialize
     ET.indent(svg, space="  ")
@@ -593,7 +694,7 @@ def eeg_to_svg(
         max_samples_per_channel: if set, limit samples per channel in the
             final SVG (applied during rendering, after filtering).
         **kwargs: passed to stackplot_svg() (e.g. width_mm, height_mm,
-            sensitivity, yscale, topdown, grid_interval, etc.)
+            sensitivity, yscale, topdown, grid_interval, theme, etc.)
 
     Returns:
         SVG content as a string
