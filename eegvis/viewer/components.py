@@ -71,12 +71,16 @@ def _viewer_styles():
     return Style(
         RawCss("""
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; }
-        .viewer-root { max-width: 1400px; margin: 0 auto; padding: 8px; }
+        .viewer-root {
+            max-width: 1400px; margin: 0 auto; padding: 8px;
+            height: 100vh; display: flex; flex-direction: column; gap: 8px;
+        }
         .toolbar {
             display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
             padding: 8px; background: white; border: 1px solid #ddd;
-            border-radius: 4px; margin-bottom: 8px;
+            border-radius: 4px;
         }
         .toolbar label { font-size: 13px; color: #555; }
         .toolbar select, .toolbar input, .toolbar button {
@@ -89,18 +93,21 @@ def _viewer_styles():
         .display-area {
             background: white; border: 1px solid #ddd; border-radius: 4px;
             padding: 4px; overflow: hidden;
+            flex: 1 1 auto; min-height: 0; display: flex;
         }
-        .display-area svg { width: 100%; height: auto; }
+        .display-area svg {
+            width: 100%; height: 100%; flex: 1 1 auto; min-height: 0;
+        }
         .status-bar {
             display: flex; justify-content: space-between; align-items: center;
             padding: 4px 8px; font-size: 12px; color: #777;
-            background: white; border: 1px solid #ddd;
-            border-radius: 4px; margin-top: 8px;
+            background: white; border: 1px solid #ddd; border-radius: 4px;
+            flex: 0 0 auto;
         }
         .jump-bar {
             height: 24px; background: #eee; border: 1px solid #ddd;
-            border-radius: 3px; margin-top: 8px; position: relative;
-            cursor: pointer;
+            border-radius: 3px; position: relative; cursor: pointer;
+            flex: 0 0 auto;
         }
         .jump-bar .position-marker {
             position: absolute; top: 0; height: 100%;

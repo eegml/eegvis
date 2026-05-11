@@ -33,12 +33,16 @@ to support the hypermedia viewer (see `eegvis/viewer/`).
 # Run tests with pytest
 pytest tests/
 pytest tests/test_stackplot_svg.py        # SVG backend tests
+pytest tests/test_montage_display.py      # MontageDisplay / bundled profiles
 
 # Run via tox (multiple Python/matplotlib versions)
 tox
 tox -e py310
 tox -e py37-mpl3.2    # tests against matplotlib 3.2 (Colab compatibility)
 ```
+
+A local pre-commit hook in `.git/hooks/pre-commit` runs `uvx ruff format` on
+staged `.py` files and re-stages them. Bypass with `--no-verify`.
 
 ## Architecture
 
@@ -61,11 +65,29 @@ The SVG backend is structured as a pipeline of pure functions:
   `vector-effect="non-scaling-stroke"` so line weight stays constant under
   zoom. Includes vertical time grid, scale bar (µV by default), border,
   channel labels, and an empty `<g class="annotations">` layer for downstream
-  viewer overlays.
+  viewer overlays. Extra knobs:
+  - `theme=` picks a `SvgTheme` (background, grid, trace, label colors and
+    weights). Bundled themes: `DEFAULT_THEME`, `PUBLICATION_THEME`,
+    `STRATUS_THEME` (color-cycles traces in `color_group_size`-channel bands).
+  - `channel_gaps_mm=` is a per-channel sequence of extra vertical mm to
+    insert *after* each channel — used for inter-group spacers.
+  - `channel_colors=` is a per-channel sequence of explicit color overrides
+    that wins over the theme's group-cycled color.
+  - `preserve_aspect_ratio=` is written verbatim to the SVG root attribute
+    (default: omit). Set to `"none"` to let the SVG stretch independently
+    in x and y to fill its container — used by the viewer to spread
+    waveforms edge-to-edge.
 - **`save_svg(filepath, ...)`** — Writes the SVG string to disk.
 - **`show_montage_svg` / `save_montage_svg`** — Convenience wrappers that
   apply a `MontageView.V.data` matrix multiply before rendering and use
   `montage.montage_labels` as channel labels.
+- **`show_montage_display_svg(signals, sample_frequency, display, rec_labels=, ...)` /
+  `save_montage_display_svg`** — Render using a `MontageDisplay` profile
+  (see below). Honors the display's group order, per-group/per-channel
+  colors, gaps, gains, and visibility. Flips channel order before calling
+  `stackplot_svg` so that profiles can keep the clinical "first listed =
+  top of page" convention while the underlying renderer numbers channels
+  bottom-up.
 - **`eeg_to_svg(signals, sample_frequency, montage=, low_freq=, high_freq=, notch_freq=, target_frequency=, max_samples_per_channel=, ...)`**
   — End-to-end pipeline: downsample → montage derivation → bandpass → notch → render.
 - **`save_eeg_svg(filepath, ...)`** — File-output sibling of `eeg_to_svg`.
@@ -85,6 +107,32 @@ and by annotation tooling.
 `max_samples_per_channel` is the main lever for keeping SVG file size sane on
 high-sample-rate recordings — it triggers a one-shot decimation tuned so each
 polyline has at most that many points.
+
+### Montage Display Profiles (`montage_display.py` + `displays/`)
+
+A `MontageDisplay` bundles three things that historically lived in separate
+places: the derivation (matrix or built-in name), the channel grouping/order,
+and per-channel style overrides. It is the canonical way to author a
+clinical layout that wants per-hemisphere coloring or visual spacers between
+chains.
+
+- **`MontageDisplay`** carries `derivation_ref` (a name like `"double_banana"`
+  resolved against `_BUILTIN_DERIVATIONS`) or a self-contained
+  `MontageDerivation(matrix, montage_labels, rec_labels)`, a list of
+  `ChannelGroup` (name, channels, default color, `gap_after_mm`), and a dict
+  of per-channel `ChannelStyle` overrides (color, gain, gap, visibility).
+- **Order convention**: channels listed earlier in the file are drawn
+  *higher* on the page. `gap_after_mm` inserts space *below* that group or
+  channel.
+- **`save() / load()`** serialize a profile to / from JSON.
+- **`eegvis/displays/`** ships JSON profiles next to the package. Use
+  `from eegvis.displays import list_displays, load_display`. Currently
+  bundled:
+  - `double_banana.json` — clinical "left chains | midline | right chains"
+    layout, blue/black/red coloring, with two large spacers at the left↔right
+    transitions around the midline.
+  - `double_banana_paired.json` — LT/RT, LL/RR stacked layout with spacers
+    between every left/right hand-off.
 
 ### Hypermedia Clinical Viewer (`eegvis/viewer/`)
 
@@ -108,7 +156,11 @@ patches.
 - **`viewer/components.py`** — ztml HTML components for the page shell, toolbar
   (montage / sensitivity / page-duration / nav / filter selects), display
   area, jump bar, and status bar. Uses datastar `data-on:*` and `data-bind`
-  attributes; loads the datastar runtime from the jsDelivr CDN.
+  attributes; loads the datastar runtime from the jsDelivr CDN. Layout is a
+  fixed-height (`100vh`) flex column: toolbar / jump-bar / status-bar take
+  their natural size; `.display-area` flex-grows to fill the rest and the
+  SVG inside is rendered with `preserveAspectRatio="none"` so the waveforms
+  span edge-to-edge horizontally.
 
 Run the demo with synthetic data:
 
@@ -145,7 +197,13 @@ noise, and 60 Hz line noise so the viewer is exercisable without real data.
 - Montage derivations are expressed as xarray matrix operations over ordered channel dictionaries.
 - Clinical "negative up" display: in the SVG backend this falls out of SVG's
   native y-down axis — raw data values map directly without sign flip.
-- SVG layout coordinates are in millimeters via `viewBox`; CSS scales the SVG
-  to container width while preserving aspect ratio.
+- SVG layout coordinates are in millimeters via `viewBox`. Standalone exports
+  rely on the default `preserveAspectRatio="xMidYMid meet"` (letterbox to
+  preserve aspect for print); the viewer overrides this to `"none"` to fill
+  the available container in both dimensions.
+- Channel ordering: `stackplot_svg` numbers channels bottom-up (index 0 at
+  the bottom), but `MontageDisplay` and its `show_montage_display_svg`
+  wrapper expose the inverse convention (first listed = top of page).
+  Author profiles in clinical top-down order.
 - Python 3.7+ required (f-strings). Some files retain `__future__` imports for historical compatibility.
 - matplotlib >=3.2 is supported via backported `AffineDeltaTransform`.
