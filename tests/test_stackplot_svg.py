@@ -417,7 +417,7 @@ def test_polyline_has_scale_transform():
         assert transform is not None
         assert transform.startswith("scale(1,")
         assert pl.get("data-yscale") is not None
-        assert pl.get("vector-effect") == "non-scaling-stroke"
+        assert pl.get("class") == "trace"  # vector-effect is in CSS class
 
 
 def test_channel_data_attributes():
@@ -519,3 +519,194 @@ def test_translate_scale_visual_equivalence():
         y_svg = baseline + y_raw * yscale_val
         # this should be within the plot area (top_margin=5, bottom = 5+187=192)
         assert 0 <= y_svg <= 200  # within SVG viewBox height
+
+
+# === Theme system tests ===
+
+
+def test_theme_default_produces_valid_svg():
+    """DEFAULT_THEME should produce valid SVG with correct classes."""
+    signals = np.random.randn(4, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=256.0, theme=stackplot_svg.DEFAULT_THEME
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    assert len(root.findall(".//svg:polyline", ns)) == 4
+    # Check style element contains .trace class
+    style = root.find("svg:style", ns)
+    assert style is not None
+    assert ".trace" in style.text
+
+
+def test_stratus_theme_applies_styles():
+    """STRATUS_THEME should produce SVG with Stratus-style CSS classes."""
+    signals = np.random.randn(8, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=256.0, theme=stackplot_svg.STRATUS_THEME
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    style = root.find("svg:style", ns)
+    # Stratus theme uses Segoe UI font
+    assert "Segoe UI" in style.text
+    # Stratus theme has multiple trace colors
+    assert "#00007f" in svg_str
+    # Grid lines should have major-grid class
+    major_grids = root.findall(".//svg:line[@class='major-grid']", ns)
+    assert len(major_grids) > 0
+
+
+def test_publication_theme_applies_styles():
+    """PUBLICATION_THEME should produce SVG with publication-style CSS."""
+    signals = np.random.randn(4, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals, sample_frequency=256.0, theme=stackplot_svg.PUBLICATION_THEME
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    style = root.find("svg:style", ns)
+    assert "DejaVu Sans" in style.text
+    # Publication theme has thinner traces
+    assert "stroke-width: 0.4" in style.text
+
+
+def test_alternating_trace_colors():
+    """Theme with multiple trace colors should cycle through them."""
+    signals = np.random.randn(12, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals,
+        sample_frequency=256.0,
+        theme=stackplot_svg.STRATUS_THEME,
+        color_group_size=4,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    polylines = root.findall(".//svg:polyline", ns)
+    colors = [pl.get("stroke") for pl in polylines]
+    # 12 channels, groups of 4: colors should repeat in groups
+    # Expected pattern (topdown reverses): blue, black, red, blue, black, red, ...
+    stratus_colors = ["#00007f", "#000000", "#7f0000"]
+    for i, c in enumerate(colors):
+        expected = stratus_colors[(i // 4) % 3]
+        assert c == expected, f"Channel {i}: got {c}, expected {expected}"
+
+
+def test_minor_grid_lines():
+    """When minor_grid=True, minor grid lines should appear with class='minor-grid'."""
+    signals = np.random.randn(4, 800)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals,
+        sample_frequency=256.0,
+        seconds=3.0,
+        grid_interval=1.0,
+        minor_grid=True,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    minor_lines = root.findall(".//svg:line[@class='minor-grid']", ns)
+    major_lines = root.findall(".//svg:line[@class='major-grid']", ns)
+    # Should have minor grid lines between major ones
+    assert len(minor_lines) > 0
+    assert len(major_lines) > 0
+    # Minor lines should be more numerous than major
+    assert len(minor_lines) >= len(major_lines) * 2
+
+
+def test_minor_grid_off_by_default():
+    """Without minor_grid=True, no minor grid lines should appear."""
+    signals = np.random.randn(4, 800)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals,
+        sample_frequency=256.0,
+        seconds=3.0,
+        grid_interval=1.0,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    minor_lines = root.findall(".//svg:line[@class='minor-grid']", ns)
+    assert len(minor_lines) == 0
+
+
+def test_scalebar_bg_rect_stratus():
+    """STRATUS_THEME scalebar should have a background rect."""
+    signals = np.random.randn(4, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals,
+        sample_frequency=256.0,
+        theme=stackplot_svg.STRATUS_THEME,
+        show_scalebar=True,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    scalebar = root.find(".//svg:g[@class='scalebar']", ns)
+    rects = scalebar.findall("svg:rect", ns)
+    assert len(rects) == 1
+    assert rects[0].get("fill") == "#dfdfdf"
+    assert rects[0].get("fill-opacity") == "0.5"
+
+
+def test_scalebar_no_bg_default():
+    """DEFAULT_THEME scalebar should not have background rect."""
+    signals = np.random.randn(4, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals,
+        sample_frequency=256.0,
+        theme=stackplot_svg.DEFAULT_THEME,
+        show_scalebar=True,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    scalebar = root.find(".//svg:g[@class='scalebar']", ns)
+    rects = scalebar.findall("svg:rect", ns)
+    assert len(rects) == 0
+
+
+def test_theme_wire_through_eeg_to_svg():
+    """Theme parameter should pass through eeg_to_svg pipeline."""
+    fs = 256.0
+    n = int(fs * 5)
+    signals = np.random.randn(4, n) * 50.0
+    svg_str = stackplot_svg.eeg_to_svg(
+        signals,
+        fs,
+        ylabels=["Ch1", "Ch2", "Ch3", "Ch4"],
+        seconds=5.0,
+        theme=stackplot_svg.STRATUS_THEME,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    style = root.find("svg:style", ns)
+    assert "Segoe UI" in style.text
+
+
+def test_explicit_linecolor_overrides_theme():
+    """Explicit linecolor parameter should override theme trace colors."""
+    signals = np.random.randn(4, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals,
+        sample_frequency=256.0,
+        theme=stackplot_svg.STRATUS_THEME,
+        linecolor="red",
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    polylines = root.findall(".//svg:polyline", ns)
+    for pl in polylines:
+        assert pl.get("stroke") == "red"
+
+
+def test_explicit_linewidth_overrides_theme():
+    """Explicit linewidth parameter should override theme trace width."""
+    signals = np.random.randn(4, 500)
+    svg_str = stackplot_svg.stackplot_svg(
+        signals,
+        sample_frequency=256.0,
+        theme=stackplot_svg.STRATUS_THEME,
+        linewidth=1.0,
+    )
+    root = ET.fromstring(svg_str)
+    ns = {"svg": stackplot_svg.SVG_NS}
+    polylines = root.findall(".//svg:polyline", ns)
+    for pl in polylines:
+        assert float(pl.get("stroke-width")) == 1.0
