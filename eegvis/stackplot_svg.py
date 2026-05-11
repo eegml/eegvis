@@ -313,6 +313,7 @@ def stackplot_svg(
     color_group_size=4,
     channel_gaps_mm=None,
     channel_colors=None,
+    preserve_aspect_ratio=None,
 ):
     """Generate an SVG string of stacked EEG traces.
 
@@ -357,6 +358,12 @@ def stackplot_svg(
             (length must equal num_channels). An entry of None falls back to
             the theme's group-cycled color. Channels are matched by their
             original index in the signals array, not by display order.
+        preserve_aspect_ratio: optional value for the SVG root's
+            ``preserveAspectRatio`` attribute. Leave as None (default) to
+            omit the attribute and rely on the SVG default of
+            "xMidYMid meet" (letterbox to preserve aspect). Set to "none"
+            for the SVG to stretch independently in x and y to fill its
+            container — useful for full-page strip-chart viewers.
 
     Returns:
         SVG content as a string
@@ -467,19 +474,19 @@ def stackplot_svg(
         label_order = list(reversed(label_order))
 
     # build SVG
-    svg = ET.Element(
-        "svg",
-        {
-            "xmlns": SVG_NS,
-            "viewBox": f"0 0 {width_mm} {height_mm}",
-            "width": f"{width_mm}mm",
-            "height": f"{height_mm}mm",
-            "data-sample-frequency": str(sample_frequency),
-            "data-start-time": str(start_time),
-            "data-seconds": str(seconds),
-            "data-num-channels": str(num_channels),
-        },
-    )
+    svg_attrs = {
+        "xmlns": SVG_NS,
+        "viewBox": f"0 0 {width_mm} {height_mm}",
+        "width": f"{width_mm}mm",
+        "height": f"{height_mm}mm",
+        "data-sample-frequency": str(sample_frequency),
+        "data-start-time": str(start_time),
+        "data-seconds": str(seconds),
+        "data-num-channels": str(num_channels),
+    }
+    if preserve_aspect_ratio is not None:
+        svg_attrs["preserveAspectRatio"] = preserve_aspect_ratio
+    svg = ET.Element("svg", svg_attrs)
 
     # background
     ET.SubElement(

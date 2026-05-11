@@ -87,6 +87,7 @@ def _render_page_svg(study: "_StudyData", session: ViewerSession) -> str:
         sensitivity=session.sensitivity,
         show_scalebar=True,
         max_samples_per_channel=2000,
+        preserve_aspect_ratio="none",
     )
 
 
