@@ -832,3 +832,299 @@ def test_error_message_for_negative_gap():
     )
     assert "groups[0].gap_after_mm" in msg
     assert "minimum" in msg
+
+
+# ---------- Per-channel clinical attributes (Sens/LF/HF/CAL/Width) ----------
+
+
+def test_channel_style_accepts_new_attributes():
+    style = ChannelStyle(
+        label="Fp1-F7",
+        sensitivity=7.0,
+        lf=1.0,
+        hf=70.0,
+        cal=50.0,
+        width=0.4,
+    )
+    assert style.sensitivity == 7.0
+    assert style.lf == 1.0
+    assert style.hf == 70.0
+    assert style.cal == 50.0
+    assert style.width == 0.4
+
+
+def test_schema_accepts_per_channel_attributes():
+    from eegvis.montage_display import validate_montage_display_dict
+
+    raw = {
+        "name": "x",
+        "derivation": {
+            "type": "symbolic",
+            "channels": [{"label": "A-B", "diffpair": ["A", "B"]}],
+        },
+        "groups": [{"name": "g", "channels": ["A-B"]}],
+        "channel_overrides": {
+            "A-B": {
+                "label": "A-B",
+                "sensitivity": 7.0,
+                "lf": 1.0,
+                "hf": 70.0,
+                "cal": 50.0,
+                "width": 0.4,
+            },
+        },
+    }
+    validate_montage_display_dict(raw)  # no raise
+
+
+def test_schema_rejects_zero_or_negative_sensitivity():
+    import jsonschema
+    from eegvis.montage_display import validate_montage_display_dict
+
+    raw = {
+        "name": "x",
+        "derivation": {
+            "type": "symbolic",
+            "channels": [{"label": "A-B", "diffpair": ["A", "B"]}],
+        },
+        "groups": [{"name": "g", "channels": ["A-B"]}],
+        "channel_overrides": {
+            "A-B": {"label": "A-B", "sensitivity": 0},
+        },
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        validate_montage_display_dict(raw)
+
+
+def test_schema_allows_null_to_clear_per_channel_attr():
+    from eegvis.montage_display import validate_montage_display_dict
+
+    raw = {
+        "name": "x",
+        "derivation": {
+            "type": "symbolic",
+            "channels": [{"label": "A-B", "diffpair": ["A", "B"]}],
+        },
+        "groups": [{"name": "g", "channels": ["A-B"]}],
+        "channel_overrides": {
+            "A-B": {"label": "A-B", "sensitivity": None, "lf": None},
+        },
+    }
+    validate_montage_display_dict(raw)  # null is allowed
+
+
+def test_json_roundtrip_preserves_per_channel_attributes():
+    """JSON save/load preserves the new fields."""
+    d = MontageDisplay(
+        name="rt",
+        derivation=SymbolicDerivation(
+            channels=[SymbolicChannel(label="A-B", diffpair=["A", "B"])]
+        ),
+        groups=[ChannelGroup("g", ["A-B"])],
+        channel_overrides={
+            "A-B": ChannelStyle(
+                label="A-B", sensitivity=7.0, lf=1.0, hf=70.0, cal=50.0, width=0.4
+            )
+        },
+    )
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "rt.json"
+        d.save(path)
+        loaded = MontageDisplay.load(path)
+    style = loaded.channel_overrides["A-B"]
+    assert style.sensitivity == 7.0
+    assert style.lf == 1.0
+    assert style.hf == 70.0
+    assert style.cal == 50.0
+    assert style.width == 0.4
+
+
+def test_editor_session_roundtrips_per_channel_attributes():
+    """EditorRow attrs survive to_display() -> from_display()."""
+    from eegvis.viewer.editor_session import EditorRow, EditorSession
+
+    sess = EditorSession(
+        name="rt",
+        rows=[
+            EditorRow(
+                kind="channel",
+                g1="A",
+                g2="B",
+                color="#1f4e79",
+                sensitivity=7.0,
+                lf=1.0,
+                hf=70.0,
+                cal=50.0,
+                width=0.4,
+            )
+        ],
+    )
+    display = sess.to_display()
+    style = display.channel_overrides["A-B"]
+    assert style.sensitivity == 7.0
+    assert style.width == 0.4
+
+    restored = EditorSession.from_display(display)
+    assert len(restored.rows) == 1
+    row = restored.rows[0]
+    assert row.sensitivity == 7.0
+    assert row.lf == 1.0
+    assert row.hf == 70.0
+    assert row.cal == 50.0
+    assert row.width == 0.4
+
+
+def test_editor_set_cell_parses_numeric_fields():
+    from eegvis.viewer.editor_session import EditorRow, EditorSession
+
+    sess = EditorSession(rows=[EditorRow(kind="channel", g1="A", g2="B")])
+    sess.set_cell(0, "sensitivity", "7.5")
+    sess.set_cell(0, "lf", "1.0")
+    sess.set_cell(0, "width", "")  # empty clears
+    assert sess.rows[0].sensitivity == 7.5
+    assert sess.rows[0].lf == 1.0
+    assert sess.rows[0].width is None
+
+
+# ---------- Renderer wire-through for per-channel attrs ----------
+
+
+def _synth_for_overrides():
+    """Tiny 3-channel synthetic for the override-rendering tests."""
+    fs = 200.0
+    rec = ["A", "B", "C"]
+    t = np.arange(int(fs * 2)) / fs
+    rng = np.random.default_rng(0)
+    signals = np.zeros((3, len(t)))
+    for i in range(3):
+        signals[i] = rng.normal(0, 5, len(t)) + 10 * np.sin(2 * np.pi * 10 * t)
+    return signals, fs, rec
+
+
+def _build_display_with_overrides(overrides):
+    return MontageDisplay(
+        name="t",
+        derivation=SymbolicDerivation(
+            channels=[
+                SymbolicChannel(label="A-B", diffpair=["A", "B"]),
+                SymbolicChannel(label="B-C", diffpair=["B", "C"]),
+            ],
+        ),
+        groups=[ChannelGroup("g", ["A-B", "B-C"])],
+        channel_overrides=overrides,
+    )
+
+
+def test_per_channel_width_lands_on_polyline_stroke_width():
+    signals, fs, rec = _synth_for_overrides()
+    d = _build_display_with_overrides({"A-B": ChannelStyle(label="A-B", width=0.9)})
+    svg_str = show_montage_display_svg(signals, fs, d, rec_labels=rec, sensitivity=7.0)
+    root = ET.fromstring(svg_str)
+    # Match by data-channel-name (independent of bottom-up render order)
+    polys = {}
+    for ch in root.findall(".//svg:g[@class='channel']", NS):
+        name = ch.attrib["data-channel-name"]
+        poly = ch.find("./svg:polyline", NS)
+        polys[name] = float(poly.attrib["stroke-width"])
+    assert polys["A-B"] == 0.9
+    # B-C falls back to theme default
+    assert polys["B-C"] != 0.9
+
+
+def test_per_channel_cal_renders_annotation():
+    signals, fs, rec = _synth_for_overrides()
+    d = _build_display_with_overrides({"A-B": ChannelStyle(label="A-B", cal=50.0)})
+    svg_str = show_montage_display_svg(signals, fs, d, rec_labels=rec, sensitivity=7.0)
+    root = ET.fromstring(svg_str)
+    cal_texts = []
+    for ch in root.findall(".//svg:g[@class='channel']", NS):
+        for txt in ch.findall("./svg:text[@class='channel-cal']", NS):
+            cal_texts.append((ch.attrib["data-channel-name"], txt.text))
+    assert ("A-B", "50µV") in cal_texts
+    # B-C has no override → no annotation
+    assert not any(name == "B-C" for name, _ in cal_texts)
+
+
+def test_per_channel_sensitivity_scales_yscale():
+    """Channel with smaller per-channel sensitivity should render with a
+    larger y_scale_factor (more sensitive = bigger amplitude)."""
+    signals, fs, rec = _synth_for_overrides()
+    # Channel A-B at half the global sensitivity should be 2x larger.
+    d = _build_display_with_overrides(
+        {"A-B": ChannelStyle(label="A-B", sensitivity=3.5)}  # global is 7.0
+    )
+    svg_str = show_montage_display_svg(signals, fs, d, rec_labels=rec, sensitivity=7.0)
+    root = ET.fromstring(svg_str)
+    yscales = {}
+    for ch in root.findall(".//svg:g[@class='channel']", NS):
+        name = ch.attrib["data-channel-name"]
+        poly = ch.find("./svg:polyline", NS)
+        yscales[name] = float(poly.attrib["data-yscale"])
+    # A-B should be roughly 2x B-C
+    assert yscales["A-B"] / yscales["B-C"] == pytest.approx(2.0, rel=1e-3)
+
+
+def test_per_channel_lf_hf_changes_trace_points():
+    """When LF/HF are set per-channel, the corresponding polyline points
+    should differ from the unfiltered case for that channel only."""
+    signals, fs, rec = _synth_for_overrides()
+    d_plain = _build_display_with_overrides({})
+    d_filt = _build_display_with_overrides(
+        {"A-B": ChannelStyle(label="A-B", lf=2.0, hf=20.0)}
+    )
+    plain = ET.fromstring(
+        show_montage_display_svg(signals, fs, d_plain, rec_labels=rec, sensitivity=7.0)
+    )
+    filt = ET.fromstring(
+        show_montage_display_svg(signals, fs, d_filt, rec_labels=rec, sensitivity=7.0)
+    )
+
+    def points(root, name):
+        for ch in root.findall(".//svg:g[@class='channel']", NS):
+            if ch.attrib["data-channel-name"] == name:
+                return ch.find("./svg:polyline", NS).attrib["points"]
+        return None
+
+    assert points(plain, "A-B") != points(filt, "A-B"), (
+        "A-B trace should change after per-channel filtering"
+    )
+    # B-C had no override — its trace should be identical.
+    assert points(plain, "B-C") == points(filt, "B-C")
+
+
+def test_channel_widths_length_validation():
+    """stackplot_svg should raise if channel_widths length != num_channels."""
+    signals = np.zeros((3, 100))
+    with pytest.raises(ValueError, match="channel_widths must have length 3"):
+        stackplot_svg.stackplot_svg(
+            signals, sample_frequency=100.0, channel_widths=[0.5, 0.5]
+        )
+
+
+def test_channel_cal_length_validation():
+    signals = np.zeros((3, 100))
+    with pytest.raises(ValueError, match="channel_cal must have length 3"):
+        stackplot_svg.stackplot_svg(
+            signals, sample_frequency=100.0, channel_cal=[50, 50]
+        )
+
+
+def test_apply_per_channel_bandpass_only_filters_specified_rows():
+    from eegvis.stackplot_svg import apply_per_channel_bandpass
+
+    fs = 200.0
+    t = np.arange(int(fs * 2)) / fs
+    signals = np.stack(
+        [
+            np.sin(2 * np.pi * 10 * t),
+            np.sin(2 * np.pi * 10 * t),
+            np.sin(2 * np.pi * 10 * t),
+        ]
+    )
+    out = apply_per_channel_bandpass(
+        signals, fs, channel_lf=[None, 0.5, None], channel_hf=[None, 30.0, None]
+    )
+    # Row 0 and 2 should be byte-identical, row 1 should differ.
+    assert np.array_equal(out[0], signals[0])
+    assert np.array_equal(out[2], signals[2])
+    assert not np.array_equal(out[1], signals[1])
