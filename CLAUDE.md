@@ -111,28 +111,56 @@ polyline has at most that many points.
 ### Montage Display Profiles (`montage_display.py` + `displays/`)
 
 A `MontageDisplay` bundles three things that historically lived in separate
-places: the derivation (matrix or built-in name), the channel grouping/order,
-and per-channel style overrides. It is the canonical way to author a
-clinical layout that wants per-hemisphere coloring or visual spacers between
-chains.
+places: the derivation, the channel grouping/order, and per-channel style
+overrides. It is the canonical way to author a clinical layout that wants
+per-hemisphere coloring or visual spacers between chains.
 
-- **`MontageDisplay`** carries `derivation_ref` (a name like `"double_banana"`
-  resolved against `_BUILTIN_DERIVATIONS`) or a self-contained
-  `MontageDerivation(matrix, montage_labels, rec_labels)`, a list of
-  `ChannelGroup` (name, channels, default color, `gap_after_mm`), and a dict
-  of per-channel `ChannelStyle` overrides (color, gain, gap, visibility).
-- **Order convention**: channels listed earlier in the file are drawn
-  *higher* on the page. `gap_after_mm` inserts space *below* that group or
-  channel.
-- **`save() / load()`** serialize a profile to / from JSON.
-- **`eegvis/displays/`** ships JSON profiles next to the package. Use
-  `from eegvis.displays import list_displays, load_display`. Currently
-  bundled:
-  - `double_banana.json` — clinical "left chains | midline | right chains"
-    layout, blue/black/red coloring, with two large spacers at the left↔right
-    transitions around the midline.
-  - `double_banana_paired.json` — LT/RT, LL/RR stacked layout with spacers
-    between every left/right hand-off.
+The JSON file format is formally specified in
+**`eegvis/displays/SCHEMA.md`** — that doc is the source of truth for what
+fields exist and how they are resolved.
+
+Three derivation forms exist (in order of preference for new profiles):
+
+1. **`SymbolicDerivation`** (`"type": "symbolic"`) — portable. Channels are
+   declared as symbolic linear combinations: `{"label": "Fp1-F7",
+   "diffpair": ["Fp1", "F7"]}` for the bipolar shorthand, or
+   `{"label": "x", "sum_coefficients": {"A": 0.5, "B": -0.5}}` for general
+   weighted sums. Reference resolution looks up names first in
+   `virtual_channels` (named linear combinations of physical electrodes —
+   `"AVG"`, `"LE"`, etc.) then in `rec_labels`. The matrix is built at
+   apply time, so the same JSON works across recordings with different
+   electrode sets.
+2. **`MontageDerivation`** (`"type": "matrix"`) — self-contained but locked
+   to a specific `rec_labels` ordering. Useful for fully self-contained
+   exports.
+3. **`derivation_ref`** — names a built-in `MontageView` subclass
+   (`"double_banana"`, `"true_sphenoidal"`, etc.). Kept for back-compat;
+   the bundled profiles have moved to symbolic.
+
+Other elements:
+
+- **`ChannelGroup`**: name, channels (top-down order), default color,
+  `gap_after_mm` (extra space *below* the group's last visible channel).
+- **`ChannelStyle`** (per-channel overrides): color, gain, gap, visibility.
+
+**Order convention**: channels listed earlier are drawn *higher* on the
+page. `gap_after_mm` inserts space *below* that group / channel.
+
+**`save() / load()`** serialize a profile to / from JSON.
+
+**`eegvis/displays/`** ships JSON profiles next to the package. Use
+`from eegvis.displays import list_displays, load_display`. Bundled
+profiles (all symbolic):
+
+- `circle.json` — circumferential perimeter walk (10 channels).
+- `double_banana.json` — clinical "left chains | midline | right chains".
+- `double_banana_paired.json` — LT/RT, LL/RR stacked layout.
+- `double_banana_avg.json` — common-average reference; uses the `AVG`
+  virtual channel.
+- `tcp.json` — Temporal Central Parasagittal (20 channels).
+- `neonatal.json` — modified 10-20 for neonates (16 channels).
+- `true_sphenoidal.json` — double-banana variant threading Sp1/Sp2 needle
+  electrodes into the anterior temporal chains.
 
 ### Hypermedia Clinical Viewer (`eegvis/viewer/`)
 
