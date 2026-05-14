@@ -11,6 +11,8 @@ deflections appear as upward movements on screen.
 """
 
 from dataclasses import dataclass, field
+from typing import List, Optional
+
 import numpy as np
 import xml.etree.ElementTree as ET
 
@@ -187,6 +189,40 @@ def bandpass_filter(signals, sample_frequency, low_freq=1.0, high_freq=70.0):
     return result
 
 
+def apply_per_channel_bandpass(
+    signals, sample_frequency, channel_lf=None, channel_hf=None
+):
+    """Apply bandpass filtering with per-channel cutoffs.
+
+    ``channel_lf`` and ``channel_hf`` are sequences of length
+    ``num_channels``. An entry of ``None``, ``0``, or a negative value
+    skips that direction for that channel. Channels with both set are
+    bandpassed; channels with neither are passed through untouched.
+
+    Internally just calls :func:`bandpass_filter` on each row that needs
+    filtering — slow for very many channels with disparate cutoffs, but
+    fine for clinical 20-channel work.
+    """
+    if channel_lf is None and channel_hf is None:
+        return signals
+    num_channels = signals.shape[0]
+    out = signals.copy()
+    for ch in range(num_channels):
+        lf = channel_lf[ch] if channel_lf is not None else None
+        hf = channel_hf[ch] if channel_hf is not None else None
+        # Normalize "no filter" semantics: 0 or negative or None = skip.
+        if lf is not None and lf <= 0:
+            lf = None
+        if hf is not None and hf <= 0:
+            hf = None
+        if lf is None and hf is None:
+            continue
+        row = signals[ch : ch + 1]
+        filtered = bandpass_filter(row, sample_frequency, low_freq=lf, high_freq=hf)
+        out[ch] = filtered[0]
+    return out
+
+
 def notch_filter(signals, sample_frequency, notch_freq=60.0, Q=30.0):
     """Apply a zero-phase notch (band-stop) filter to remove line noise.
 
@@ -313,6 +349,8 @@ def stackplot_svg(
     color_group_size=4,
     channel_gaps_mm=None,
     channel_colors=None,
+    channel_widths=None,
+    channel_cal=None,
     preserve_aspect_ratio=None,
 ):
     """Generate an SVG string of stacked EEG traces.
@@ -358,6 +396,14 @@ def stackplot_svg(
             (length must equal num_channels). An entry of None falls back to
             the theme's group-cycled color. Channels are matched by their
             original index in the signals array, not by display order.
+        channel_widths: optional per-channel sequence of trace stroke widths
+            in mm (length must equal num_channels). An entry of None falls
+            back to the theme's ``trace_width`` (or ``linewidth`` if set).
+        channel_cal: optional per-channel sequence of calibration amplitudes
+            in µV (length must equal num_channels). When set, a small
+            "<amp>µV" annotation is rendered at the right edge of each
+            channel's trace. An entry of None disables the annotation for
+            that channel.
         preserve_aspect_ratio: optional value for the SVG root's
             ``preserveAspectRatio`` attribute. Leave as None (default) to
             omit the attribute and rely on the SVG default of
@@ -427,6 +473,19 @@ def stackplot_svg(
             raise ValueError(
                 f"channel_colors must have length {num_channels}, "
                 f"got {len(channel_colors)}"
+            )
+
+    if channel_widths is not None:
+        if len(channel_widths) != num_channels:
+            raise ValueError(
+                f"channel_widths must have length {num_channels}, "
+                f"got {len(channel_widths)}"
+            )
+
+    if channel_cal is not None:
+        if len(channel_cal) != num_channels:
+            raise ValueError(
+                f"channel_cal must have length {num_channels}, got {len(channel_cal)}"
             )
 
     # compute vertical offsets in data space
@@ -619,6 +678,11 @@ def stackplot_svg(
             },
         ).text = label_order[draw_idx]
 
+        # per-channel stroke width override (matched by original ch_idx)
+        ch_width = trace_width
+        if channel_widths is not None and channel_widths[ch_idx] is not None:
+            ch_width = float(channel_widths[ch_idx])
+
         # polyline
         y_raw = data[:, ch_idx]
         points_str = _format_points(t_svg, y_raw)
@@ -629,11 +693,26 @@ def stackplot_svg(
                 "points": points_str,
                 "class": "trace",
                 "stroke": ch_color,
-                "stroke-width": str(trace_width),
+                "stroke-width": str(ch_width),
                 "transform": f"scale(1,{y_scale_factor:.6f})",
                 "data-yscale": f"{y_scale_factor:.6f}",
             },
         )
+
+        # per-channel calibration annotation (small text at right edge)
+        if channel_cal is not None and channel_cal[ch_idx] is not None:
+            cal_val = float(channel_cal[ch_idx])
+            ET.SubElement(
+                ch_g,
+                "text",
+                {
+                    "x": f"{label_margin + plot_width + 1:.2f}",
+                    "y": "0",
+                    "class": "channel-cal",
+                    "font-size": "2.2",
+                    "fill": "#666",
+                },
+            ).text = f"{cal_val:g}µV"
 
     # annotations layer
     ET.SubElement(svg, "g", {"class": "annotations"})
@@ -808,6 +887,19 @@ def show_montage_display_svg(
     gaps_mm = display.resolve_gaps_mm()
     colors = display.resolve_colors()
     gains = display.resolve_gains()
+    # Per-channel clinical attributes — None means "inherit global".
+    per_chan_sens: List[Optional[float]] = []
+    per_chan_lf: List[Optional[float]] = []
+    per_chan_hf: List[Optional[float]] = []
+    per_chan_cal: List[Optional[float]] = []
+    per_chan_width: List[Optional[float]] = []
+    for lbl in ordered:
+        override = display.channel_overrides.get(lbl)
+        per_chan_sens.append(override.sensitivity if override else None)
+        per_chan_lf.append(override.lf if override else None)
+        per_chan_hf.append(override.hf if override else None)
+        per_chan_cal.append(override.cal if override else None)
+        per_chan_width.append(override.width if override else None)
 
     label_to_row = {lbl: i for i, lbl in enumerate(montage_labels)}
     try:
@@ -818,6 +910,18 @@ def show_montage_display_svg(
             f"montage_labels {montage_labels}"
         ) from None
     derived_ordered = derived[indices]
+
+    # Apply per-channel bandpass before stacking (only if any channel has
+    # LF or HF set).
+    if any(v is not None for v in per_chan_lf) or any(
+        v is not None for v in per_chan_hf
+    ):
+        derived_ordered = apply_per_channel_bandpass(
+            derived_ordered,
+            sample_frequency,
+            channel_lf=per_chan_lf,
+            channel_hf=per_chan_hf,
+        )
 
     # MontageDisplay lists channels top-down (file order matches visual
     # order); stackplot_svg numbers channels bottom-up. Reverse so the
@@ -831,6 +935,9 @@ def show_montage_display_svg(
     ordered_render = list(reversed(ordered))
     colors_render = list(reversed(colors))
     gains_render = list(reversed(gains))
+    widths_render = list(reversed(per_chan_width))
+    cal_render = list(reversed(per_chan_cal))
+    sens_render = list(reversed(per_chan_sens))
     if n > 0:
         gaps_render = list(reversed(gaps_mm[:-1])) + [0.0]
     else:
@@ -844,7 +951,21 @@ def show_montage_display_svg(
             gains_render, dtype=float
         )
 
-    for reserved in ("ylabels", "channel_gaps_mm", "channel_colors"):
+    # Fold per-channel sensitivity into yscale: smaller channel sens means
+    # larger trace, so yscale[i] *= global_sens / channel_sens[i].
+    global_sens = kwargs.get("sensitivity")
+    if global_sens is not None:
+        for i, ch_sens in enumerate(sens_render):
+            if ch_sens is not None and ch_sens > 0:
+                yscale_arr[i] *= float(global_sens) / float(ch_sens)
+
+    for reserved in (
+        "ylabels",
+        "channel_gaps_mm",
+        "channel_colors",
+        "channel_widths",
+        "channel_cal",
+    ):
         kwargs.pop(reserved, None)
 
     return stackplot_svg(
@@ -854,6 +975,8 @@ def show_montage_display_svg(
         yscale=yscale_arr,
         channel_gaps_mm=gaps_render,
         channel_colors=colors_render,
+        channel_widths=widths_render,
+        channel_cal=cal_render,
         **kwargs,
     )
 
