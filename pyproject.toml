@@ -30,6 +30,7 @@ dependencies = [
     "ztml>=0.2.4",
     "datastar-py>=0.8.0",
     "fastapi>=0.135.2",
+    "jsonschema>=4",  # MontageDisplay JSON profile validation
 ]
 
 # may want to break this out into different backends
