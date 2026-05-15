@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/eegml/eegvis/montage_display.schema.json",
+  "title": "MontageDisplay profile",
+  "description": "Schema for eegvis MontageDisplay JSON profiles. See SCHEMA.md for prose.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "name": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "derivation_ref": {"type": ["string", "null"]},
+    "derivation": {"$ref": "#/$defs/Derivation"},
+    "groups": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/ChannelGroup"}
+    },
+    "channel_overrides": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/ChannelStyle"}
+    }
+  },
+  "oneOf": [
+    {
+      "title": "named built-in derivation",
+      "required": ["derivation_ref"],
+      "properties": {
+        "derivation_ref": {"type": "string", "minLength": 1}
+      },
+      "not": {
+        "anyOf": [
+          {"required": ["derivation"]}
+        ]
+      }
+    },
+    {
+      "title": "self-contained derivation",
+      "required": ["derivation"],
+      "properties": {
+        "derivation_ref": {"type": "null"}
+      }
+    }
+  ],
+  "$defs": {
+    "Derivation": {
+      "description": "Either a symbolic derivation or an explicit matrix.",
+      "oneOf": [
+        {"$ref": "#/$defs/SymbolicDerivation"},
+        {"$ref": "#/$defs/MatrixDerivation"}
+      ]
+    },
+    "SymbolicDerivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "channels"],
+      "properties": {
+        "type": {"const": "symbolic"},
+        "reversed_polarity": {"type": "boolean"},
+        "virtual_channels": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/VirtualElectrode"}
+        },
+        "channels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/SymbolicChannel"}
+        }
+      }
+    },
+    "MatrixDerivation": {
+      "type": "object",
+      "description": "Explicit matrix form. The 'type' field is optional for backward compatibility; absent means matrix.",
+      "additionalProperties": false,
+      "required": ["montage_labels", "rec_labels", "matrix"],
+      "properties": {
+        "type": {"const": "matrix"},
+        "reversed_polarity": {"type": "boolean"},
+        "montage_labels": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "rec_labels": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "matrix": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {"type": "number"}
+          }
+        }
+      }
+    },
+    "VirtualElectrode": {
+      "description": "Named linear combination of physical electrodes.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "electrodes"],
+          "properties": {
+            "type": {"const": "mean"},
+            "electrodes": {
+              "type": "array",
+              "items": {"type": "string"},
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "weights"],
+          "properties": {
+            "type": {"const": "weighted"},
+            "weights": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {"type": "number"}
+            }
+          }
+        }
+      ]
+    },
+    "SymbolicChannel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "diffpair": {
+          "description": "Bipolar shorthand: [a, b] -> +1 on a, -1 on b.",
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "sum_coefficients": {
+          "description": "General linear combination: name -> weight.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"type": "number"}
+        }
+      },
+      "oneOf": [
+        {"required": ["diffpair"], "not": {"required": ["sum_coefficients"]}},
+        {"required": ["sum_coefficients"], "not": {"required": ["diffpair"]}}
+      ]
+    },
+    "ChannelGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "channels"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "channels": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "color": {"$ref": "#/$defs/ColorOrNull"},
+        "gap_after_mm": {"type": "number", "minimum": 0}
+      }
+    },
+    "ChannelStyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1},
+        "color": {"$ref": "#/$defs/ColorOrNull"},
+        "gap_after_mm": {"type": ["number", "null"], "minimum": 0},
+        "visible": {"type": "boolean"},
+        "gain": {"type": "number"},
+        "sensitivity": {
+          "description": "Per-channel sensitivity (μV/mm). Overrides the renderer's global sensitivity.",
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
+        },
+        "lf": {
+          "description": "Per-channel low-frequency cutoff / high-pass filter (Hz). 0 or null disables.",
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "hf": {
+          "description": "Per-channel high-frequency cutoff / low-pass filter (Hz). 0 or null disables.",
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "cal": {
+          "description": "Per-channel calibration amplitude (μV).",
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
+        },
+        "width": {
+          "description": "Per-channel trace stroke width (mm).",
+          "type": ["number", "null"],
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "ColorOrNull": {
+      "description": "CSS color (hex like #ab12cd, rgb(), or named) or null for theme default.",
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "minLength": 1}
+      ]
+    }
+  }
+}
