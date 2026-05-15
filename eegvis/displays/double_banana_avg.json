@@ -1,0 +1,227 @@
+{
+  "$schema": "./montage_display.schema.json",
+  "name": "double_banana_avg",
+  "description": "Average-reference montage that uses the same electrode set as double banana but references every channel to the common average instead of forming bipolar chains. Channels are grouped in the same clinical bands as double_banana (LT, LL, midline, RR, RT) with the same blue/black/red color coding and large spacers at the two left/right transitions around the midline.",
+  "derivation": {
+    "type": "symbolic",
+    "reversed_polarity": true,
+    "virtual_channels": {
+      "AVG": {
+        "type": "mean",
+        "electrodes": [
+          "Fp1",
+          "F7",
+          "T3",
+          "T5",
+          "Fp2",
+          "F8",
+          "T4",
+          "T6",
+          "F3",
+          "C3",
+          "P3",
+          "O1",
+          "F4",
+          "C4",
+          "P4",
+          "O2",
+          "Fz",
+          "Cz",
+          "Pz"
+        ]
+      }
+    },
+    "channels": [
+      {
+        "label": "Fp1-AVG",
+        "diffpair": [
+          "Fp1",
+          "AVG"
+        ]
+      },
+      {
+        "label": "F7-AVG",
+        "diffpair": [
+          "F7",
+          "AVG"
+        ]
+      },
+      {
+        "label": "T3-AVG",
+        "diffpair": [
+          "T3",
+          "AVG"
+        ]
+      },
+      {
+        "label": "T5-AVG",
+        "diffpair": [
+          "T5",
+          "AVG"
+        ]
+      },
+      {
+        "label": "F3-AVG",
+        "diffpair": [
+          "F3",
+          "AVG"
+        ]
+      },
+      {
+        "label": "C3-AVG",
+        "diffpair": [
+          "C3",
+          "AVG"
+        ]
+      },
+      {
+        "label": "P3-AVG",
+        "diffpair": [
+          "P3",
+          "AVG"
+        ]
+      },
+      {
+        "label": "O1-AVG",
+        "diffpair": [
+          "O1",
+          "AVG"
+        ]
+      },
+      {
+        "label": "Fz-AVG",
+        "diffpair": [
+          "Fz",
+          "AVG"
+        ]
+      },
+      {
+        "label": "Cz-AVG",
+        "diffpair": [
+          "Cz",
+          "AVG"
+        ]
+      },
+      {
+        "label": "Pz-AVG",
+        "diffpair": [
+          "Pz",
+          "AVG"
+        ]
+      },
+      {
+        "label": "F4-AVG",
+        "diffpair": [
+          "F4",
+          "AVG"
+        ]
+      },
+      {
+        "label": "C4-AVG",
+        "diffpair": [
+          "C4",
+          "AVG"
+        ]
+      },
+      {
+        "label": "P4-AVG",
+        "diffpair": [
+          "P4",
+          "AVG"
+        ]
+      },
+      {
+        "label": "O2-AVG",
+        "diffpair": [
+          "O2",
+          "AVG"
+        ]
+      },
+      {
+        "label": "Fp2-AVG",
+        "diffpair": [
+          "Fp2",
+          "AVG"
+        ]
+      },
+      {
+        "label": "F8-AVG",
+        "diffpair": [
+          "F8",
+          "AVG"
+        ]
+      },
+      {
+        "label": "T4-AVG",
+        "diffpair": [
+          "T4",
+          "AVG"
+        ]
+      },
+      {
+        "label": "T6-AVG",
+        "diffpair": [
+          "T6",
+          "AVG"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "left_temporal",
+      "channels": [
+        "Fp1-AVG",
+        "F7-AVG",
+        "T3-AVG",
+        "T5-AVG"
+      ],
+      "color": "#1f4e79",
+      "gap_after_mm": 2.0
+    },
+    {
+      "name": "left_parasagittal",
+      "channels": [
+        "F3-AVG",
+        "C3-AVG",
+        "P3-AVG",
+        "O1-AVG"
+      ],
+      "color": "#1f4e79",
+      "gap_after_mm": 5.0
+    },
+    {
+      "name": "midline",
+      "channels": [
+        "Fz-AVG",
+        "Cz-AVG",
+        "Pz-AVG"
+      ],
+      "color": "#000000",
+      "gap_after_mm": 5.0
+    },
+    {
+      "name": "right_parasagittal",
+      "channels": [
+        "F4-AVG",
+        "C4-AVG",
+        "P4-AVG",
+        "O2-AVG"
+      ],
+      "color": "#a8323e",
+      "gap_after_mm": 2.0
+    },
+    {
+      "name": "right_temporal",
+      "channels": [
+        "Fp2-AVG",
+        "F8-AVG",
+        "T4-AVG",
+        "T6-AVG"
+      ],
+      "color": "#a8323e",
+      "gap_after_mm": 0.0
+    }
+  ],
+  "channel_overrides": {}
+}
