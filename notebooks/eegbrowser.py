@@ -60,6 +60,7 @@ ipywidgets.__version__
 
 # %%
 import scipy
+
 scipy.__version__
 
 # %%

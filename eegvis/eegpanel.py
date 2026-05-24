@@ -18,7 +18,7 @@ import panel.widgets
 # get layouts, start ith row, column
 import bokeh.layouts
 
-#%%
+# %%
 import bokeh.plotting
 from bokeh.models import FuncTickFormatter, Range1d
 
@@ -49,7 +49,7 @@ import eegml_signal.filters as esfilters
 import pdb
 import signalslot
 
-#%%
+# %%
 
 # """
 # notes on setting ranges for a plot
@@ -66,7 +66,7 @@ import signalslot
 
 # this is not used yet
 
-#%% [markdown]
+# %% [markdown]
 # ### [Bokeh Callbacks](https://docs.bokeh.org/en/latest/docs/user_guide/interaction/widgets.html)
 # To use widgets, you must add them to your document and define their callbacks. Widgets can be added directly to the document root or nested inside a layout. There are two ways to use a widget’s functionality:
 
@@ -93,11 +93,11 @@ import signalslot
 # radio_group = RadioGroup(labels=["Option 1", "Option 2", "Option 3"], active=0)
 # radio_group.on_click(my_radio_handler)
 # ```
-#%% [markdown]
+# %% [markdown]
 # ### [bokeh.events](https://docs.bokeh.org/en/latest/docs/reference/events.html)
 
 
-#%%
+# %%
 
 
 def ignore_warnings():
@@ -139,7 +139,7 @@ class EeghdfBrowser:
         start_seconds=-1,
         montage="neonatal",
         montage_options={},
-        tuh = True,
+        tuh=True,
         yscale=1.0,
         plot_width=950,
         plot_height=600,
@@ -149,7 +149,7 @@ class EeghdfBrowser:
         @montage is either a string in the standard list or a montageview factory
         @eeghdf_files - a list of eeghdf.Eeeghdf instances
         @page_width_seconds = how big to make the view in seconds
-        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function
         @start_seconds - center view on this point in time
         @tuh - bool indicating if signal is coming from tuh
 
@@ -260,7 +260,7 @@ class EeghdfBrowser:
 
         # TODO: this HACK is model specific, we cut out last (signal_length % 60) secs
         # we do this b/c model does not output probs for clips < 60sec
-        #pdb.set_trace()
+        # pdb.set_trace()
         signal_len = self.eeghdf_file.phys_signals.shape[1] / self.fs
         remaining_samples = int(self.fs * (signal_len % 60))
         if remaining_samples > 0:
@@ -285,8 +285,8 @@ class EeghdfBrowser:
 
         # reference labels are used for montages, since this is an eeghdf file, it can provide these
 
-        #TODO: stnaford uses shortcut labels!
-        self.ref_labels = eeghdf_file.electrode_labels #eeghdf_file.shortcut_elabels
+        # TODO: stnaford uses shortcut labels!
+        self.ref_labels = eeghdf_file.electrode_labels  # eeghdf_file.shortcut_elabels
 
         if not montage_options:
             # then use builtins and/or ones in the file
@@ -303,11 +303,11 @@ class EeghdfBrowser:
         self.current_montage_instance = None
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-                #try:
+                # try:
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
-                #except:
+                # except:
                 #    self.data_source.data.update(dict(xs=[0], ys=[0]))
                 #    self.current_montage_instance = montage_options[0](self.ref_labels)
             else:
@@ -317,7 +317,6 @@ class EeghdfBrowser:
                 self.current_montage_instance = montage(self.ref_labels)
                 montage_options[self.current_montage_instance.name] = montage
             else:  # use default
-
                 self.current_montage_instance = montage_options[0](self.ref_labels)
 
         assert self.current_montage_instance
@@ -477,9 +476,7 @@ class EeghdfBrowser:
 
         ticklocs = []
         if not "plot_width" in kwargs:
-            kwargs[
-                "plot_width"
-            ] = (
+            kwargs["plot_width"] = (
                 self.ui_plot_width
             )  # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
         if not "plot_height" in kwargs:
@@ -608,7 +605,7 @@ class EeghdfBrowser:
 
         ## xlim(*xlm)
         # xticks(np.linspace(xlm, 10))
-        
+
         dmin = data.min()
         dmax = data.max()
         dr = (dmax - dmin) * 0.7  # Crowd them a bit.
@@ -752,7 +749,7 @@ class EeghdfBrowser:
 
         @ylabels a list of labels for each row ("channel") in marray
         @yscale with increase (mutiply) the signals in each row by this amount
-        @montage instance 
+        @montage instance
 
         """
 
@@ -803,9 +800,7 @@ class EeghdfBrowser:
 
         ticklocs = []
         if not "plot_width" in kwargs:
-            kwargs[
-                "plot_width"
-            ] = (
+            kwargs["plot_width"] = (
                 self.ui_plot_width
             )  # 950  # a default width that is wider but can just fit in jupyter, not sure if plot_width is preferred
         if not "plot_height" in kwargs:
@@ -927,7 +922,7 @@ class EeghdfBrowser:
                 self.current_montage_instance.name,
                 self.montage_options,
             )
-            self.loc_sec = int(self.page_width_secs/2)
+            self.loc_sec = int(self.page_width_secs / 2)
             self.update_plot_after_montage_change()
             self.update()
             self.filename_signal.emit(filename=newvalue)
@@ -1044,7 +1039,7 @@ class EeghdfBrowser:
             self.update()
 
         def ui_gain_watcher(ev, parent=self):
-            "guess how to write a call back for a param watch "
+            "guess how to write a call back for a param watch"
             # print(repr(ev), repr(ev.new))
             # print(f"updating {self.yscale} -> {ev.new}")
             self.yscale = float(ev.new)
@@ -1125,7 +1120,10 @@ class EeghdfBrowser:
             self.update()
 
         self.ui_bottom_bar_layout = bokeh.layouts.row(
-            self.ui_buttonback, self.ui_buttonf, self.ui_buttonback1, self.ui_buttonf1,
+            self.ui_buttonback,
+            self.ui_buttonf,
+            self.ui_buttonback1,
+            self.ui_buttonf1,
         )
         return self.ui_bottom_bar_layout
         # print('displayed buttons')
@@ -1195,7 +1193,7 @@ class EegBrowser(EeghdfBrowser):
         @montage is either a string in the standard list or a montageview factory
         @eeghdf_file - an eeghdf.Eeeghdf instance
         @page_width_seconds = how big to make the view in seconds
-        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @montage - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function
         @start_seconds - center view on this point in time
 
         BTW 'trace' is what NK calls its 'as recorded' montage - might be better to call 'raw'
@@ -1234,7 +1232,6 @@ class EegBrowser(EeghdfBrowser):
         # defines self.current_montage_instance
         if type(montage) == str:  # then we have some work to do
             if montage in montage_options:
-
                 self.current_montage_instance = montage_options[montage](
                     self.ref_labels
                 )
@@ -1245,7 +1242,6 @@ class EegBrowser(EeghdfBrowser):
                 self.current_montage_instance = montage(self.ref_labels)
                 montage_options[self.current_montage_instance.name] = montage
             else:  # use default
-
                 self.current_montage_instance = montage_options[0](self.ref_labels)
 
         assert self.current_montage_instance

@@ -1,0 +1,209 @@
+{
+  "$schema": "./montage_display.schema.json",
+  "name": "tcp",
+  "description": "Temporal Central Parasagittal montage (20 channels). Left chains on top, central coronal row through the midline, right chains on the bottom. The coronal row (A1-T3 -> T4-A2) bridges the hemispheres, so the spacers are placed on either side of it to mark the left/right transitions.",
+  "derivation": {
+    "type": "symbolic",
+    "reversed_polarity": true,
+    "channels": [
+      {
+        "label": "Fp1-F7",
+        "diffpair": [
+          "Fp1",
+          "F7"
+        ]
+      },
+      {
+        "label": "F7-T3",
+        "diffpair": [
+          "F7",
+          "T3"
+        ]
+      },
+      {
+        "label": "T3-T5",
+        "diffpair": [
+          "T3",
+          "T5"
+        ]
+      },
+      {
+        "label": "T5-O1",
+        "diffpair": [
+          "T5",
+          "O1"
+        ]
+      },
+      {
+        "label": "Fp2-F8",
+        "diffpair": [
+          "Fp2",
+          "F8"
+        ]
+      },
+      {
+        "label": "F8-T4",
+        "diffpair": [
+          "F8",
+          "T4"
+        ]
+      },
+      {
+        "label": "T4-T6",
+        "diffpair": [
+          "T4",
+          "T6"
+        ]
+      },
+      {
+        "label": "T6-O2",
+        "diffpair": [
+          "T6",
+          "O2"
+        ]
+      },
+      {
+        "label": "A1-T3",
+        "diffpair": [
+          "A1",
+          "T3"
+        ]
+      },
+      {
+        "label": "T3-C3",
+        "diffpair": [
+          "T3",
+          "C3"
+        ]
+      },
+      {
+        "label": "C3-Cz",
+        "diffpair": [
+          "C3",
+          "Cz"
+        ]
+      },
+      {
+        "label": "Cz-C4",
+        "diffpair": [
+          "Cz",
+          "C4"
+        ]
+      },
+      {
+        "label": "C4-T4",
+        "diffpair": [
+          "C4",
+          "T4"
+        ]
+      },
+      {
+        "label": "T4-A2",
+        "diffpair": [
+          "T4",
+          "A2"
+        ]
+      },
+      {
+        "label": "Fp1-F3",
+        "diffpair": [
+          "Fp1",
+          "F3"
+        ]
+      },
+      {
+        "label": "F3-C3",
+        "diffpair": [
+          "F3",
+          "C3"
+        ]
+      },
+      {
+        "label": "C3-P3",
+        "diffpair": [
+          "C3",
+          "P3"
+        ]
+      },
+      {
+        "label": "Fp2-F4",
+        "diffpair": [
+          "Fp2",
+          "F4"
+        ]
+      },
+      {
+        "label": "F4-C4",
+        "diffpair": [
+          "F4",
+          "C4"
+        ]
+      },
+      {
+        "label": "C4-P4",
+        "diffpair": [
+          "C4",
+          "P4"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "left_temporal",
+      "channels": [
+        "Fp1-F7",
+        "F7-T3",
+        "T3-T5",
+        "T5-O1"
+      ],
+      "color": "#1f4e79",
+      "gap_after_mm": 2.0
+    },
+    {
+      "name": "left_parasagittal",
+      "channels": [
+        "Fp1-F3",
+        "F3-C3",
+        "C3-P3"
+      ],
+      "color": "#1f4e79",
+      "gap_after_mm": 5.0
+    },
+    {
+      "name": "coronal",
+      "channels": [
+        "A1-T3",
+        "T3-C3",
+        "C3-Cz",
+        "Cz-C4",
+        "C4-T4",
+        "T4-A2"
+      ],
+      "color": "#000000",
+      "gap_after_mm": 5.0
+    },
+    {
+      "name": "right_parasagittal",
+      "channels": [
+        "Fp2-F4",
+        "F4-C4",
+        "C4-P4"
+      ],
+      "color": "#a8323e",
+      "gap_after_mm": 2.0
+    },
+    {
+      "name": "right_temporal",
+      "channels": [
+        "Fp2-F8",
+        "F8-T4",
+        "T4-T6",
+        "T6-O2"
+      ],
+      "color": "#a8323e",
+      "gap_after_mm": 0.0
+    }
+  ],
+  "channel_overrides": {}
+}

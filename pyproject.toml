@@ -15,6 +15,7 @@ classifiers = [
     ]
 
 dynamic = ["version", "description"] # this means will be extracted from module docstring
+# set requires python
 
 dependencies = [
     "numpy",
@@ -26,6 +27,10 @@ dependencies = [
     "bokeh>=0.12.16", # required for bokeh backend
     "ipywidgets>=7.0",
     "panel",   # needed for more elaborate ui/web dashboard
+    "ztml>=0.2.4",
+    "datastar-py>=0.8.0",
+    "fastapi>=0.135.2",
+    "jsonschema>=4",  # MontageDisplay JSON profile validation
 ]
 
 # may want to break this out into different backends
@@ -39,3 +44,9 @@ pyedflib = ["pyedflib<=0.1.22"] # sample_frequency is wrong after this will be f
 
 [project.urls]
 Home = "https://github.com/eegml/eegvis"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "pytest>=9.0.2",
+]

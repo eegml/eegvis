@@ -39,7 +39,7 @@ from pprint import pprint
 import eegvis.stacklineplot as stacklineplot
 import eegvis.montageview as montageview
 
-#%%
+# %%
 matplotlib.rcParams["figure.dpi"] = 100  # 100 dpi
 matplotlib.rcParams["figure.figsize"] = (8, 6)
 # %%
@@ -103,7 +103,7 @@ stacklineplot.show_epoch_centered(
     ylabels=ylabels,
 )
 
-#%%
+# %%
 stacklineplot.show_epoch_centered(
     signals,
     goto_sec,
@@ -138,7 +138,7 @@ stacklineplot.show_epoch_centered(
     chstop=chstop,
     ylabels=ylabels,
 )
-#%%
+# %%
 plt.figure(figsize=(16, 8))
 stacklineplot.show_epoch_centered(
     signals,
@@ -187,7 +187,7 @@ stacklineplot.show_montage_centered(
     ysensitivity=7.0,
 )  # the yscale multiples the signals by this number, it is a bit of a hack
 
-#%%
+# %%
 print("plot with ysensitivity=20.0")
 plt.figure(figsize=(16, 8))
 stacklineplot.show_montage_centered(
@@ -217,7 +217,9 @@ tarray = signals[0:19, 0 : int(FS * 10)].T
 
 # %%
 stacklineplot.stackplot_t_with_heatmap(
-    tarray, seconds=10.0, heatmap_image=heatmap_ex  # without seconds shows samples
+    tarray,
+    seconds=10.0,
+    heatmap_image=heatmap_ex,  # without seconds shows samples
 )
 
 # %% [markdown]

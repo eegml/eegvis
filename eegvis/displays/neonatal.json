@@ -1,0 +1,191 @@
+{
+  "$schema": "./montage_display.schema.json",
+  "name": "neonatal",
+  "description": "Modified 10-20 neonatal montage based on Shellhaas (2011) ACNS guideline 13, plus an occipital traversal (T3-O1 -> O1-O2 -> O2-T4). 16 channels arranged as paired temporal then paired central long chains, followed by a coronal row, midline, and a back occipital traversal. Spacers fall at each left/right transition.",
+  "derivation": {
+    "type": "symbolic",
+    "reversed_polarity": true,
+    "channels": [
+      {
+        "label": "Fp1-T3",
+        "diffpair": [
+          "Fp1",
+          "T3"
+        ]
+      },
+      {
+        "label": "T3-O1",
+        "diffpair": [
+          "T3",
+          "O1"
+        ]
+      },
+      {
+        "label": "Fp2-T4",
+        "diffpair": [
+          "Fp2",
+          "T4"
+        ]
+      },
+      {
+        "label": "T4-O2",
+        "diffpair": [
+          "T4",
+          "O2"
+        ]
+      },
+      {
+        "label": "Fp1-C3",
+        "diffpair": [
+          "Fp1",
+          "C3"
+        ]
+      },
+      {
+        "label": "C3-O1",
+        "diffpair": [
+          "C3",
+          "O1"
+        ]
+      },
+      {
+        "label": "Fp2-C4",
+        "diffpair": [
+          "Fp2",
+          "C4"
+        ]
+      },
+      {
+        "label": "C4-O2",
+        "diffpair": [
+          "C4",
+          "O2"
+        ]
+      },
+      {
+        "label": "T3-C3",
+        "diffpair": [
+          "T3",
+          "C3"
+        ]
+      },
+      {
+        "label": "C3-Cz",
+        "diffpair": [
+          "C3",
+          "Cz"
+        ]
+      },
+      {
+        "label": "Cz-C4",
+        "diffpair": [
+          "Cz",
+          "C4"
+        ]
+      },
+      {
+        "label": "C4-T4",
+        "diffpair": [
+          "C4",
+          "T4"
+        ]
+      },
+      {
+        "label": "Fz-Cz",
+        "diffpair": [
+          "Fz",
+          "Cz"
+        ]
+      },
+      {
+        "label": "Cz-Pz",
+        "diffpair": [
+          "Cz",
+          "Pz"
+        ]
+      },
+      {
+        "label": "O1-O2",
+        "diffpair": [
+          "O1",
+          "O2"
+        ]
+      },
+      {
+        "label": "O2-T4",
+        "diffpair": [
+          "O2",
+          "T4"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "left_temporal",
+      "channels": [
+        "Fp1-T3",
+        "T3-O1"
+      ],
+      "color": "#1f4e79",
+      "gap_after_mm": 2.0
+    },
+    {
+      "name": "right_temporal",
+      "channels": [
+        "Fp2-T4",
+        "T4-O2"
+      ],
+      "color": "#a8323e",
+      "gap_after_mm": 5.0
+    },
+    {
+      "name": "left_central",
+      "channels": [
+        "Fp1-C3",
+        "C3-O1"
+      ],
+      "color": "#1f4e79",
+      "gap_after_mm": 2.0
+    },
+    {
+      "name": "right_central",
+      "channels": [
+        "Fp2-C4",
+        "C4-O2"
+      ],
+      "color": "#a8323e",
+      "gap_after_mm": 5.0
+    },
+    {
+      "name": "coronal",
+      "channels": [
+        "T3-C3",
+        "C3-Cz",
+        "Cz-C4",
+        "C4-T4"
+      ],
+      "color": "#000000",
+      "gap_after_mm": 4.0
+    },
+    {
+      "name": "midline",
+      "channels": [
+        "Fz-Cz",
+        "Cz-Pz"
+      ],
+      "color": "#000000",
+      "gap_after_mm": 4.0
+    },
+    {
+      "name": "back",
+      "channels": [
+        "O1-O2",
+        "O2-T4"
+      ],
+      "color": "#000000",
+      "gap_after_mm": 0.0
+    }
+  ],
+  "channel_overrides": {}
+}

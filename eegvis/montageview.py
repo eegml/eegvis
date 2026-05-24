@@ -160,7 +160,7 @@ class MontageView(object):
 
     This linear transformation is defined in the xarray matrix V
 
-    For example in the bipolar double banana montage the electrodes 
+    For example in the bipolar double banana montage the electrodes
     Fp1 and F7 are combined into (Fp1 - F7)
 
     """
@@ -292,7 +292,7 @@ class DoubleBananaMontageView(MontageView):
 
     *** NOTE this uses the clinical convention and reverses the polarity by default
     so that "up is negative" ***
-    
+
     """
 
     DB_LABELS = [
@@ -330,7 +330,7 @@ class DoubleBananaMontageView(MontageView):
 
 class DBrefMontageView(MontageView):
     """This montage derivation uses the same electrodes as double banana but uses the as recorded reference
-    so it is very simple 
+    so it is very simple
     """
 
     DBREF_LABELS = [
@@ -618,6 +618,96 @@ class TCPMontageView(MontageView):
         V.loc["C4-P4", "P4"] = -1
 
 
+class CircumferentialMontageView(MontageView):
+    """Circumferential ("circle") montage that traces the head perimeter.
+
+    The chain runs counter-clockwise starting at Fp1: down the left side
+    (Fp1 -> F7 -> T3 -> T5 -> O1), across the back (O1 -> O2), up the
+    right side (O2 -> T6 -> T4 -> F8 -> Fp2), and across the front
+    (Fp2 -> Fp1) to close the loop. Useful for picking up phase reversals
+    that wrap around the edge of the scalp.
+    """
+
+    CIRCLE_LABELS = [
+        "Fp1-F7",
+        "F7-T3",
+        "T3-T5",
+        "T5-O1",
+        "O1-O2",
+        "O2-T6",
+        "T6-T4",
+        "T4-F8",
+        "F8-Fp2",
+        "Fp2-Fp1",
+    ]
+
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(
+            self.CIRCLE_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
+        V = self.V
+        for pair in self.CIRCLE_LABELS:
+            a, b = pair.split("-")
+            V.loc[pair, a] = 1
+            V.loc[pair, b] = -1
+        if reversed_polarity:
+            self.V = (-1) * self.V
+        self.name = "circle"
+        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
+
+
+class TrueSphenoidalMontageView(MontageView):
+    """True sphenoidal montage: threads the surgically placed sphenoidal
+    electrodes (Sp1, Sp2) into the anterior temporal chains.
+
+    "True" here distinguishes this from anterior-temporal proxy montages
+    (e.g. using FT9/FT10 or T1/T2 surface positions): this derivation
+    references the actual sphenoidal needle electrodes that sit near the
+    foramen ovale, so it requires those leads to be in ``rec_labels``.
+
+    Replaces the standard F7-T3 / F8-T4 links with F7-Sp1, Sp1-T3 (and
+    mirror), pulling mesial-temporal activity into view. The remaining
+    parasagittal and midline chains are unchanged from double banana.
+    """
+
+    SPHENOIDAL_LABELS = [
+        "Fp1-F7",
+        "F7-Sp1",
+        "Sp1-T3",
+        "T3-T5",
+        "T5-O1",
+        "Fp2-F8",
+        "F8-Sp2",
+        "Sp2-T4",
+        "T4-T6",
+        "T6-O2",
+        "Fp1-F3",
+        "F3-C3",
+        "C3-P3",
+        "P3-O1",
+        "Fp2-F4",
+        "F4-C4",
+        "C4-P4",
+        "P4-O2",
+        "Fz-Cz",
+        "Cz-Pz",
+    ]
+
+    def __init__(self, rec_labels, reversed_polarity=True):
+        super().__init__(
+            self.SPHENOIDAL_LABELS, rec_labels, reversed_polarity=reversed_polarity
+        )
+        V = self.V
+        for pair in self.SPHENOIDAL_LABELS:
+            a, b = pair.split("-")
+            V.loc[pair, a] = 1
+            V.loc[pair, b] = -1
+        if reversed_polarity:
+            self.V = (-1) * self.V
+        self.name = "true sphenoidal"
+        self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
+
+
 ### A Neonatal montage (modified 10-20)
 class NeonatalMontageView(MontageView):
     """
@@ -625,10 +715,10 @@ class NeonatalMontageView(MontageView):
     where rec_labels[i] = <channel label>
     where channel labels is string such as
     "Fp1", "T3", "O2", etc in the 10-20 nomenclature
-    need to have tose which are included in 
+    need to have tose which are included in
     NeonatalMontageView.NEONATAL_LABELS
-    
-    10-20 montage modified for neonatal head sizes 
+
+    10-20 montage modified for neonatal head sizes
     This is more or less Montage 1 in Shellhaas (2011) table 3 of
     https://www.acns.org/pdf/guidelines/Guideline-13.pdf plus it adds
     the [ 'T3-O1','O1-O2','O2-T4'] chain to visualize the occipital
@@ -676,26 +766,25 @@ class NeonatalMontageView(MontageView):
         self.full_name = "%s, up=%s" % (self.name, POSCHOICE[reversed_polarity])
 
     def neonatal_set_matrix(self, V):
-        # pdb.set_trace()
-        V.loc["Fp1-T3", "FP1"] = 1
+        V.loc["Fp1-T3", "Fp1"] = 1
         V.loc["Fp1-T3", "T3"] = -1
 
         V.loc["T3-O1", "T3"] = 1
         V.loc["T3-O1", "O1"] = -1
 
-        V.loc["Fp2-T4", "FP2"] = 1
+        V.loc["Fp2-T4", "Fp2"] = 1
         V.loc["Fp2-T4", "T4"] = -1
 
         V.loc["T4-O2", "T4"] = 1
         V.loc["T4-O2", "O2"] = -1
 
-        V.loc["Fp1-C3", "FP1"] = 1
+        V.loc["Fp1-C3", "Fp1"] = 1
         V.loc["Fp1-C3", "C3"] = -1
 
         V.loc["C3-O1", "C3"] = 1
         V.loc["C3-O1", "O1"] = -1
 
-        V.loc["Fp2-C4", "FP2"] = 1
+        V.loc["Fp2-C4", "Fp2"] = 1
         V.loc["Fp2-C4", "C4"] = -1
 
         V.loc["C4-O2", "C4"] = 1
@@ -705,22 +794,19 @@ class NeonatalMontageView(MontageView):
         V.loc["T3-C3", "C3"] = -1
 
         V.loc["C3-Cz", "C3"] = 1
-        V.loc["C3-Cz", "CZ"] = -1
+        V.loc["C3-Cz", "Cz"] = -1
 
-        V.loc["Cz-C4", "CZ"] = 1
+        V.loc["Cz-C4", "Cz"] = 1
         V.loc["Cz-C4", "C4"] = -1
-
-        V.loc["C4-T4", "CZ"] = 1
-        V.loc["C4-T4", "T4"] = -1
 
         V.loc["C4-T4", "C4"] = 1
         V.loc["C4-T4", "T4"] = -1
 
-        V.loc["Fz-Cz", "FZ"] = 1
-        V.loc["Fz-Cz", "CZ"] = -1
+        V.loc["Fz-Cz", "Fz"] = 1
+        V.loc["Fz-Cz", "Cz"] = -1
 
-        V.loc["T3-O1", "T3"] = 1
-        V.loc["T3-O1", "O1"] = -1
+        V.loc["Cz-Pz", "Cz"] = 1
+        V.loc["Cz-Pz", "Pz"] = -1
 
         V.loc["O1-O2", "O1"] = 1
         V.loc["O1-O2", "O2"] = -1
@@ -844,7 +930,7 @@ class CommonAvgRefMontageView(MontageView):
             self.CAR_LABELS, rec_labels, reversed_polarity=reversed_polarity
         )
 
-        self.set_matrix(self.V)  
+        self.set_matrix(self.V)
 
         if reversed_polarity:
             self.V = (-1) * self.V

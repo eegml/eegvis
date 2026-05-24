@@ -11,6 +11,7 @@ CustomJS Callboacks allow you to activate things in a plot but they
 don't call into python (just runs in the browser side)
 
 """
+
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
@@ -27,7 +28,7 @@ import eegvis.montageview as montageview
 
 # p = bplt.figure()
 # p.line([1,2,3,4,5], [6,7,2,4,5], line_width=2)
-# bokeh.plotting.show(p)  # OR 
+# bokeh.plotting.show(p)  # OR
 # bplt.show(p)
 
 # Note from http://bokeh.pydata.org/en/latest/docs/user_guide/styling.html
@@ -48,7 +49,7 @@ def stackplot(
     ylabels=None,
     yscale=1.0,
     topdown=False,
-    **kwargs
+    **kwargs,
 ):
     """
     will plot a stack of traces one above the other assuming
@@ -69,7 +70,7 @@ def stackplot(
         ylabels=ylabels,
         yscale=yscale,
         topdown=topdown,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -80,7 +81,7 @@ def stackplot_t(
     ylabels=None,
     yscale=1.0,
     topdown=False,
-    **kwargs
+    **kwargs,
 ):
     """
     will plot a stack of traces one above the other assuming
@@ -98,7 +99,7 @@ def stackplot_t(
     # data = np.random.randn(numSamples,numRows) # test data
     # data.shape = numSamples, numRows
     if seconds:
-        t = seconds * np.arange(numSamples, dtype=float) / (numSamples-1)
+        t = seconds * np.arange(numSamples, dtype=float) / (numSamples - 1)
         # import pdb
         # pdb.set_trace()
         if start_time:
@@ -353,7 +354,7 @@ class IpyStackplot:
         fs,
         showchannels="all",
         yscale=3.0,
-        **kwargs
+        **kwargs,
     ):
         """
         showchannels (start,end) given a range of channels might extend later to be some sort of slice
@@ -446,7 +447,7 @@ class IpyStackplot:
         ylabels=None,
         yscale=1.0,
         topdown=True,  # true for this one
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -464,7 +465,7 @@ class IpyStackplot:
         # data = np.random.randn(numSamples,numRows) # test data
         # data.shape = numSamples, numRows
         if seconds:
-            t = seconds * np.arange(numSamples, dtype=float) / (numSamples-1)
+            t = seconds * np.arange(numSamples, dtype=float) / (numSamples - 1)
 
             if start_time:
                 t = t + start_time
@@ -478,9 +479,9 @@ class IpyStackplot:
 
         ticklocs = []
         if not "width" in kwargs:
-            kwargs[
-                "width"
-            ] = 950  # a default width that is wider but can just fit in jupyter
+            kwargs["width"] = (
+                950  # a default width that is wider but can just fit in jupyter
+            )
         fig = bplt.figure(
             tools="pan,box_zoom,reset,lasso_select", **kwargs
         )  # subclass of Plot that simplifies plot creation
@@ -542,7 +543,7 @@ class IpyStackplot:
         ylabels=None,
         yscale=1.0,
         topdown=True,  # true for this?
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -562,7 +563,7 @@ class IpyStackplot:
             start_time=start_time,
             ylabels=ylabels,
             yscale=yscale,
-            **kwargs
+            **kwargs,
         )
 
     def show_epoch_centered(
@@ -640,7 +641,7 @@ class IpyEEGPlot:
     work in jupyter notebook
     given an hdf @signal array-like object
     allow:
-       - scrolling 
+       - scrolling
        - goto
        ? filtering
        - montaging (linear combinations)
@@ -662,7 +663,7 @@ class IpyEEGPlot:
         showchannels="all",  # will depend on montage(s)
         yscale=3.0,
         montage=None,
-        **kwargs
+        **kwargs,
     ):
         self.title = ""  # init
         self.signals = signals
@@ -753,7 +754,7 @@ class IpyEEGPlot:
         ylabels=None,
         yscale=1.0,
         topdown=True,
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -785,13 +786,13 @@ class IpyEEGPlot:
 
         ticklocs = []
         if not "width" in kwargs:
-            kwargs[
-                "width"
-            ] = 950  # a default width that is wider but can just fit in jupyter
+            kwargs["width"] = (
+                950  # a default width that is wider but can just fit in jupyter
+            )
         fig = bplt.figure(
             title=self.title,
             tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
-            **kwargs
+            **kwargs,
         )  # subclass of Plot that simplifies plot creation
 
         # xlim(*xlm)
@@ -865,7 +866,7 @@ class IpyEEGPlot:
         ylabels=None,
         yscale=1.0,
         topdown=True,
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -886,7 +887,7 @@ class IpyEEGPlot:
             ylabels=ylabels,
             yscale=yscale,
             topdown=True,
-            **kwargs
+            **kwargs,
         )
 
     def show_epoch_centered(
@@ -1023,7 +1024,7 @@ class IpyHdfEegPlot(IpyEEGPlot):
 
         Args:
             hdf (h5py.File): an eeghdf convention hdf5 file handle
-            page_width_seconds (float): number of seconds to show 
+            page_width_seconds (float): number of seconds to show
             montage (a montageview.MontageView instance, optional): a montage with the correct mapping of elctrodes to channel numbers
         """
         rec = hdf["record-0"]
@@ -1037,12 +1038,12 @@ class IpyHdfEegPlot(IpyEEGPlot):
             electrode_labels=self.electrode_labels,
             fs=rec.attrs["sample_frequency"],
             montage=montage,
-            **kwargs
+            **kwargs,
         )
         self.title = "hdf %s - montage: %s" % (
             hdf.filename,
             self.current_montage.name if self.current_montage else "",
-        ) # try to switch from self.current_montage.full_name to .name
+        )  # try to switch from self.current_montage.full_name to .name
 
 
 class IpyHdfEegPlot2:
@@ -1061,12 +1062,12 @@ class IpyHdfEegPlot2:
         montage_class=None,
         montage_options={},
         start_seconds=-1,
-        **kwargs
+        **kwargs,
     ):
         """
         @eeghdf_file - an eeghdf.Eeeghdf instance
         @page_width_seconds = how big to make the view in seconds
-        @montage_class - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function 
+        @montage_class - montageview (class factory) OR a string that identifies a default montage (may want to change this to a factory function
         @start_seconds - center view on this point in time
         """
         self.eeghdf_file = eeghdf_file
@@ -1125,13 +1126,13 @@ class IpyHdfEegPlot2:
         self.ch_stop = self.current_montage.shape[0]
 
     def update_title(self):
-        if 'full_name' in self.current_montage.__dict__:
+        if "full_name" in self.current_montage.__dict__:
             mon_name = self.current_montage.full_name
-        elif 'name' in self.current_montage.__dict__:
+        elif "name" in self.current_montage.__dict__:
             mon_name = self.current_montage.name
         else:
             mon_name = ""
-            
+
         self.title = "hdf %s - montage: %s" % (
             self.eeghdf_file.hdf.filename,
             mon_name,
@@ -1229,7 +1230,7 @@ class IpyHdfEegPlot2:
         ylabels=None,
         yscale=1.0,
         topdown=True,
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -1261,15 +1262,15 @@ class IpyHdfEegPlot2:
 
         ticklocs = []
         if not "width" in kwargs:
-            kwargs[
-                "width"
-            ] = 950  # a default width that is wider but can just fit in jupyter
+            kwargs["width"] = (
+                950  # a default width that is wider but can just fit in jupyter
+            )
         if not self.fig:
             print("creating figure")
             fig = bplt.figure(
                 title=self.title,
                 tools="pan,box_zoom,reset,lasso_select,ywheel_zoom",
-                **kwargs
+                **kwargs,
             )  # subclass of Plot that simplifies plot creation
             self.fig = fig
 
@@ -1413,7 +1414,7 @@ class IpyHdfEegPlot2:
         ylabels=None,
         yscale=1.0,
         topdown=True,
-        **kwargs
+        **kwargs,
     ):
         """
         will plot a stack of traces one above the other assuming
@@ -1434,7 +1435,7 @@ class IpyHdfEegPlot2:
             ylabels=ylabels,
             yscale=yscale,
             topdown=True,
-            **kwargs
+            **kwargs,
         )
 
     def show_epoch_centered(

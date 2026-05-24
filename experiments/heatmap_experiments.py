@@ -73,7 +73,7 @@ def stackplot_t(
     # data = np.random.randn(numSamples,numRows) # test data
     # data.shape = numSamples, numRows
     if seconds:
-        t = seconds * np.arange(numSamples, dtype=float) / (numSamples-1)
+        t = seconds * np.arange(numSamples, dtype=float) / (numSamples - 1)
         # import pdb
         # pdb.set_trace()
         if start_time:
@@ -279,13 +279,14 @@ axarr.imshow(
     alpha=0.5,
     zorder=3,
     cmap=colorcet.cm.bmw,
-)  # inferno, magma, viridis, cividis, etc 
-# colorcet.cm.fire, colorcet.cm.blues, gray, bgwy, bmw, etc. 
+)  # inferno, magma, viridis, cividis, etc
+# colorcet.cm.fire, colorcet.cm.blues, gray, bgwy, bmw, etc.
 
 # %%
 from colorcet.plotting import swatch, swatches
 import holoviews as hv
-hv.extension('matplotlib')
+
+hv.extension("matplotlib")
 
 # %%
 swatches()
@@ -295,18 +296,18 @@ swatches()
 # - try using alpha to mask image
 
 # %%
-alphamask = np.zeros((NUM_CH,NUM_CHUNKS,4),dtype=np.float64)
+alphamask = np.zeros((NUM_CH, NUM_CHUNKS, 4), dtype=np.float64)
 
-Z = float(NUM_CH*NUM_CHUNKS)
+Z = float(NUM_CH * NUM_CHUNKS)
 for ii in range(NUM_CH):
     for jj in range(NUM_CHUNKS):
-        alphamask[ii,jj,3] = ii*jj/Z
+        alphamask[ii, jj, 3] = ii * jj / Z
 
-plt.imshow(alphamask)        
+plt.imshow(alphamask)
 
 # %%
 fig, axarr = plt.subplots(1, 1)
-fig.set_size_inches(2*FIGSIZE[0],2* 2 * FIGSIZE[1])
+fig.set_size_inches(2 * FIGSIZE[0], 2 * 2 * FIGSIZE[1])
 # print()
 # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
 eegax = stacklineplot.stackplot_t(
@@ -327,17 +328,17 @@ axarr.imshow(
     # interpolation="bilinear",
     aspect="auto",
     extent=[left, right, bottom, top],
-    #alpha=0.5,
+    # alpha=0.5,
     zorder=3,
     # cmap="inferno",
 )  # inferno, magma, viridis, cividis, etc
 
 # %%
 testeegalpha = alphamask.copy()
-testeegalpha[:,:,3] = 1-heatmap_ex
+testeegalpha[:, :, 3] = 1 - heatmap_ex
 # %%
 fig, axarr = plt.subplots(1, 1)
-fig.set_size_inches(2*FIGSIZE[0], 2*2 * FIGSIZE[1])
+fig.set_size_inches(2 * FIGSIZE[0], 2 * 2 * FIGSIZE[1])
 # print()
 # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
 eegax = stacklineplot.stackplot_t(
@@ -353,12 +354,11 @@ bottom, top = axarr.get_ylim()
 # choose to overwrite plot with image but use alpha to modify blending
 # if want EEG plot on top then set zorder to lower like 0
 axarr.imshow(
-    testeegalpha, #if add alpha values to this image 
+    testeegalpha,  # if add alpha values to this image
     origin="upper",
-    #interpolation="bilinear",
+    # interpolation="bilinear",
     aspect="auto",
     extent=[left, right, bottom, top],
-    
     zorder=3,
     cmap="inferno",
 )  # inferno, magma, viridis, cividis, etc
@@ -366,7 +366,7 @@ axarr.imshow(
 
 # %%
 fig, axarr = plt.subplots(1, 1)
-fig.set_size_inches(2*FIGSIZE[0], 2*2 * FIGSIZE[1])
+fig.set_size_inches(2 * FIGSIZE[0], 2 * 2 * FIGSIZE[1])
 # print()
 # print(axarr, f"clip_length (sec): {clip_length},", f"seconds = {clip_length*NUM_CHUNKS},")
 eegax = stacklineplot.stackplot_t(
@@ -387,7 +387,6 @@ axarr.imshow(
     interpolation="bilinear",
     aspect="auto",
     extent=[left, right, bottom, top],
-    
     zorder=3,
     cmap="inferno",
 )  # inferno, magma, viridis, cividis, etc

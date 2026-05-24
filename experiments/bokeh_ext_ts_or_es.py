@@ -58,7 +58,6 @@ from bokeh.util.compiler import TypeScript
 
 
 class Custom(LayoutDOM):
-
     __implementation__ = TypeScript(CODE)
 
     text = String(default="Custom text")
